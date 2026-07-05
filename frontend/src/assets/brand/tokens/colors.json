@@ -1,0 +1,22 @@
+{
+  "brand": "SSX + Mason Forge",
+  "version": "1.0.0",
+  "colors": {
+    "primaryNavy": "#1F3148",
+    "steelBlue": "#6F8196",
+    "warmGold": "#C99A4B",
+    "softWhite": "#F8F8F6",
+    "lightWarmGray": "#ECE9E4",
+    "charcoal": "#2E3640",
+    "forgeSilver": "#B8BDC5",
+    "success": "#2E7D32",
+    "warning": "#C99A4B",
+    "danger": "#B42318"
+  },
+  "usage": {
+    "navy": "Primary branding, navigation, headings, enterprise UI surfaces.",
+    "gold": "Restrained accent for highlights, active states, calls to action, and separators.",
+    "silver": "Mason Forge metallic secondary accents.",
+    "whiteGray": "Clean backgrounds, cards, and document surfaces."
+  }
+}

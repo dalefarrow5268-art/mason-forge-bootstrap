@@ -1,0 +1,601 @@
+:root {
+  --mf-primary: #1f3148;
+  --mf-secondary: #6f8196;
+  --mf-accent: #c99a4b;
+  --mf-background: #f8f8f6;
+  --mf-surface: #ffffff;
+  --mf-border: #ece9e4;
+  --mf-text: #2e3640;
+  --mf-radius: 16px;
+  --mf-radius-sm: 12px;
+  --mf-shadow: 0 8px 24px rgba(31, 49, 72, 0.06);
+  --mf-transition: 0.2s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--mf-background);
+  color: var(--mf-text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+  font-size: 16px;
+}
+
+button {
+  font: inherit;
+  border: 0;
+  background: transparent;
+}
+
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 28px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 24px;
+  align-items: start;
+  box-sizing: border-box;
+}
+
+.dashboard-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+aside {
+  width: 220px;
+  min-width: 220px;
+  height: fit-content;
+  position: sticky;
+  top: 24px;
+  background: linear-gradient(180deg, #1f3148 0%, #16273b 100%);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 12px 30px rgba(31, 49, 72, 0.12);
+}
+
+aside h2 {
+  margin: 0 0 8px;
+  color: white;
+  font-size: 24px;
+}
+
+.sidebar-subtitle {
+  margin: 0 0 24px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+}
+
+nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nav-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #dfe6ee;
+  font-weight: 700;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.nav-item.active {
+  background: white;
+  color: var(--mf-primary);
+  border-left: 4px solid var(--mf-accent);
+  padding-left: 16px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  background: var(--mf-primary);
+  padding: 18px 24px;
+  border-radius: var(--mf-radius);
+  box-shadow: var(--mf-shadow);
+}
+
+.header-brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.forge-logo {
+  width: 360px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.header-subtitle {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13px;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.header-badge,
+.header-version {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.header-badge {
+  background: #eef8f0;
+  color: #2e7d32;
+}
+
+.header-version {
+  background: rgba(255, 255, 255, 0.14);
+  color: white;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #2e7d32;
+}
+
+.dashboard-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(360px, 0.88fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.dashboard-left,
+.dashboard-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+section {
+  background: var(--mf-surface);
+  padding: 22px;
+  border: 1px solid var(--mf-border);
+  border-radius: var(--mf-radius);
+  box-shadow: var(--mf-shadow);
+}
+
+h2 {
+  margin: 0 0 16px;
+  color: var(--mf-primary);
+  font-size: 24px;
+}
+
+.mission-panel {
+  border-top: 4px solid var(--mf-accent);
+}
+
+.mission-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.mission-subtitle {
+  margin: 0;
+  color: var(--mf-secondary);
+  font-size: 16px;
+}
+
+.mission-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+
+  background: var(--mf-accent);
+  color: white;
+
+  padding: 10px 18px;
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.mission-text {
+  margin: 18px 0 0;
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.mission-divider {
+  border: none;
+  height: 1px;
+  background: var(--mf-border);
+  margin: 24px 0;
+}
+
+.section-label {
+  margin: 0 0 16px;
+  color: var(--mf-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.status-grid,
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.status-card,
+.metric-card,
+.team-card,
+.pipeline-card,
+.activity-item {
+  background: white;
+  border: 1px solid var(--mf-border);
+  border-radius: var(--mf-radius-sm);
+  padding: 16px;
+  box-shadow: var(--mf-shadow);
+}
+
+.status-card h3,
+.metric-card h3,
+.team-card h3 {
+  margin: 0 0 8px;
+  color: var(--mf-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.status-card p,
+.team-card p {
+  margin: 0;
+  color: var(--mf-primary);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.metric-card h2 {
+  margin: 0;
+  color: var(--mf-primary);
+  font-size: 30px;
+}
+
+.metric-card small,
+.pipeline-card small {
+  color: var(--mf-secondary);
+  font-size: 13px;
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.team-status {
+  display: inline-flex;
+  margin-top: 10px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #eef8f0;
+  color: #2e7d32;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.activity-item {
+  margin-top: 10px;
+  border-left: 4px solid var(--mf-accent);
+}
+
+.pipeline-card {
+  margin-top: 12px;
+}
+
+.pipeline-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.pipeline-progress {
+  height: 10px;
+  background: var(--mf-border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.pipeline-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--mf-primary), var(--mf-accent));
+}
+
+.forge-panel {
+  display: none;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-layout,
+  .dashboard-row {
+    grid-template-columns: 1fr;
+  }
+
+  aside {
+    position: static;
+  }
+}
+
+@media (max-width: 800px) {
+  .header,
+  .mission-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .status-grid,
+  .metrics-grid,
+  .team-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .forge-logo {
+    width: 280px;
+  }
+}
+/* FINAL MASON FORGE LAYOUT OVERRIDE */
+
+.dashboard-layout {
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 32px;
+  padding: 32px;
+  max-width: 1500px;
+}
+
+.dashboard-main {
+  gap: 28px;
+}
+
+.header {
+  background: var(--mf-primary);
+  padding: 22px 28px;
+  min-height: 110px;
+}
+
+.forge-logo {
+  width: 420px;
+  max-width: 100%;
+}
+
+.header-subtitle {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13px;
+}
+
+.header-version {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.dashboard-row {
+  grid-template-columns: minmax(0, 1.15fr) minmax(380px, 0.85fr);
+  gap: 28px;
+}
+
+.status-grid,
+.metrics-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.team-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.forge-panel {
+  display: none;
+}
+/* REMOVE BLUE HEADER BAR */
+
+.header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+  padding: 0 0 18px 0 !important;
+  margin: 0 0 24px 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  min-height: 0 !important;
+}
+
+.header-brand {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  margin-left: 12px !important;
+}
+
+
+.header-subtitle {
+  display: none !important;
+}
+.header-version {
+  background: var(--mf-primary) !important;
+  color: #ffffff !important;
+}
+
+.header-status {
+  align-self: center !important;
+}
+/* FULL WIDTH HEADER + SPACING FIX */
+
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 32px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 24px;
+  align-items: start;
+  box-sizing: border-box;
+}
+
+aside {
+  top: 32px !important;
+  margin-top: 0 !important;
+}
+
+.dashboard-main {
+  gap: 32px !important;
+}
+
+.header {
+  display: grid !important;
+  grid-template-columns: 420px 1fr !important;
+  align-items: center !important;
+  gap: 32px !important;
+  width: 100% !important;
+  margin-bottom: 24px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* FORCE HEADER STATUS POSITION */
+
+.header .header-status {
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+  padding: 0 24px 24px 0 !important;
+  margin: 0 0 24px 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  min-height: 0 !important;
+}
+
+.dashboard-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(420px, 0.8fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.dashboard-left,
+.dashboard-right {
+  gap: 32px !important;
+}
+
+.mission-status {
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 9px 16px !important;
+  border-radius: 999px !important;
+  white-space: nowrap !important;
+}
+
+
+/* FORCE SIDEBAR WIDTH FIX */
+
+.dashboard-layout > aside {
+  width: 240px !important;
+  min-width: 240px !important;
+  max-width: 240px !important;
+  padding: 24px !important;
+}
+
+.dashboard-layout {
+  grid-template-columns: 240px minmax(0, 1fr) !important;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  width: 100%;
+
+  padding: 12px 14px;
+
+  color: #dfe6ee;
+  font-size: 15px;
+  font-weight: 600;
+
+  white-space: nowrap;
+
+  border-radius: 12px;
+
+  cursor: pointer;
+}
+
+.nav-item span:last-child {
+  white-space: nowrap !important;
+}
+.forge-logo {
+  width: 340px !important;
+  min-width: 340px !important;
+  height: auto !important;
+  display: block !important;
+}
+/* HEADER LEFT ALIGN FIX */
+
+.header {
+  padding-left: 0 !important;
+}
+
+.header-brand {
+  margin-left: -12px !important;
+}

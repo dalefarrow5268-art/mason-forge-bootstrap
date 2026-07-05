@@ -1,0 +1,14 @@
+{
+  "name": "Mason Forge",
+  "version": "0.1.0",
+  "principle": "Forge it once. Reuse it forever.",
+  "status": "Phase 1 starter",
+  "systems": [
+    "brand-engine",
+    "knowledge-engine",
+    "build-engine",
+    "validation-engine",
+    "forge-control-center"
+  ],
+  "humanApprovalRequired": true
+}

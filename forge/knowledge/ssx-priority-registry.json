@@ -1,0 +1,17 @@
+{
+  "registryVersion": "0.1.0",
+  "note": "Seed registry for SSX roadmap priorities. Expand as priority packages are added.",
+  "knownStandards": [
+    "Brand-first implementation",
+    "Human approval workflow",
+    "Reusable modules",
+    "Positive, solution-based customer service",
+    "Build people, create opportunity"
+  ],
+  "priority15": {
+    "15.1": "SSX Delivery Network\u2122",
+    "15.2": "SSX Transportation Exchange\u2122",
+    "15.3": "SSX Logistics Marketplace\u2122",
+    "15.4": "SSX Fleet & Delivery Network\u2122"
+  }
+}

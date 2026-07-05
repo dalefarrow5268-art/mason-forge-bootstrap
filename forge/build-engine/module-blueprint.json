@@ -1,0 +1,20 @@
+{
+  "moduleBlueprintVersion": "0.1.0",
+  "outputs": [
+    "database_schema",
+    "api_routes",
+    "frontend_pages",
+    "mobile_screens",
+    "tests",
+    "documentation",
+    "brand_review",
+    "human_approval_summary"
+  ],
+  "requiredChecks": [
+    "compile",
+    "typecheck",
+    "security_review",
+    "brand_token_usage",
+    "integration_conflict_scan"
+  ]
+}

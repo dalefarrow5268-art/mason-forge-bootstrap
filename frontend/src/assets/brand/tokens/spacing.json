@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "radius": {
+    "sm": "8px",
+    "md": "14px",
+    "lg": "22px",
+    "xl": "32px"
+  },
+  "spacing": {
+    "xs": "4px",
+    "sm": "8px",
+    "md": "16px",
+    "lg": "24px",
+    "xl": "40px",
+    "xxl": "72px"
+  },
+  "shadow": {
+    "card": "0 18px 45px rgba(31, 49, 72, 0.10)",
+    "panel": "0 8px 24px rgba(31, 49, 72, 0.08)"
+  }
+}

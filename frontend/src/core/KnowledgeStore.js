@@ -25,6 +25,12 @@ class KnowledgeStore {
     this.memory = memory;
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | CRUD Operations
+  |--------------------------------------------------------------------------
+  */
+
   save(key, value, metadata = {}) {
     return this.memory.set(key, value, metadata);
   }
@@ -40,6 +46,12 @@ class KnowledgeStore {
   remove(key) {
     return this.memory.delete(key);
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Collection Operations
+  |--------------------------------------------------------------------------
+  */
 
   all() {
     return this.memory.getAll();
@@ -57,6 +69,12 @@ class KnowledgeStore {
     this.memory.clear();
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Import / Export
+  |--------------------------------------------------------------------------
+  */
+
   export() {
     return this.memory.export();
   }
@@ -65,13 +83,17 @@ class KnowledgeStore {
     return this.memory.import(data);
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Search
+  |--------------------------------------------------------------------------
+  */
+
   search(query = "") {
     const q = query.toLowerCase();
 
     return this.all().filter((record) => {
-      if (record.key.toLowerCase().includes(q)) {
-        return true;
-      }
+      if (record.key.toLowerCase().includes(q)) return true;
 
       if (
         typeof record.value === "string" &&
@@ -82,9 +104,7 @@ class KnowledgeStore {
 
       if (
         record.metadata &&
-        JSON.stringify(record.metadata)
-          .toLowerCase()
-          .includes(q)
+        JSON.stringify(record.metadata).toLowerCase().includes(q)
       ) {
         return true;
       }
@@ -93,11 +113,32 @@ class KnowledgeStore {
     });
   }
 
-  health() {
+  /*
+  |--------------------------------------------------------------------------
+  | Statistics
+  |--------------------------------------------------------------------------
+  */
+
+  stats() {
     return {
-      status: "healthy",
       backend: "KnowledgeMemory",
       records: this.count(),
+      keys: this.keys().length,
+    };
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Health
+  |--------------------------------------------------------------------------
+  */
+
+  health() {
+    return {
+      status: "Operational",
+      backend: "KnowledgeMemory",
+      records: this.count(),
+      statistics: this.stats(),
       timestamp: new Date().toISOString(),
     };
   }

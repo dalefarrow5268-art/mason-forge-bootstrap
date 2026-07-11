@@ -13,49 +13,98 @@ import knowledgeService from "./KnowledgeService";
 class DashboardService {
   constructor() {
     this.startedAt = new Date().toISOString();
+    this.version = "0.4.0";
   }
 
-  /**
-   * Dashboard status.
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Dashboard Status
+  |--------------------------------------------------------------------------
+  */
+
   status() {
     return {
-      status: "Ready",
+      status: "Operational",
+      version: this.version,
+      milestone: "Milestone 3",
       uptime: this.startedAt,
       timestamp: new Date().toISOString(),
     };
   }
 
-  /**
-   * Dashboard summary.
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Dashboard Summary
+  |--------------------------------------------------------------------------
+  */
+
   summary() {
     return {
-      core: "Healthy",
+      platform: "SubSource Exchange™",
+      mission: "Engineering Operating System",
+      motto: "Forge it once. Reuse it forever.™",
+
+      version: this.version,
+      milestone: "Milestone 3",
+
+      core: "Operational",
       knowledge: knowledgeService.health().status,
       knowledgeRecords: knowledgeService.count(),
+
+      engineeringSystems: 11,
+      engineeringAgents: 7,
+      engineeringJobs: 5,
+
+      approvalQueue: 1,
+
+      deploymentStatus: "Ready",
+      verificationStatus: "Ready",
+      localAI: "Waiting for Connection",
+
       timestamp: new Date().toISOString(),
     };
   }
 
-  /**
-   * Dashboard metrics.
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Dashboard Metrics
+  |--------------------------------------------------------------------------
+  */
+
   metrics() {
     return {
+      engineeringSystems: 11,
+
+      engineeringAgents: 7,
+      engineeringJobs: 5,
+
+      approvalQueue: 1,
+
       knowledgeRecords: knowledgeService.count(),
       knowledgeReady: knowledgeService.isReady(),
+
+      deploymentReady: true,
+      verificationReady: true,
+
+      localAIConnected: false,
+
+      platformHealth: "Operational",
+
       timestamp: new Date().toISOString(),
     };
   }
 
-  /**
-   * Dashboard health.
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Dashboard Health
+  |--------------------------------------------------------------------------
+  */
+
   health() {
     return {
-      status: "healthy",
+      status: "Operational",
       dashboard: "DashboardService",
+      version: this.version,
       timestamp: new Date().toISOString(),
     };
   }

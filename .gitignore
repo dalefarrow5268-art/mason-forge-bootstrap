@@ -1,20 +1,27 @@
 # Dependencies
 node_modules/
 
+# Production builds
+dist/
+
 # Vite cache
 .vite/
-
-# Build output
-dist/
 
 # Environment files
 .env
 .env.*
+!.env.example
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Editor files
+.vscode/
+.idea/
 
 # OS files
 .DS_Store

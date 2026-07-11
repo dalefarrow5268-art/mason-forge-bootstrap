@@ -1,13 +1,27 @@
 {
   "name": "mason-forge-bootstrap",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "description": "Mason Forge™ Engineering Operating System for SubSource Exchange™",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "echo \"Linting will be added in Milestone 2\"",
+    "test": "echo \"Testing will be added in Milestone 2\""
   },
+  "keywords": [
+    "mason-forge",
+    "subsource-exchange",
+    "engineering",
+    "construction",
+    "ai",
+    "react",
+    "vite"
+  ],
+  "author": "Dale Farrow",
+  "license": "Proprietary",
   "dependencies": {
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

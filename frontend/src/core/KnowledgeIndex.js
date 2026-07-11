@@ -21,7 +21,19 @@
 class KnowledgeIndex {
   constructor() {
     this.index = new Map();
+
+    this.statistics = {
+      indexed: 0,
+      searches: 0,
+      lastUpdated: null,
+    };
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Index Operations
+  |--------------------------------------------------------------------------
+  */
 
   index(record) {
     if (!record || !record.key) {
@@ -36,17 +48,27 @@ class KnowledgeIndex {
       .join(" ")
       .toLowerCase();
 
-    this.index.set(record.key, {
+    const indexedRecord = {
       key: record.key,
       searchableText,
       updatedAt: new Date().toISOString(),
-    });
+    };
 
-    return this.index.get(record.key);
+    this.index.set(record.key, indexedRecord);
+
+    this.statistics.indexed = this.size();
+    this.statistics.lastUpdated = new Date().toISOString();
+
+    return indexedRecord;
   }
 
   remove(key) {
-    return this.index.delete(key);
+    const removed = this.index.delete(key);
+
+    this.statistics.indexed = this.size();
+    this.statistics.lastUpdated = new Date().toISOString();
+
+    return removed;
   }
 
   has(key) {
@@ -56,21 +78,30 @@ class KnowledgeIndex {
   rebuild(records = []) {
     this.clear();
 
-    records.forEach((record) => {
-      this.index(record);
-    });
+    records.forEach((record) => this.index(record));
+
+    this.statistics.indexed = this.size();
+    this.statistics.lastUpdated = new Date().toISOString();
 
     return this.size();
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Search
+  |--------------------------------------------------------------------------
+  */
+
   search(query = "") {
+    this.statistics.searches++;
+
     const terms = query
       .toLowerCase()
       .trim()
       .split(/\s+/)
       .filter(Boolean);
 
-    if (terms.length === 0) {
+    if (!terms.length) {
       return [];
     }
 
@@ -79,11 +110,11 @@ class KnowledgeIndex {
     for (const record of this.index.values()) {
       let score = 0;
 
-      terms.forEach((term) => {
+      for (const term of terms) {
         if (record.searchableText.includes(term)) {
           score++;
         }
-      });
+      }
 
       if (score > 0) {
         matches.push({
@@ -96,8 +127,17 @@ class KnowledgeIndex {
     return matches.sort((a, b) => b.score - a.score);
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Storage
+  |--------------------------------------------------------------------------
+  */
+
   clear() {
     this.index.clear();
+
+    this.statistics.indexed = 0;
+    this.statistics.lastUpdated = new Date().toISOString();
   }
 
   size() {
@@ -117,13 +157,37 @@ class KnowledgeIndex {
       }
     });
 
+    this.statistics.indexed = this.size();
+    this.statistics.lastUpdated = new Date().toISOString();
+
     return this.size();
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Statistics
+  |--------------------------------------------------------------------------
+  */
+
+  metrics() {
+    return {
+      indexedRecords: this.size(),
+      searches: this.statistics.searches,
+      lastUpdated: this.statistics.lastUpdated,
+    };
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Health
+  |--------------------------------------------------------------------------
+  */
+
   health() {
     return {
-      status: "healthy",
+      status: "Operational",
       indexedRecords: this.size(),
+      metrics: this.metrics(),
       timestamp: new Date().toISOString(),
     };
   }

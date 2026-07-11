@@ -13,13 +13,18 @@ class KnowledgeMemory {
     this.records = new Map();
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | CRUD Operations
+  |--------------------------------------------------------------------------
+  */
+
   set(key, value, metadata = {}) {
     if (!key) {
       throw new Error("Knowledge key is required.");
     }
 
     const now = new Date().toISOString();
-
     const existing = this.records.get(key);
 
     const record = {
@@ -44,7 +49,7 @@ class KnowledgeMemory {
       return null;
     }
 
-    record.accessCount += 1;
+    record.accessCount++;
     record.lastAccessed = new Date().toISOString();
 
     return record;
@@ -57,6 +62,12 @@ class KnowledgeMemory {
   delete(key) {
     return this.records.delete(key);
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Collection Operations
+  |--------------------------------------------------------------------------
+  */
 
   getAll() {
     return [...this.records.values()];
@@ -74,6 +85,12 @@ class KnowledgeMemory {
     this.records.clear();
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Import / Export
+  |--------------------------------------------------------------------------
+  */
+
   export() {
     return this.getAll();
   }
@@ -90,10 +107,31 @@ class KnowledgeMemory {
     return this.size();
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Statistics
+  |--------------------------------------------------------------------------
+  */
+
+  stats() {
+    return {
+      records: this.size(),
+      keys: this.keys().length,
+    };
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Health
+  |--------------------------------------------------------------------------
+  */
+
   health() {
     return {
-      status: "healthy",
+      status: "Operational",
+      backend: "In Memory",
       records: this.size(),
+      statistics: this.stats(),
       timestamp: new Date().toISOString(),
     };
   }

@@ -26,7 +26,15 @@ class KnowledgeEngine {
   } = {}) {
     this.store = store;
     this.index = index;
+
     this.ready = false;
+
+    this.statistics = {
+      searches: 0,
+      remembers: 0,
+      recalls: 0,
+      lastUpdated: null,
+    };
 
     this.rebuildIndex();
 
@@ -37,53 +45,51 @@ class KnowledgeEngine {
     return this.ready;
   }
 
-  /**
-   * Store knowledge.
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Knowledge Operations
+  |--------------------------------------------------------------------------
+  */
+
   remember(key, value, metadata = {}) {
     const record = this.store.save(key, value, metadata);
 
     this.index.index(record);
 
+    this.statistics.remembers++;
+    this.statistics.lastUpdated = new Date().toISOString();
+
     return record;
   }
 
-  /**
-   * Retrieve knowledge.
-   */
   recall(key) {
+    this.statistics.recalls++;
+
     return this.store.load(key);
   }
 
-  /**
-   * Determine if knowledge exists.
-   */
   exists(key) {
     return this.store.exists(key);
   }
 
-  /**
-   * Remove knowledge.
-   */
   forget(key) {
     this.index.remove(key);
+
+    this.statistics.lastUpdated = new Date().toISOString();
 
     return this.store.remove(key);
   }
 
-  /**
-   * Search indexed knowledge.
-   */
   search(query = "") {
+    this.statistics.searches++;
+
     const matches = this.index.search(query);
 
     return matches
       .map((match) => {
         const record = this.store.load(match.key);
 
-        if (!record) {
-          return null;
-        }
+        if (!record) return null;
 
         return {
           ...record,
@@ -93,38 +99,37 @@ class KnowledgeEngine {
       .filter(Boolean);
   }
 
-  /**
-   * Return all knowledge.
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Storage
+  |--------------------------------------------------------------------------
+  */
+
   all() {
     return this.store.all();
   }
 
-  /**
-   * Number of stored records.
-   */
   count() {
     return this.store.count();
   }
 
-  /**
-   * Rebuild the search index.
-   */
   rebuildIndex() {
     this.index.rebuild(this.store.all());
   }
 
-  /**
-   * Remove everything.
-   */
   clear() {
     this.store.clear();
     this.index.clear();
+
+    this.statistics.lastUpdated = new Date().toISOString();
   }
 
-  /**
-   * Export engine state.
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Import / Export
+  |--------------------------------------------------------------------------
+  */
+
   export() {
     return {
       version: 1,
@@ -134,9 +139,6 @@ class KnowledgeEngine {
     };
   }
 
-  /**
-   * Import engine state.
-   */
   import(data = {}) {
     this.store.import(data.records || []);
 
@@ -146,18 +148,37 @@ class KnowledgeEngine {
       this.rebuildIndex();
     }
 
+    this.statistics.lastUpdated = new Date().toISOString();
+
     return this.count();
   }
 
-  /**
-   * Engine health.
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Statistics
+  |--------------------------------------------------------------------------
+  */
+
+  metrics() {
+    return {
+      ...this.statistics,
+      records: this.count(),
+    };
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Health
+  |--------------------------------------------------------------------------
+  */
+
   health() {
     return {
-      status: this.ready ? "healthy" : "starting",
+      status: this.ready ? "Operational" : "Starting",
       ready: this.ready,
       engine: "KnowledgeEngine",
       records: this.count(),
+      metrics: this.metrics(),
       store: this.store.health(),
       index: this.index.health(),
       timestamp: new Date().toISOString(),

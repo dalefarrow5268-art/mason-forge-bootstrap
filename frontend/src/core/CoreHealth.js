@@ -10,26 +10,38 @@
 
 class CoreHealth {
   constructor() {
+    this.version = "0.4.0";
     this.services = new Map();
+    this.startedAt = new Date().toISOString();
   }
 
-  /**
-   * Register a service for health monitoring.
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Registration
+  |--------------------------------------------------------------------------
+  */
+
   register(name, service) {
     this.services.set(name, service);
   }
 
-  /**
-   * Check a single service.
-   */
+  unregister(name) {
+    this.services.delete(name);
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Service Health
+  |--------------------------------------------------------------------------
+  */
+
   checkService(name) {
     const service = this.services.get(name);
 
     if (!service) {
       return {
         name,
-        status: "unknown",
+        status: "Unknown",
       };
     }
 
@@ -42,13 +54,16 @@ class CoreHealth {
 
     return {
       name,
-      status: "healthy",
+      status: "Operational",
     };
   }
 
-  /**
-   * Check all registered services.
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Overall Health
+  |--------------------------------------------------------------------------
+  */
+
   check() {
     const services = [];
 
@@ -56,18 +71,71 @@ class CoreHealth {
       services.push(this.checkService(name));
     }
 
+    const operationalServices = services.filter(
+      (service) =>
+        service.status === "Operational" ||
+        service.status === "healthy"
+    );
+
+    const warningServices = services.filter(
+      (service) =>
+        service.status !== "Operational" &&
+        service.status !== "healthy"
+    );
+
     return {
-      status: services.every((s) => s.status === "healthy")
-        ? "healthy"
-        : "warning",
+      version: this.version,
+
+      status:
+        warningServices.length === 0
+          ? "Operational"
+          : "Warning",
+
+      startedAt: this.startedAt,
+
+      registeredServices: services.length,
+
+      operationalServices: operationalServices.length,
+
+      warningServices: warningServices.length,
+
       services,
+
       timestamp: new Date().toISOString(),
     };
   }
 
-  /**
-   * Alias used throughout Mason Forge.
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Dashboard Summary
+  |--------------------------------------------------------------------------
+  */
+
+  summary() {
+    const report = this.check();
+
+    return {
+      version: report.version,
+      status: report.status,
+
+      registeredServices: report.registeredServices,
+
+      operationalServices: report.operationalServices,
+
+      warningServices: report.warningServices,
+
+      uptime: report.startedAt,
+
+      timestamp: report.timestamp,
+    };
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Alias
+  |--------------------------------------------------------------------------
+  */
+
   health() {
     return this.check();
   }

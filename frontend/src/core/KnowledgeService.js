@@ -15,9 +15,11 @@ class KnowledgeService {
     this.engine = new KnowledgeEngine();
   }
 
-  /**
-   * Engine Status
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Engine Status
+  |--------------------------------------------------------------------------
+  */
 
   isReady() {
     return this.engine.isReady();
@@ -27,9 +29,11 @@ class KnowledgeService {
     return this.engine.health();
   }
 
-  /**
-   * Knowledge Operations
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Knowledge Operations
+  |--------------------------------------------------------------------------
+  */
 
   remember(key, value, metadata = {}) {
     return this.engine.remember(key, value, metadata);
@@ -51,9 +55,11 @@ class KnowledgeService {
     return this.engine.forget(key);
   }
 
-  /**
-   * Storage
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Storage
+  |--------------------------------------------------------------------------
+  */
 
   all() {
     return this.engine.all();
@@ -67,9 +73,11 @@ class KnowledgeService {
     this.engine.clear();
   }
 
-  /**
-   * Backup / Restore
-   */
+  /*
+  |--------------------------------------------------------------------------
+  | Backup / Restore
+  |--------------------------------------------------------------------------
+  */
 
   export() {
     return this.engine.export();
@@ -81,6 +89,20 @@ class KnowledgeService {
 
   rebuildIndex() {
     this.engine.rebuildIndex();
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Dashboard Helpers
+  |--------------------------------------------------------------------------
+  */
+
+  summary() {
+    return {
+      ready: this.isReady(),
+      records: this.count(),
+      health: this.health(),
+    };
   }
 }
 

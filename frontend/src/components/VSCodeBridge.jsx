@@ -1,21 +1,51 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 export default function VSCodeBridge() {
   const [workspaceName, setWorkspaceName] = useState("");
   const [workspaceFolder, setWorkspaceFolder] = useState("");
   const [connectedWorkspace, setConnectedWorkspace] = useState(null);
-  const [managedFiles, setManagedFiles] = useState([]);
-  const [filePath, setFilePath] = useState("");
-  const [selectedFileId, setSelectedFileId] = useState(null);
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const selectedFile = useMemo(() => {
-    return (
-      managedFiles.find((file) => file.id === selectedFileId) ?? null
-    );
-  }, [managedFiles, selectedFileId]);
+  const formatDate = (value) => {
+    if (!value) {
+      return "--";
+    }
 
-  const handleConnectWorkspace = (event) => {
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+
+    return date.toLocaleString();
+  };
+
+  const readResponse = async (response) => {
+    const text = await response.text();
+
+    if (!text) {
+      throw new Error("The local Vite API returned an empty response.");
+    }
+
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error("The local Vite API returned an invalid response.");
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || data.message || "Unable to inspect the workspace."
+      );
+    }
+
+    return data;
+  };
+
+  const handleConnectWorkspace = async (event) => {
     event.preventDefault();
 
     const trimmedName = workspaceName.trim();
@@ -26,143 +56,83 @@ export default function VSCodeBridge() {
       return;
     }
 
-    setConnectedWorkspace({
-      id: `WORKSPACE-${Date.now()}`,
-      name: trimmedName,
-      folder: trimmedFolder,
-      status: "Connected",
-      lastSync: new Date().toLocaleString(),
-    });
+    setIsLoading(true);
+    setMessage("Inspecting local workspace...");
 
-    setMessage("VS Code workspace connected.");
+    try {
+      const response = await fetch("/api/vscode/workspace/connect", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          workspaceFolder: trimmedFolder,
+        }),
+      });
+
+      const data = await readResponse(response);
+
+      setConnectedWorkspace({
+        ...data.workspace,
+        displayName: trimmedName,
+      });
+
+      setMessage("Local workspace connected and verified.");
+    } catch (error) {
+      setConnectedWorkspace(null);
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to connect to the local workspace."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefreshWorkspace = async () => {
+    if (!connectedWorkspace) {
+      setMessage("Connect a workspace before refreshing.");
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage("Refreshing local workspace...");
+
+    try {
+      const response = await fetch("/api/vscode/workspace/connect", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          workspaceFolder: connectedWorkspace.folder,
+        }),
+      });
+
+      const data = await readResponse(response);
+
+      setConnectedWorkspace({
+        ...data.workspace,
+        displayName: connectedWorkspace.displayName,
+      });
+
+      setMessage("Local workspace inspection refreshed.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to refresh the local workspace."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDisconnectWorkspace = () => {
     setConnectedWorkspace(null);
-    setManagedFiles([]);
-    setSelectedFileId(null);
-    setFilePath("");
     setMessage("VS Code workspace disconnected.");
   };
-
-  const handleAddFile = (event) => {
-    event.preventDefault();
-
-    if (!connectedWorkspace) {
-      setMessage("Connect a workspace before adding files.");
-      return;
-    }
-
-    const trimmedPath = filePath.trim();
-
-    if (!trimmedPath) {
-      setMessage("Enter a file path.");
-      return;
-    }
-
-    const duplicateFile = managedFiles.some(
-      (file) => file.path.toLowerCase() === trimmedPath.toLowerCase()
-    );
-
-    if (duplicateFile) {
-      setMessage("That file is already managed.");
-      return;
-    }
-
-    const newFile = {
-      id: `FILE-${Date.now()}`,
-      path: trimmedPath,
-      status: "Open",
-      syncStatus: "Synced",
-      lastModified: new Date().toLocaleString(),
-    };
-
-    setManagedFiles((currentFiles) => [newFile, ...currentFiles]);
-    setSelectedFileId(newFile.id);
-    setFilePath("");
-    setMessage("File added to the VS Code Bridge.");
-  };
-
-  const handleCloseFile = (fileId) => {
-    setManagedFiles((currentFiles) =>
-      currentFiles.filter((file) => file.id !== fileId)
-    );
-
-    if (selectedFileId === fileId) {
-      setSelectedFileId(null);
-    }
-
-    setMessage("File removed from the managed workspace.");
-  };
-
-  const handleMarkModified = (fileId) => {
-    setManagedFiles((currentFiles) =>
-      currentFiles.map((file) =>
-        file.id === fileId
-          ? {
-              ...file,
-              syncStatus: "Changes Pending",
-              lastModified: new Date().toLocaleString(),
-            }
-          : file
-      )
-    );
-
-    setMessage("File marked with pending changes.");
-  };
-
-  const handleSyncFile = (fileId) => {
-    setManagedFiles((currentFiles) =>
-      currentFiles.map((file) =>
-        file.id === fileId
-          ? {
-              ...file,
-              syncStatus: "Synced",
-              lastModified: new Date().toLocaleString(),
-            }
-          : file
-      )
-    );
-
-    setConnectedWorkspace((currentWorkspace) =>
-      currentWorkspace
-        ? {
-            ...currentWorkspace,
-            lastSync: new Date().toLocaleString(),
-          }
-        : currentWorkspace
-    );
-
-    setMessage("File synchronized.");
-  };
-
-  const handleSyncWorkspace = () => {
-    if (!connectedWorkspace) {
-      setMessage("Connect a workspace before synchronizing.");
-      return;
-    }
-
-    setManagedFiles((currentFiles) =>
-      currentFiles.map((file) => ({
-        ...file,
-        syncStatus: "Synced",
-        lastModified: new Date().toLocaleString(),
-      }))
-    );
-
-    setConnectedWorkspace((currentWorkspace) => ({
-      ...currentWorkspace,
-      lastSync: new Date().toLocaleString(),
-    }));
-
-    setMessage("Workspace synchronization complete.");
-  };
-
-  const pendingSyncCount = useMemo(() => {
-    return managedFiles.filter(
-      (file) => file.syncStatus === "Changes Pending"
-    ).length;
-  }, [managedFiles]);
 
   return (
     <section className="engineering-planner">
@@ -171,12 +141,16 @@ export default function VSCodeBridge() {
           <h2>VS Code Bridge</h2>
 
           <p className="engineering-planner-subtitle">
-            Connect Mason Forge directly to the local development workspace.
+            Inspect the real local development workspace through Mason Forge.
           </p>
         </div>
 
         <div className="engineering-planner-status">
-          {connectedWorkspace ? "Connected" : "Disconnected"}
+          {isLoading
+            ? "Inspecting"
+            : connectedWorkspace
+              ? "Connected"
+              : "Disconnected"}
         </div>
       </div>
 
@@ -187,55 +161,53 @@ export default function VSCodeBridge() {
           </span>
 
           <strong className="engineering-planner-card-value">
-            {connectedWorkspace ? connectedWorkspace.name : "--"}
+            {connectedWorkspace
+              ? connectedWorkspace.displayName
+              : "--"}
           </strong>
 
           <p>
             {connectedWorkspace
               ? connectedWorkspace.folder
-              : "No workspace connected."}
+              : "No local workspace connected."}
           </p>
         </article>
 
         <article className="engineering-planner-card">
           <span className="engineering-planner-card-label">
-            Open Files
+            Workspace Items
           </span>
 
           <strong className="engineering-planner-card-value">
-            {managedFiles.length}
+            {connectedWorkspace ? connectedWorkspace.itemCount : 0}
           </strong>
 
           <p>
-            {managedFiles.length === 0
-              ? "No files currently managed."
-              : `${managedFiles.length} ${
-                  managedFiles.length === 1 ? "file is" : "files are"
-                } currently managed.`}
+            {connectedWorkspace
+              ? "Top-level items verified by the local API."
+              : "No workspace items inspected."}
           </p>
         </article>
 
         <article className="engineering-planner-card">
           <span className="engineering-planner-card-label">
-            Sync Status
+            Git Repository
           </span>
 
           <strong className="engineering-planner-card-value">
             {!connectedWorkspace
-              ? "Offline"
-              : pendingSyncCount > 0
-                ? "Pending"
-                : "Synced"}
+              ? "--"
+              : connectedWorkspace.hasGitRepository
+                ? "Verified"
+                : "Not Found"}
           </strong>
 
           <p>
             {!connectedWorkspace
-              ? "Waiting for local bridge connection."
-              : pendingSyncCount > 0
-                ? `${pendingSyncCount} ${
-                    pendingSyncCount === 1 ? "file requires" : "files require"
-                  } synchronization.`
-                : "Local workspace synchronized."}
+              ? "Waiting for local workspace inspection."
+              : connectedWorkspace.hasGitRepository
+                ? "Local Git repository detected."
+                : "No local Git repository detected."}
           </p>
         </article>
       </div>
@@ -246,7 +218,7 @@ export default function VSCodeBridge() {
             <h3>Workspace Connection</h3>
 
             <p>
-              Configure the local VS Code workspace Mason Forge should manage.
+              Enter the real local folder Mason Forge should inspect.
             </p>
           </div>
         </div>
@@ -267,7 +239,7 @@ export default function VSCodeBridge() {
               setWorkspaceName(event.target.value);
               setMessage("");
             }}
-            disabled={Boolean(connectedWorkspace)}
+            disabled={Boolean(connectedWorkspace) || isLoading}
             placeholder="Mason Forge"
           />
 
@@ -283,8 +255,8 @@ export default function VSCodeBridge() {
               setWorkspaceFolder(event.target.value);
               setMessage("");
             }}
-            disabled={Boolean(connectedWorkspace)}
-            placeholder="C:\MasonForge\Code\mason-forge"
+            disabled={Boolean(connectedWorkspace) || isLoading}
+            placeholder="C:\MasonForge\Code\mason-forge-bootstrap"
           />
 
           {message ? (
@@ -300,6 +272,7 @@ export default function VSCodeBridge() {
                   type="button"
                   className="secondary-button"
                   onClick={handleDisconnectWorkspace}
+                  disabled={isLoading}
                 >
                   Disconnect Workspace
                 </button>
@@ -307,14 +280,19 @@ export default function VSCodeBridge() {
                 <button
                   type="button"
                   className="primary-button"
-                  onClick={handleSyncWorkspace}
+                  onClick={handleRefreshWorkspace}
+                  disabled={isLoading}
                 >
-                  Sync Workspace
+                  {isLoading ? "Inspecting..." : "Refresh Inspection"}
                 </button>
               </>
             ) : (
-              <button type="submit" className="primary-button">
-                Connect Workspace
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={isLoading}
+              >
+                {isLoading ? "Inspecting..." : "Connect Workspace"}
               </button>
             )}
           </div>
@@ -327,7 +305,7 @@ export default function VSCodeBridge() {
             <h3>Workspace Status</h3>
 
             <p>
-              Review the connected workspace and synchronization status.
+              Verified information returned by the local Vite API.
             </p>
           </div>
         </div>
@@ -338,22 +316,22 @@ export default function VSCodeBridge() {
               <th>Workspace</th>
               <th>Folder</th>
               <th>Status</th>
-              <th>Last Sync</th>
+              <th>Last Inspection</th>
             </tr>
           </thead>
 
           <tbody>
             {connectedWorkspace ? (
               <tr>
-                <td>{connectedWorkspace.name}</td>
+                <td>{connectedWorkspace.displayName}</td>
                 <td>{connectedWorkspace.folder}</td>
                 <td>{connectedWorkspace.status}</td>
-                <td>{connectedWorkspace.lastSync}</td>
+                <td>{formatDate(connectedWorkspace.connectedAt)}</td>
               </tr>
             ) : (
               <tr>
                 <td colSpan="4" style={{ textAlign: "center" }}>
-                  VS Code Bridge has not been connected.
+                  No local workspace has been verified.
                 </td>
               </tr>
             )}
@@ -364,123 +342,51 @@ export default function VSCodeBridge() {
       <div className="engineering-planner-workspace">
         <div className="engineering-planner-workspace-header">
           <div>
-            <h3>Managed Files</h3>
+            <h3>Project Detection</h3>
 
             <p>
-              Add files that Mason Forge should track inside the connected
-              workspace.
+              Development project details detected inside the workspace.
             </p>
           </div>
         </div>
 
-        <form
-          className="engineering-planner-form"
-          onSubmit={handleAddFile}
-        >
-          <label htmlFor="vscode-file-path">
-            File Path
-          </label>
-
-          <input
-            id="vscode-file-path"
-            type="text"
-            value={filePath}
-            onChange={(event) => {
-              setFilePath(event.target.value);
-              setMessage("");
-            }}
-            disabled={!connectedWorkspace}
-            placeholder="src/components/Dashboard.jsx"
-          />
-
-          <div className="engineering-planner-actions">
-            <button
-              type="submit"
-              className="primary-button"
-              disabled={!connectedWorkspace}
-            >
-              Add File
-            </button>
-          </div>
-        </form>
-
         <table className="planner-table">
           <thead>
             <tr>
-              <th>File</th>
-              <th>Status</th>
-              <th>Sync Status</th>
-              <th>Last Modified</th>
+              <th>Package</th>
+              <th>Version</th>
+              <th>Package File</th>
+              <th>Git Repository</th>
+              <th>Workspace Items</th>
             </tr>
           </thead>
 
           <tbody>
-            {managedFiles.length === 0 ? (
+            {connectedWorkspace ? (
               <tr>
-                <td colSpan="4" style={{ textAlign: "center" }}>
-                  No workspace files are currently managed.
+                <td>{connectedWorkspace.packageName || "--"}</td>
+                <td>{connectedWorkspace.packageVersion || "--"}</td>
+                <td>
+                  {connectedWorkspace.hasPackageJson
+                    ? "Detected"
+                    : "Not Found"}
                 </td>
+                <td>
+                  {connectedWorkspace.hasGitRepository
+                    ? "Detected"
+                    : "Not Found"}
+                </td>
+                <td>{connectedWorkspace.itemCount}</td>
               </tr>
             ) : (
-              managedFiles.map((file) => (
-                <tr
-                  key={file.id}
-                  onClick={() => setSelectedFileId(file.id)}
-                >
-                  <td>{file.path}</td>
-                  <td>{file.status}</td>
-                  <td>{file.syncStatus}</td>
-                  <td>{file.lastModified}</td>
-                </tr>
-              ))
+              <tr>
+                <td colSpan="5" style={{ textAlign: "center" }}>
+                  Connect a workspace to inspect the local project.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
-
-        {selectedFile ? (
-          <div className="engineering-planner-plan-detail">
-            <div className="engineering-planner-plan-detail-header">
-              <div>
-                <span className="engineering-planner-card-label">
-                  {selectedFile.id}
-                </span>
-
-                <h3>{selectedFile.path}</h3>
-              </div>
-
-              <div className="engineering-planner-status">
-                {selectedFile.syncStatus}
-              </div>
-            </div>
-
-            <div className="engineering-planner-actions">
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => handleCloseFile(selectedFile.id)}
-              >
-                Remove File
-              </button>
-
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => handleMarkModified(selectedFile.id)}
-              >
-                Mark Modified
-              </button>
-
-              <button
-                type="button"
-                className="primary-button"
-                onClick={() => handleSyncFile(selectedFile.id)}
-                disabled={selectedFile.syncStatus === "Synced"}
-              >
-                Sync File
-              </button>
-            </div>
-          </div>
-        ) : null}
       </div>
     </section>
   );

@@ -1,276 +1,167 @@
-import { useEffect, useMemo, useState } from "react";
-import { stateManager, eventBus } from "../core";
+import { useState } from "react";
+import { eventBus } from "../core";
 
 export default function GitBridge() {
   const [repositoryName, setRepositoryName] = useState("");
   const [repositoryPath, setRepositoryPath] = useState("");
-  const [branchName, setBranchName] = useState("main");
   const [connectedRepository, setConnectedRepository] = useState(null);
-  const [pendingChanges, setPendingChanges] = useState(
-    () => stateManager.get("gitChanges") ?? []
-  );
-  const [commitMessage, setCommitMessage] = useState("");
-  const [commitHistory, setCommitHistory] = useState([]);
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const syncGitChanges = (updatedChanges) => {
-      setPendingChanges(
-        Array.isArray(updatedChanges) ? updatedChanges : []
-      );
-    };
+  const formatDate = (value) => {
+    if (!value) {
+      return "--";
+    }
 
-    const addEngineeringJobChange = (payload) => {
-      const job = payload?.job;
+    const date = new Date(value);
 
-      if (!job) {
-        return;
-      }
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
 
-      const currentChanges =
-        stateManager.get("gitChanges") ?? [];
-
-      const existingChange = currentChanges.find(
-        (change) => change.jobId === job.id
-      );
-
-      if (existingChange) {
-        return;
-      }
-
-      const newChange = {
-        id: `CHANGE-${job.id}`,
-        jobId: job.id,
-        planId: job.planId,
-        file: `src/generated/${job.id}.js`,
-        type: "Generated",
-        status: "Pending",
-        description: job.title,
-        createdAt: new Date().toISOString(),
-      };
-
-      stateManager.set("gitChanges", [
-        newChange,
-        ...currentChanges,
-      ]);
-
-      eventBus.emit("git-change-created", {
-        change: newChange,
-        changeId: newChange.id,
-        job,
-        jobId: job.id,
-        planId: job.planId,
-        timestamp: new Date().toISOString(),
-      });
-    };
-
-    const unsubscribeChanges = stateManager.subscribe(
-      "gitChanges",
-      syncGitChanges
-    );
-
-    const unsubscribeEngineeringJob = eventBus.on(
-      "engineering-job-created",
-      addEngineeringJobChange
-    );
-
-    setPendingChanges(stateManager.get("gitChanges") ?? []);
-
-    return () => {
-      if (typeof unsubscribeChanges === "function") {
-        unsubscribeChanges();
-      }
-
-      if (typeof unsubscribeEngineeringJob === "function") {
-        unsubscribeEngineeringJob();
-      }
-    };
-  }, []);
-
-  const connectionStatus = connectedRepository
-    ? "Connected"
-    : "Not Connected";
-
-  const lastCommit = useMemo(() => {
-    return commitHistory[0] ?? null;
-  }, [commitHistory]);
-
-  const writeGitChanges = (updater) => {
-    const currentChanges =
-      stateManager.get("gitChanges") ?? [];
-
-    const updatedChanges =
-      typeof updater === "function"
-        ? updater(currentChanges)
-        : updater;
-
-    stateManager.set("gitChanges", updatedChanges);
-
-    return updatedChanges;
+    return date.toLocaleString();
   };
 
-  const handleConnectRepository = (event) => {
+  const readResponse = async (response) => {
+    const text = await response.text();
+
+    if (!text) {
+      throw new Error("The local Git API returned an empty response.");
+    }
+
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error("The local Git API returned an invalid response.");
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || data.message || "Unable to inspect the repository."
+      );
+    }
+
+    return data;
+  };
+
+  const inspectRepository = async (path) => {
+    const response = await fetch("/api/git/repository/inspect", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        repositoryPath: path,
+      }),
+    });
+
+    return readResponse(response);
+  };
+
+  const handleConnectRepository = async (event) => {
     event.preventDefault();
 
     const trimmedName = repositoryName.trim();
     const trimmedPath = repositoryPath.trim();
-    const trimmedBranch = branchName.trim();
 
-    if (!trimmedName || !trimmedPath || !trimmedBranch) {
-      setMessage(
-        "Enter the repository name, local path, and branch before connecting."
-      );
+    if (!trimmedName || !trimmedPath) {
+      setMessage("Enter the repository name and local path.");
       return;
     }
 
-    const repository = {
-      id: `REPO-${Date.now()}`,
-      name: trimmedName,
-      path: trimmedPath,
-      branch: trimmedBranch,
-      connectedAt: new Date().toLocaleString(),
-    };
+    setIsLoading(true);
+    setMessage("Inspecting local Git repository...");
 
-    setConnectedRepository(repository);
+    try {
+      const data = await inspectRepository(trimmedPath);
 
-    eventBus.emit("git-repository-connected", {
-      repository,
-      repositoryId: repository.id,
-      timestamp: new Date().toISOString(),
-    });
+      const repository = {
+        ...data.repository,
+        displayName: trimmedName,
+      };
 
-    setMessage("Repository connected to Mason Forge.");
+      setConnectedRepository(repository);
+
+      eventBus.emit("git-repository-connected", {
+        repository,
+        timestamp: new Date().toISOString(),
+      });
+
+      setMessage("Local Git repository connected and verified.");
+    } catch (error) {
+      setConnectedRepository(null);
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to connect to the local Git repository."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefreshRepository = async () => {
+    if (!connectedRepository) {
+      setMessage("Connect a repository before refreshing.");
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage("Refreshing local Git repository...");
+
+    try {
+      const data = await inspectRepository(connectedRepository.path);
+
+      const repository = {
+        ...data.repository,
+        displayName: connectedRepository.displayName,
+      };
+
+      setConnectedRepository(repository);
+
+      eventBus.emit("git-repository-refreshed", {
+        repository,
+        timestamp: new Date().toISOString(),
+      });
+
+      setMessage("Local Git repository inspection refreshed.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to refresh the local Git repository."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDisconnectRepository = () => {
     const repository = connectedRepository;
 
     setConnectedRepository(null);
-    writeGitChanges([]);
-    setCommitMessage("");
-    setCommitHistory([]);
 
     eventBus.emit("git-repository-disconnected", {
       repository,
-      repositoryId: repository?.id ?? null,
       timestamp: new Date().toISOString(),
     });
 
-    setMessage("Repository disconnected.");
+    setMessage("Git repository disconnected.");
   };
 
-  const handleAddTestChange = () => {
-    if (!connectedRepository) {
-      setMessage("Connect a repository before tracking changes.");
-      return;
-    }
+  const connectionStatus = isLoading
+    ? "Inspecting"
+    : connectedRepository
+      ? "Connected"
+      : "Not Connected";
 
-    const currentChanges =
-      stateManager.get("gitChanges") ?? [];
+  const pendingChangeCount =
+    connectedRepository?.changes?.length ?? 0;
 
-    const nextChangeNumber = currentChanges.length + 1;
-
-    const newChange = {
-      id: `CHANGE-${Date.now()}`,
-      jobId: null,
-      planId: null,
-      file: `src/generated/change-${nextChangeNumber}.js`,
-      type: "Modified",
-      status: "Pending",
-      description: "Test Git change",
-      createdAt: new Date().toISOString(),
-    };
-
-    writeGitChanges((changes) => [
-      newChange,
-      ...changes,
-    ]);
-
-    eventBus.emit("git-change-created", {
-      change: newChange,
-      changeId: newChange.id,
-      timestamp: new Date().toISOString(),
-    });
-
-    setMessage("Test change added to the Git staging queue.");
-  };
-
-  const handleRemoveChange = (changeId) => {
-    const change =
-      (stateManager.get("gitChanges") ?? []).find(
-        (currentChange) => currentChange.id === changeId
-      ) ?? null;
-
-    writeGitChanges((currentChanges) =>
-      currentChanges.filter(
-        (currentChange) => currentChange.id !== changeId
-      )
-    );
-
-    eventBus.emit("git-change-removed", {
-      change,
-      changeId,
-      jobId: change?.jobId ?? null,
-      planId: change?.planId ?? null,
-      timestamp: new Date().toISOString(),
-    });
-
-    setMessage("Pending change removed.");
-  };
-
-  const handleCommitChanges = (event) => {
-    event.preventDefault();
-
-    if (!connectedRepository) {
-      setMessage("Connect a repository before committing changes.");
-      return;
-    }
-
-    const currentChanges =
-      stateManager.get("gitChanges") ?? [];
-
-    if (currentChanges.length === 0) {
-      setMessage("There are no pending changes to commit.");
-      return;
-    }
-
-    const trimmedCommitMessage = commitMessage.trim();
-
-    if (!trimmedCommitMessage) {
-      setMessage("Enter a commit message.");
-      return;
-    }
-
-    const newCommit = {
-      id: `COMMIT-${Date.now()}`,
-      hash: Math.random().toString(16).slice(2, 9),
-      message: trimmedCommitMessage,
-      branch: connectedRepository.branch,
-      files: currentChanges.length,
-      changes: currentChanges,
-      createdAt: new Date().toLocaleString(),
-      status: "Committed",
-    };
-
-    setCommitHistory((currentHistory) => [
-      newCommit,
-      ...currentHistory,
-    ]);
-
-    writeGitChanges([]);
-    setCommitMessage("");
-
-    eventBus.emit("git-changes-committed", {
-      commit: newCommit,
-      commitId: newCommit.id,
-      repository: connectedRepository,
-      repositoryId: connectedRepository.id,
-      changes: currentChanges,
-      timestamp: new Date().toISOString(),
-    });
-
-    setMessage("Changes committed successfully.");
-  };
+  const recentCommits =
+    connectedRepository?.recentCommits ?? [];
 
   return (
     <section className="engineering-planner">
@@ -279,8 +170,7 @@ export default function GitBridge() {
           <h2>Git Bridge</h2>
 
           <p className="engineering-planner-subtitle">
-            Connect Mason Forge to Git repositories for version control and
-            automated engineering workflows.
+            Inspect the real local Git repository through Mason Forge.
           </p>
         </div>
 
@@ -296,13 +186,15 @@ export default function GitBridge() {
           </span>
 
           <strong className="engineering-planner-card-value">
-            {connectedRepository ? connectedRepository.name : "--"}
+            {connectedRepository
+              ? connectedRepository.displayName
+              : "--"}
           </strong>
 
           <p>
             {connectedRepository
               ? connectedRepository.path
-              : "No repository connected."}
+              : "No local repository connected."}
           </p>
         </article>
 
@@ -312,13 +204,15 @@ export default function GitBridge() {
           </span>
 
           <strong className="engineering-planner-card-value">
-            {connectedRepository ? connectedRepository.branch : "--"}
+            {connectedRepository
+              ? connectedRepository.branch
+              : "--"}
           </strong>
 
           <p>
             {connectedRepository
-              ? "Active Git branch."
-              : "No active branch."}
+              ? "Verified active Git branch."
+              : "No active branch verified."}
           </p>
         </article>
 
@@ -328,15 +222,17 @@ export default function GitBridge() {
           </span>
 
           <strong className="engineering-planner-card-value">
-            {pendingChanges.length}
+            {pendingChangeCount}
           </strong>
 
           <p>
-            {pendingChanges.length === 0
-              ? "No tracked changes."
-              : `${pendingChanges.length} ${
-                  pendingChanges.length === 1 ? "change is" : "changes are"
-                } waiting to be committed.`}
+            {!connectedRepository
+              ? "Waiting for repository inspection."
+              : pendingChangeCount === 0
+                ? "Working tree is clean."
+                : `${pendingChangeCount} ${
+                    pendingChangeCount === 1 ? "change was" : "changes were"
+                  } detected.`}
           </p>
         </article>
       </div>
@@ -347,7 +243,7 @@ export default function GitBridge() {
             <h3>Repository Connection</h3>
 
             <p>
-              Configure the local Git repository Mason Forge should manage.
+              Enter the local Git repository Mason Forge should inspect.
             </p>
           </div>
         </div>
@@ -368,8 +264,8 @@ export default function GitBridge() {
               setRepositoryName(event.target.value);
               setMessage("");
             }}
-            disabled={Boolean(connectedRepository)}
-            placeholder="mason-forge"
+            disabled={Boolean(connectedRepository) || isLoading}
+            placeholder="Mason Forge"
           />
 
           <label htmlFor="git-repository-path">
@@ -384,24 +280,8 @@ export default function GitBridge() {
               setRepositoryPath(event.target.value);
               setMessage("");
             }}
-            disabled={Boolean(connectedRepository)}
-            placeholder="C:\MasonForge\Code\mason-forge"
-          />
-
-          <label htmlFor="git-branch-name">
-            Branch
-          </label>
-
-          <input
-            id="git-branch-name"
-            type="text"
-            value={branchName}
-            onChange={(event) => {
-              setBranchName(event.target.value);
-              setMessage("");
-            }}
-            disabled={Boolean(connectedRepository)}
-            placeholder="main"
+            disabled={Boolean(connectedRepository) || isLoading}
+            placeholder="C:\MasonForge\Code\mason-forge-bootstrap"
           />
 
           {message ? (
@@ -412,16 +292,32 @@ export default function GitBridge() {
 
           <div className="engineering-planner-actions">
             {connectedRepository ? (
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={handleDisconnectRepository}
-              >
-                Disconnect Repository
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handleDisconnectRepository}
+                  disabled={isLoading}
+                >
+                  Disconnect Repository
+                </button>
+
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={handleRefreshRepository}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Inspecting..." : "Refresh Inspection"}
+                </button>
+              </>
             ) : (
-              <button type="submit" className="primary-button">
-                Connect Repository
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={isLoading}
+              >
+                {isLoading ? "Inspecting..." : "Connect Repository"}
               </button>
             )}
           </div>
@@ -434,7 +330,7 @@ export default function GitBridge() {
             <h3>Repository Status</h3>
 
             <p>
-              Review the connected repository, branch, and latest commit.
+              Verified information returned by the local Git API.
             </p>
           </div>
         </div>
@@ -444,27 +340,29 @@ export default function GitBridge() {
             <tr>
               <th>Repository</th>
               <th>Branch</th>
-              <th>Last Commit</th>
-              <th>Status</th>
+              <th>Remote</th>
+              <th>Head Commit</th>
+              <th>Last Inspection</th>
             </tr>
           </thead>
 
           <tbody>
             {connectedRepository ? (
               <tr>
-                <td>{connectedRepository.name}</td>
+                <td>{connectedRepository.displayName}</td>
                 <td>{connectedRepository.branch}</td>
+                <td>{connectedRepository.remote || "Not Configured"}</td>
                 <td>
-                  {lastCommit
-                    ? `${lastCommit.hash} — ${lastCommit.message}`
-                    : "No commits created"}
+                  {connectedRepository.headCommit
+                    ? `${connectedRepository.headCommit.hash} — ${connectedRepository.headCommit.message}`
+                    : "No commit detected"}
                 </td>
-                <td>Connected</td>
+                <td>{formatDate(connectedRepository.inspectedAt)}</td>
               </tr>
             ) : (
               <tr>
-                <td colSpan="4" style={{ textAlign: "center" }}>
-                  Git Bridge has not been configured.
+                <td colSpan="5" style={{ textAlign: "center" }}>
+                  No local Git repository has been verified.
                 </td>
               </tr>
             )}
@@ -475,104 +373,52 @@ export default function GitBridge() {
       <div className="engineering-planner-workspace">
         <div className="engineering-planner-workspace-header">
           <div>
-            <h3>Pending Changes</h3>
+            <h3>Working Tree</h3>
 
             <p>
-              Review files waiting to be included in the next Git commit.
+              Real uncommitted changes detected in the local repository.
             </p>
           </div>
-
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={handleAddTestChange}
-            disabled={!connectedRepository}
-          >
-            Add Test Change
-          </button>
         </div>
 
         <table className="planner-table">
           <thead>
             <tr>
               <th>File</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th>Action</th>
+              <th>Index Status</th>
+              <th>Working Tree Status</th>
             </tr>
           </thead>
 
           <tbody>
-            {pendingChanges.length === 0 ? (
+            {!connectedRepository || pendingChangeCount === 0 ? (
               <tr>
-                <td colSpan="4" style={{ textAlign: "center" }}>
-                  No pending Git changes.
+                <td colSpan="3" style={{ textAlign: "center" }}>
+                  {connectedRepository
+                    ? "Working tree is clean."
+                    : "Connect a repository to inspect its working tree."}
                 </td>
               </tr>
             ) : (
-              pendingChanges.map((change) => (
-                <tr key={change.id}>
+              connectedRepository.changes.map((change, index) => (
+                <tr key={`${change.file}-${index}`}>
                   <td>{change.file}</td>
-                  <td>{change.type}</td>
-                  <td>{change.status}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => handleRemoveChange(change.id)}
-                    >
-                      Remove
-                    </button>
-                  </td>
+                  <td>{change.indexStatus}</td>
+                  <td>{change.workingTreeStatus}</td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
-
-        <form
-          className="engineering-planner-form"
-          onSubmit={handleCommitChanges}
-        >
-          <label htmlFor="git-commit-message">
-            Commit Message
-          </label>
-
-          <input
-            id="git-commit-message"
-            type="text"
-            value={commitMessage}
-            onChange={(event) => {
-              setCommitMessage(event.target.value);
-              setMessage("");
-            }}
-            disabled={
-              !connectedRepository || pendingChanges.length === 0
-            }
-            placeholder="Describe the approved engineering changes..."
-          />
-
-          <div className="engineering-planner-actions">
-            <button
-              type="submit"
-              className="primary-button"
-              disabled={
-                !connectedRepository || pendingChanges.length === 0
-              }
-            >
-              Commit Changes
-            </button>
-          </div>
-        </form>
       </div>
 
       <div className="engineering-planner-workspace">
         <div className="engineering-planner-workspace-header">
           <div>
-            <h3>Commit History</h3>
+            <h3>Recent Commit History</h3>
 
             <p>
-              Review commits created through the Mason Forge Git Bridge.
+              Recent commits read directly from the local repository.
             </p>
           </div>
         </div>
@@ -582,32 +428,61 @@ export default function GitBridge() {
             <tr>
               <th>Commit</th>
               <th>Message</th>
-              <th>Branch</th>
-              <th>Files</th>
+              <th>Author</th>
               <th>Created</th>
             </tr>
           </thead>
 
           <tbody>
-            {commitHistory.length === 0 ? (
+            {recentCommits.length === 0 ? (
               <tr>
-                <td colSpan="5" style={{ textAlign: "center" }}>
-                  No commits have been created.
+                <td colSpan="4" style={{ textAlign: "center" }}>
+                  {connectedRepository
+                    ? "No commit history was returned."
+                    : "Connect a repository to inspect commit history."}
                 </td>
               </tr>
             ) : (
-              commitHistory.map((commit) => (
-                <tr key={commit.id}>
+              recentCommits.map((commit) => (
+                <tr key={commit.hash}>
                   <td>{commit.hash}</td>
                   <td>{commit.message}</td>
-                  <td>{commit.branch}</td>
-                  <td>{commit.files}</td>
-                  <td>{commit.createdAt}</td>
+                  <td>{commit.author}</td>
+                  <td>{formatDate(commit.createdAt)}</td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="engineering-planner-workspace">
+        <div className="engineering-planner-workspace-header">
+          <div>
+            <h3>Human Approval Gate</h3>
+
+            <p>
+              Git commits and pushes remain disabled until an approved
+              execution workflow is connected.
+            </p>
+          </div>
+        </div>
+
+        <div className="engineering-planner-plan-detail">
+          <div className="engineering-planner-plan-detail-header">
+            <div>
+              <span className="engineering-planner-card-label">
+                Protected Action
+              </span>
+
+              <h3>Commit and Push</h3>
+            </div>
+
+            <div className="engineering-planner-status">
+              Approval Required
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

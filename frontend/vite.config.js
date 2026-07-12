@@ -1,7 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+
+const execFileAsync = promisify(execFile);
 
 const DEFAULT_WORKSPACE =
   "C:\\MasonForge\\Code\\mason-forge-bootstrap\\frontend";
@@ -22,6 +26,19 @@ async function readJsonBody(request) {
   const body = Buffer.concat(chunks).toString("utf8");
 
   return body ? JSON.parse(body) : {};
+}
+
+async function runGit(repositoryPath, args) {
+  const result = await execFileAsync(
+    "git",
+    ["-C", repositoryPath, ...args],
+    {
+      windowsHide: true,
+      maxBuffer: 1024 * 1024,
+    }
+  );
+
+  return result.stdout.trim();
 }
 
 async function inspectWorkspace(workspaceFolder) {
@@ -66,6 +83,137 @@ async function inspectWorkspace(workspaceFolder) {
     packageVersion: packageJson?.version ?? null,
     hasGitRepository,
     itemCount: entries.length,
+  };
+}
+
+function parseGitStatus(output) {
+  if (!output) {
+    return [];
+  }
+
+  return output.split(/\r?\n/).map((line) => {
+    const indexStatus = line.charAt(0);
+    const workingTreeStatus = line.charAt(1);
+    const file = line.slice(3).trim();
+
+    return {
+      file,
+      indexStatus:
+        indexStatus === " " ? "Unchanged" : indexStatus,
+      workingTreeStatus:
+        workingTreeStatus === " " ? "Unchanged" : workingTreeStatus,
+    };
+  });
+}
+
+function parseCommitHistory(output) {
+  if (!output) {
+    return [];
+  }
+
+  return output
+    .split("\u001e")
+    .map((record) => record.trim())
+    .filter(Boolean)
+    .map((record) => {
+      const [hash, message, author, createdAt] =
+        record.split("\u001f");
+
+      return {
+        hash,
+        message,
+        author,
+        createdAt,
+      };
+    });
+}
+
+async function inspectGitRepository(repositoryPath) {
+  const resolvedPath = path.resolve(repositoryPath);
+  const stats = await fs.stat(resolvedPath);
+
+  if (!stats.isDirectory()) {
+    throw new Error("The selected repository path is not a directory.");
+  }
+
+  const insideWorkTree = await runGit(resolvedPath, [
+    "rev-parse",
+    "--is-inside-work-tree",
+  ]);
+
+  if (insideWorkTree !== "true") {
+    throw new Error("The selected folder is not inside a Git repository.");
+  }
+
+  const repositoryRoot = await runGit(resolvedPath, [
+    "rev-parse",
+    "--show-toplevel",
+  ]);
+
+  const branch = await runGit(resolvedPath, [
+    "branch",
+    "--show-current",
+  ]);
+
+  const statusOutput = await runGit(repositoryRoot, [
+    "status",
+    "--short",
+  ]);
+
+  let remote = "";
+
+  try {
+    remote = await runGit(repositoryRoot, [
+      "remote",
+      "get-url",
+      "origin",
+    ]);
+  } catch {
+    remote = "";
+  }
+
+  let headCommit = null;
+  let recentCommits = [];
+
+  try {
+    const headOutput = await runGit(repositoryRoot, [
+      "log",
+      "-1",
+      "--format=%h%x1f%s%x1f%an%x1f%cI",
+    ]);
+
+    const [headHash, headMessage, headAuthor, headCreatedAt] =
+      headOutput.split("\u001f");
+
+    headCommit = {
+      hash: headHash,
+      message: headMessage,
+      author: headAuthor,
+      createdAt: headCreatedAt,
+    };
+
+    const historyOutput = await runGit(repositoryRoot, [
+      "log",
+      "-10",
+      "--format=%h%x1f%s%x1f%an%x1f%cI%x1e",
+    ]);
+
+    recentCommits = parseCommitHistory(historyOutput);
+  } catch {
+    headCommit = null;
+    recentCommits = [];
+  }
+
+  return {
+    path: repositoryRoot,
+    name: path.basename(repositoryRoot),
+    status: "Connected",
+    branch: branch || "Detached HEAD",
+    remote,
+    headCommit,
+    changes: parseGitStatus(statusOutput),
+    recentCommits,
+    inspectedAt: new Date().toISOString(),
   };
 }
 
@@ -136,6 +284,47 @@ function localWorkspaceBridge() {
                 error instanceof Error
                   ? error.message
                   : "Unable to connect to the workspace.",
+            });
+          }
+        }
+      );
+
+      server.middlewares.use(
+        "/api/git/repository/inspect",
+        async (request, response) => {
+          if (request.method !== "POST") {
+            sendJson(response, 405, {
+              error: "Method not allowed.",
+            });
+            return;
+          }
+
+          try {
+            const body = await readJsonBody(request);
+            const repositoryPath =
+              typeof body.repositoryPath === "string"
+                ? body.repositoryPath.trim()
+                : "";
+
+            if (!repositoryPath) {
+              sendJson(response, 400, {
+                error: "A repository path is required.",
+              });
+              return;
+            }
+
+            const repository =
+              await inspectGitRepository(repositoryPath);
+
+            sendJson(response, 200, {
+              repository,
+            });
+          } catch (error) {
+            sendJson(response, 400, {
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "Unable to inspect the Git repository.",
             });
           }
         }

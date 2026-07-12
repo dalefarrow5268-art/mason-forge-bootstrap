@@ -1,3 +1,5 @@
+import { ForgeInfo } from "../core";
+
 export default function AIEngineeringTeam() {
   const divisions = [
     {
@@ -40,13 +42,13 @@ export default function AIEngineeringTeam() {
       id: 7,
       title: "Git Bridge",
       lead: "Version Control",
-      status: "Offline",
+      status: "Online",
     },
     {
       id: 8,
       title: "VS Code Bridge",
       lead: "Local Development",
-      status: "Offline",
+      status: "Online",
     },
     {
       id: 9,
@@ -64,20 +66,40 @@ export default function AIEngineeringTeam() {
       id: 11,
       title: "Local AI Integration",
       lead: "AI Infrastructure",
-      status: "Offline",
+      status: "Ready",
     },
     {
       id: 12,
-      title: "Human Approval Gate",
-      lead: "Executive Oversight",
-      status: "Required",
+      title: "Shared Event Bus",
+      lead: "System Communications",
+      status: "Online",
+    },
+    {
+      id: 13,
+      title: "Shared State Manager",
+      lead: "Platform State",
+      status: "Online",
+    },
+    {
+      id: 14,
+      title: "Workflow Coordinator",
+      lead: "Engineering Workflow",
+      status: "Online",
     },
   ];
+
+  const getStatusSymbol = (status) => {
+    if (status === "Required") {
+      return "●";
+    }
+
+    return "●";
+  };
 
   return (
     <section>
       <p className="section-label">
-        12 Engineering Systems • Mason Forge Milestone 2
+        {divisions.length} Engineering Systems • {ForgeInfo.milestone}
       </p>
 
       <h2>Engineering Organization</h2>
@@ -86,16 +108,10 @@ export default function AIEngineeringTeam() {
         {divisions.map((division) => (
           <div className="team-card" key={division.id}>
             <h3>{division.title}</h3>
-
             <p>{division.lead}</p>
 
             <span className="team-status">
-              {division.status === "Offline"
-                ? "⚪"
-                : division.status === "Required"
-                ? "🟡"
-                : "🟢"}{" "}
-              {division.status}
+              {getStatusSymbol(division.status)} {division.status}
             </span>
           </div>
         ))}

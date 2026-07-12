@@ -1,92 +1,78 @@
 import { ForgeInfo } from "../core";
 
-const primaryItems = [
+const engineeringItems = [
   {
     icon: "⌂",
     label: "Mission Control",
     id: "mission",
-    description: "Platform command center",
   },
   {
-    icon: "🧠",
+    icon: "◆",
     label: "Knowledge Engine",
     id: "engineering",
-    description: "Engineering memory",
   },
   {
-    icon: "📋",
+    icon: "▤",
     label: "Engineering Planner",
     id: "planner",
-    description: "Engineering planning",
   },
   {
-    icon: "👥",
+    icon: "◉",
     label: "AI Workforce",
     id: "workforce",
-    description: "AI employee management",
   },
   {
-    icon: "✔",
+    icon: "✓",
     label: "Approval Queue",
     id: "approvals",
-    description: "Human review",
   },
   {
-    icon: "💬",
+    icon: "✦",
     label: "Prompt Library",
     id: "prompts",
-    description: "Reusable prompts",
   },
   {
-    icon: "🔗",
+    icon: "⌁",
     label: "Git Bridge",
     id: "pipeline",
-    description: "Repository integration",
   },
   {
-    icon: "💻",
+    icon: "▣",
     label: "VS Code Bridge",
     id: "vscode",
-    description: "Local workspace",
   },
   {
-    icon: "🧪",
+    icon: "◇",
     label: "Verification Engine",
     id: "analytics",
-    description: "Testing and verification",
   },
   {
-    icon: "🚀",
+    icon: "▲",
     label: "Deployment Bridge",
     id: "deployments",
-    description: "Release operations",
   },
   {
-    icon: "🤖",
+    icon: "◎",
     label: "Local AI",
     id: "localai",
-    description: "AI lab integration",
   },
   {
-    icon: "📡",
+    icon: "◈",
     label: "Forge Status",
     id: "forge-status",
-    description: "Engineering systems",
   },
 ];
 
 const platformItems = [
   {
-    icon: "▤",
+    icon: "▥",
     label: "SSX Projects",
     id: "projects",
-    description: "Active platform builds",
   },
   {
     icon: "⚙",
     label: "Platform Settings",
     id: "settings",
-    description: "System configuration",
   },
 ];
 
@@ -99,19 +85,13 @@ function NavigationItem({ item, page, setPage }) {
       className={`nav-item ${isActive ? "active" : ""}`}
       onClick={() => setPage(item.id)}
       aria-current={isActive ? "page" : undefined}
+      title={item.label}
     >
       <span className="nav-item-icon" aria-hidden="true">
         {item.icon}
       </span>
 
-      <span className="nav-item-content">
-        <span className="nav-item-label">{item.label}</span>
-        <span className="nav-item-description">{item.description}</span>
-      </span>
-
-      <span className="nav-item-indicator" aria-hidden="true">
-        {isActive ? "●" : ""}
-      </span>
+      <span className="nav-item-label">{item.label}</span>
     </button>
   );
 }
@@ -126,10 +106,7 @@ export default function Sidebar({ page, setPage }) {
 
         <div className="sidebar-brand-content">
           <h2>Mason Forge™</h2>
-
-          <p className="sidebar-subtitle">
-            Engineering Operating System
-          </p>
+          <p className="sidebar-subtitle">Engineering Operating System</p>
         </div>
       </div>
 
@@ -137,11 +114,9 @@ export default function Sidebar({ page, setPage }) {
 
       <nav className="sidebar-navigation" aria-label="Mason Forge navigation">
         <div className="sidebar-nav-section">
-          <p className="sidebar-section-label">
-            Engineering Systems
-          </p>
+          <p className="sidebar-section-label">Engineering Systems</p>
 
-          {primaryItems.map((item) => (
+          {engineeringItems.map((item) => (
             <NavigationItem
               key={item.id}
               item={item}
@@ -152,9 +127,7 @@ export default function Sidebar({ page, setPage }) {
         </div>
 
         <div className="sidebar-nav-section">
-          <p className="sidebar-section-label">
-            Platform
-          </p>
+          <p className="sidebar-section-label">Platform</p>
 
           {platformItems.map((item) => (
             <NavigationItem
@@ -173,9 +146,7 @@ export default function Sidebar({ page, setPage }) {
 
           <div>
             <strong>Mason Forge Online</strong>
-            <small>
-              {ForgeInfo.milestone} • Shared Systems Active
-            </small>
+            <small>{ForgeInfo.milestone} • Shared Systems Active</small>
           </div>
         </div>
 

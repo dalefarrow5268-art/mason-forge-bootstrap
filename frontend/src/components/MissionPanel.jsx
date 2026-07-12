@@ -1,19 +1,21 @@
+import { ForgeInfo } from "../core";
+
 export default function MissionPanel() {
   const stats = [
     {
       title: "Engineering Systems",
-      value: "10",
-      subtitle: "Online",
+      value: ForgeInfo.systems.length,
+      subtitle: "Active",
     },
     {
       title: "AI Workforce",
-      value: "7",
+      value: ForgeInfo.engineeringAgents,
       subtitle: "Engineering Agents",
     },
     {
       title: "Platform Health",
       value: "100%",
-      subtitle: "Operational",
+      subtitle: ForgeInfo.platformHealth,
     },
     {
       title: "Human Approval",
@@ -26,9 +28,7 @@ export default function MissionPanel() {
     <section className="mission-panel">
       <div className="mission-header">
         <div>
-          <p className="section-label">
-            MISSION CONTROL
-          </p>
+          <p className="section-label">Mission Control</p>
 
           <h2>Engineering Operating System</h2>
 
@@ -40,7 +40,8 @@ export default function MissionPanel() {
         </div>
 
         <div className="mission-status">
-          🟢 Milestone 2 Active
+          <span className="status-dot" />
+          {ForgeInfo.milestone} Active
         </div>
       </div>
 
@@ -48,10 +49,10 @@ export default function MissionPanel() {
         <h3>Current Objective</h3>
 
         <p>
-          Transform Mason Forge from a dashboard into a fully autonomous
-          engineering operating system where specialized AI teams collaborate,
-          every significant action is verified, and every production release
-          requires human approval.
+          Transform Mason Forge from a dashboard into an autonomous engineering
+          operating system where specialized AI teams collaborate, every
+          significant action is verified, and every production release requires
+          human approval.
         </p>
       </div>
 
@@ -59,9 +60,7 @@ export default function MissionPanel() {
         {stats.map((stat) => (
           <div className="metric-card" key={stat.title}>
             <small>{stat.title}</small>
-
             <h2>{stat.value}</h2>
-
             <span>{stat.subtitle}</span>
           </div>
         ))}
@@ -70,7 +69,7 @@ export default function MissionPanel() {
       <div className="mission-footer">
         <div>
           <strong>Current Milestone</strong>
-          <p>Milestone 2 — Engineering Systems</p>
+          <p>{ForgeInfo.milestone} — Shared Systems Integration</p>
         </div>
 
         <div>
@@ -80,7 +79,7 @@ export default function MissionPanel() {
 
         <div>
           <strong>Operating Mode</strong>
-          <p>Forge it once. Reuse it forever.™</p>
+          <p>{ForgeInfo.slogan}</p>
         </div>
       </div>
     </section>

@@ -1,9 +1,10 @@
 import forgeLogo from "../assets/brand/mason-forge/Mason-Forge-logo-and-word-mark-white-clear-bg.svg";
+import { ForgeInfo } from "../core";
 
 export default function Header() {
   return (
     <header className="header">
-      <div className="header-left">
+      <div className="header-brand">
         <img
           src={forgeLogo}
           alt="Mason Forge™"
@@ -11,68 +12,45 @@ export default function Header() {
           draggable="false"
         />
 
-        <div className="header-brand">
-          <h1>Mason Forge™</h1>
-
-          <p className="header-subtitle">
-            Engineering Operating System for SubSource Exchange™
-          </p>
+        <div className="header-brand-copy">
+          <h1>{ForgeInfo.name}</h1>
+          <p>Engineering Operating System</p>
+          <span>Powered by SubSource Exchange™</span>
         </div>
       </div>
 
-      <div className="header-center">
-        <div className="header-card">
-          <small>Mission</small>
-          <strong>Build SSX Engineering Platform</strong>
+      <div className="header-overview">
+        <div className="header-overview-item">
+          <span>Current Mission</span>
+          <strong>Build the SSX Engineering Platform</strong>
         </div>
 
-        <div className="header-card">
-          <small>Milestone</small>
-          <strong>Milestone 3</strong>
+        <div className="header-overview-item">
+          <span>Milestone</span>
+          <strong>{ForgeInfo.milestone}</strong>
         </div>
 
-        <div className="header-card">
-          <small>Engineering Systems</small>
-          <strong>11 Online</strong>
+        <div className="header-overview-item">
+          <span>Engineering Systems</span>
+          <strong>{ForgeInfo.systems.length} Active</strong>
         </div>
 
-        <div className="header-card">
-          <small>AI Workforce</small>
-          <strong>7 Engineers</strong>
-        </div>
-
-        <div className="header-card">
-          <small>Core Version</small>
-          <strong>v0.4.0</strong>
-        </div>
-
-        <div className="header-card">
-          <small>Human Approval</small>
-          <strong>Required</strong>
+        <div className="header-overview-item">
+          <span>AI Workforce</span>
+          <strong>{ForgeInfo.engineeringAgents} Engineers</strong>
         </div>
       </div>
 
-      <div className="header-right">
-        <div className="header-status">
-          <span className="status-dot"></span>
-          All Systems Operational
+      <div className="header-system-status">
+        <div className="system-status-heading">
+          <span className="status-dot" />
+          <strong>All Systems Operational</strong>
         </div>
 
-        <div className="header-status">
-          🟢 Mason Core Online
-        </div>
-
-        <div className="header-status">
-          🧠 Knowledge Engine Ready
-        </div>
-
-        <div className="header-status">
-          🤖 Local AI Ready for Connection
-        </div>
-
-        <div className="header-status">
-          🔒 Human Approval Required
-        </div>
+        <span>Mason Core Online</span>
+        <span>Knowledge Engine Ready</span>
+        <span>Local AI Ready for Connection</span>
+        <span>Human Approval Required</span>
       </div>
     </header>
   );

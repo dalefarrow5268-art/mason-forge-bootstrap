@@ -14,6 +14,23 @@ function disableCaching(response) {
   response.setHeader("expires", "0");
 }
 
+function normalizeBootstrap(payload) {
+  if (!payload || !Array.isArray(payload.taskTotals)) return payload;
+  const rows = payload.taskTotals;
+  const taskTotals = Object.fromEntries(rows.map((row) => [String(row.status), Number(row.count || 0)]));
+  const projects = (payload.projects || []).map((project) => ({
+    ...project,
+    file_count: Number(project.file_count || 0),
+    running_tasks: Number(project.running_tasks || 0),
+    queued_tasks: Number(project.queued_tasks || 0),
+    blocked_tasks: Number(project.blocked_tasks || 0),
+    completed_tasks: Number(project.completed_tasks || 0),
+    failed_tasks: Number(project.failed_tasks || 0),
+    canceled_tasks: Number(project.canceled_tasks || 0),
+  }));
+  return { ...payload, projects, taskTotals, taskTotalsRows: rows };
+}
+
 export default async function handler(request, response) {
   disableCaching(response);
   if (request.method !== "GET") return response.status(405).json({ error: "Method not allowed." });
@@ -50,9 +67,13 @@ export default async function handler(request, response) {
     response.setHeader("x-mason-proxy-retrieved-at", new Date().toISOString());
     response.setHeader("x-mason-upstream-status", String(upstream.status));
 
-    if (contentType.includes("application/json") || contentType.startsWith("text/")) {
-      return response.send(await upstream.text());
+    if (contentType.includes("application/json")) {
+      const text = await upstream.text();
+      let parsed;
+      try { parsed = JSON.parse(text); } catch { return response.send(text); }
+      return response.json(requestedPath === "/api/connector/bootstrap" ? normalizeBootstrap(parsed) : parsed);
     }
+    if (contentType.startsWith("text/")) return response.send(await upstream.text());
     const bytes = Buffer.from(await upstream.arrayBuffer());
     return response.send(bytes);
   } catch (error) {

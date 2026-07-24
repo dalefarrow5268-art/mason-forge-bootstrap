@@ -21,10 +21,7 @@ async function audit(env, actor, action, entityType, entityId, beforeValue, afte
       (id, actor, action, entity_type, entity_id, before_json, after_json, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
-    id("audit"),
-    actor,
-    action,
-    entityType,
+    id("audit"), actor, action, entityType,
     entityId == null ? null : String(entityId),
     beforeValue == null ? null : JSON.stringify(beforeValue),
     afterValue == null ? null : JSON.stringify(afterValue),
@@ -40,32 +37,20 @@ async function createProject(request, env) {
     INSERT INTO projects
       (name, project_number, location, client, status, review_status, source, created_at, updated_at)
     VALUES (?, ?, ?, ?, 'INTAKE', 'NEEDS REVIEW', 'CLOUD INTAKE', ?, ?)
-  `).bind(
-    body.name.trim(),
-    body.projectNumber || null,
-    body.location || null,
-    body.client || null,
-    timestamp,
-    timestamp,
-  ).run();
+  `).bind(body.name.trim(), body.projectNumber || null, body.location || null, body.client || null, timestamp, timestamp).run();
   const projectId = result.meta.last_row_id;
 
   await env.DB.batch([
-    env.DB.prepare(`
-      INSERT INTO project_identity_cards
-        (project_id, official_name, verification_status, intake_json, created_at, updated_at)
-      VALUES (?, ?, 'AWAITING INTAKE', ?, ?, ?)
-    `).bind(projectId, body.name.trim(), JSON.stringify(body), timestamp, timestamp),
-    env.DB.prepare(`
-      INSERT INTO project_risk_profiles
-        (project_id, overall_score, created_at, updated_at)
-      VALUES (?, 100, ?, ?)
-    `).bind(projectId, timestamp, timestamp),
-    env.DB.prepare(`
-      INSERT INTO project_outcome_ledgers
-        (project_id, created_at, updated_at)
-      VALUES (?, ?, ?)
-    `).bind(projectId, timestamp, timestamp),
+    env.DB.prepare(`INSERT INTO project_identity_cards
+      (project_id, official_name, verification_status, intake_json, created_at, updated_at)
+      VALUES (?, ?, 'AWAITING INTAKE', ?, ?, ?)`)
+      .bind(projectId, body.name.trim(), JSON.stringify(body), timestamp, timestamp),
+    env.DB.prepare(`INSERT INTO project_risk_profiles
+      (project_id, overall_score, created_at, updated_at) VALUES (?, 100, ?, ?)`)
+      .bind(projectId, timestamp, timestamp),
+    env.DB.prepare(`INSERT INTO project_outcome_ledgers
+      (project_id, created_at, updated_at) VALUES (?, ?, ?)`)
+      .bind(projectId, timestamp, timestamp),
   ]);
 
   const employeeRows = await env.DB.prepare("SELECT id, department, job_description_json FROM ai_employees").all();
@@ -73,28 +58,15 @@ async function createProject(request, env) {
     const taskId = id("task");
     return {
       taskId,
-      message: {
-        taskId,
-        projectId,
-        employeeId: employee.id,
-        department: employee.department,
-      },
+      message: { taskId, projectId, employeeId: employee.id, department: employee.department },
       statement: env.DB.prepare(`
         INSERT INTO department_tasks
           (id, project_id, employee_id, department, workstream, title, instructions,
            priority, status, source_file_ids_json, created_at, updated_at)
         VALUES (?, ?, ?, ?, 'PROJECT INTAKE', ?, ?, ?, 'QUEUED', '[]', ?, ?)
-      `).bind(
-        taskId,
-        projectId,
-        employee.id,
-        employee.department,
-        `${employee.department} initial project assignment`,
-        employee.job_description_json,
-        100 - sequence,
-        timestamp,
-        timestamp,
-      ),
+      `).bind(taskId, projectId, employee.id, employee.department,
+        `${employee.department} initial project assignment`, employee.job_description_json,
+        100 - sequence, timestamp, timestamp),
     };
   });
 
@@ -111,15 +83,12 @@ async function createProject(request, env) {
 async function listProjects(env) {
   const result = await env.DB.prepare(`
     SELECT p.*,
-      COUNT(DISTINCT f.id) AS file_count,
-      SUM(CASE WHEN t.status = 'RUNNING' THEN 1 ELSE 0 END) AS running_tasks,
-      SUM(CASE WHEN t.status = 'QUEUED' THEN 1 ELSE 0 END) AS queued_tasks,
-      SUM(CASE WHEN t.status = 'COMPLETED' THEN 1 ELSE 0 END) AS completed_tasks,
-      SUM(CASE WHEN t.status = 'FAILED' THEN 1 ELSE 0 END) AS failed_tasks
+      (SELECT COUNT(*) FROM project_files f WHERE f.project_id = p.id) AS file_count,
+      (SELECT COUNT(*) FROM department_tasks t WHERE t.project_id = p.id AND t.status = 'RUNNING') AS running_tasks,
+      (SELECT COUNT(*) FROM department_tasks t WHERE t.project_id = p.id AND t.status = 'QUEUED') AS queued_tasks,
+      (SELECT COUNT(*) FROM department_tasks t WHERE t.project_id = p.id AND t.status = 'COMPLETED') AS completed_tasks,
+      (SELECT COUNT(*) FROM department_tasks t WHERE t.project_id = p.id AND t.status = 'FAILED') AS failed_tasks
     FROM projects p
-    LEFT JOIN project_files f ON f.project_id = p.id
-    LEFT JOIN department_tasks t ON t.project_id = p.id
-    GROUP BY p.id
     ORDER BY p.updated_at DESC
   `).all();
   return json({ projects: result.results });
@@ -136,15 +105,7 @@ async function projectStatus(projectId, env) {
     env.DB.prepare("SELECT * FROM rfi_register WHERE project_id = ? ORDER BY created_at").bind(projectId).all(),
     env.DB.prepare("SELECT trade, COUNT(*) AS item_count, SUM(CASE WHEN quantity IS NOT NULL THEN 1 ELSE 0 END) AS measured_count FROM takeoff_items WHERE project_id = ? GROUP BY trade").bind(projectId).all(),
   ]);
-  return json({
-    project,
-    identity,
-    risk,
-    tasks: tasks.results,
-    findings: findings.results,
-    rfis: rfis.results,
-    takeoffSummary: takeoff.results,
-  });
+  return json({ project, identity, risk, tasks: tasks.results, findings: findings.results, rfis: rfis.results, takeoffSummary: takeoff.results });
 }
 
 async function createUpload(request, projectId, env) {
@@ -161,19 +122,9 @@ async function createUpload(request, projectId, env) {
       (project_id, r2_key, file_name, relative_path, file_type, size_bytes, sha256,
        revision, document_date, review_status, uploaded_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'UPLOAD PENDING', ?, ?)
-  `).bind(
-    projectId,
-    r2Key,
-    safeName,
-    body.relativePath || safeName,
-    body.fileType || null,
-    Number(body.sizeBytes),
-    body.sha256 || null,
-    body.revision || null,
-    body.documentDate || null,
-    timestamp,
-    timestamp,
-  ).run();
+  `).bind(projectId, r2Key, safeName, body.relativePath || safeName, body.fileType || null,
+    Number(body.sizeBytes), body.sha256 || null, body.revision || null, body.documentDate || null,
+    timestamp, timestamp).run();
   const url = await env.PROJECT_FILES.createMultipartUpload(r2Key, {
     httpMetadata: { contentType: body.fileType || "application/octet-stream" },
     customMetadata: { projectId: String(projectId), fileId },
@@ -182,44 +133,36 @@ async function createUpload(request, projectId, env) {
 }
 
 async function health(env) {
-  const db = await env.DB.prepare("SELECT COUNT(*) AS count FROM projects").first();
+  const [projects, files, outputs, continuity, taskRows] = await Promise.all([
+    env.DB.prepare("SELECT COUNT(*) AS count FROM projects").first(),
+    env.DB.prepare("SELECT COUNT(*) AS count FROM project_files").first(),
+    env.DB.prepare("SELECT COUNT(*) AS count FROM department_outputs").first(),
+    env.DB.prepare("SELECT checkpoint_id, version, verification_status, updated_at FROM continuity_heads WHERE scope_type='system' AND scope_id='mason-forge'").first(),
+    env.DB.prepare("SELECT status, COUNT(*) count FROM department_tasks GROUP BY status").all(),
+  ]);
+  const taskTotals = Object.fromEntries((taskRows.results || []).map((row) => [row.status, Number(row.count || 0)]));
+  const totalTasks = Object.values(taskTotals).reduce((sum, value) => sum + Number(value || 0), 0);
+  const operationalReady = Boolean(
+    env.OPENAI_API_KEY && continuity && continuity.verification_status === "VERIFIED" &&
+    totalTasks > 0 && Number(outputs?.count || 0) > 0
+  );
   return json({
-    status: "online",
+    status: operationalReady ? "online" : "degraded",
+    operationalReady,
     service: env.SYSTEM_NAME || "Mason Forge Cloud",
     environment: env.ENVIRONMENT || "unknown",
     database: "D1",
     projectFileStorage: "R2",
     departmentQueue: "Cloudflare Queues",
     openai: env.OPENAI_API_KEY ? "CONFIGURED" : "NOT CONFIGURED",
-    projects: Number(db?.count || 0),
+    projects: Number(projects?.count || 0),
+    files: Number(files?.count || 0),
+    taskTotals,
+    totalTasks,
+    outputCount: Number(outputs?.count || 0),
+    continuity: continuity || null,
     checkedAt: now(),
-  });
-}
-
-async function runTask(message, env) {
-  const task = await env.DB.prepare("SELECT * FROM department_tasks WHERE id = ?").bind(message.taskId).first();
-  if (!task || ["COMPLETED", "CANCELED"].includes(task.status)) return;
-  const timestamp = now();
-  await env.DB.prepare(`
-    UPDATE department_tasks
-    SET status = 'RUNNING', attempt_count = attempt_count + 1,
-        started_at = COALESCE(started_at, ?), heartbeat_at = ?, updated_at = ?
-    WHERE id = ?
-  `).bind(timestamp, timestamp, timestamp, task.id).run();
-  await env.DB.prepare(`
-    INSERT INTO task_events
-      (id, task_id, project_id, event_type, previous_status, new_status, message, created_at)
-    VALUES (?, ?, ?, 'STATUS', ?, 'RUNNING', 'Cloud worker started assignment.', ?)
-  `).bind(id("event"), task.id, task.project_id, task.status, timestamp).run();
-
-  // This foundation deliberately records honest execution state. Specialized
-  // department processors are attached here in subsequent releases.
-  await env.DB.prepare(`
-    UPDATE department_tasks
-    SET status = 'BLOCKED', blocked_reason = 'SPECIALIZED PROCESSOR NOT YET DEPLOYED',
-        heartbeat_at = ?, updated_at = ?
-    WHERE id = ?
-  `).bind(now(), now(), task.id).run();
+  }, operationalReady ? 200 : 503);
 }
 
 export default {
@@ -227,50 +170,14 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/health" && request.method === "GET") return health(env);
     if (!authorized(request, env)) return json({ error: "Unauthorized." }, 401);
-
     if (url.pathname === "/api/projects" && request.method === "GET") return listProjects(env);
     if (url.pathname === "/api/projects" && request.method === "POST") return createProject(request, env);
-
     const statusMatch = url.pathname.match(/^\/api\/projects\/(\d+)\/status$/);
     if (statusMatch && request.method === "GET") return projectStatus(Number(statusMatch[1]), env);
-
     const uploadMatch = url.pathname.match(/^\/api\/projects\/(\d+)\/files\/multipart$/);
     if (uploadMatch && request.method === "POST") return createUpload(request, Number(uploadMatch[1]), env);
-
     return json({ error: "Not found." }, 404);
   },
-
-  async queue(batch, env) {
-    for (const message of batch.messages) {
-      try {
-        await runTask(message.body, env);
-        message.ack();
-      } catch (error) {
-        message.retry({ delaySeconds: 60 });
-      }
-    }
-  },
-
-  async scheduled(_event, env) {
-    const stale = await env.DB.prepare(`
-      SELECT id, project_id, employee_id, department
-      FROM department_tasks
-      WHERE status = 'RUNNING'
-        AND heartbeat_at < datetime('now', '-20 minutes')
-      LIMIT 100
-    `).all();
-    for (const task of stale.results) {
-      await env.DB.prepare(`
-        UPDATE department_tasks
-        SET status = 'QUEUED', blocked_reason = 'STALE HEARTBEAT RECOVERY', updated_at = ?
-        WHERE id = ?
-      `).bind(now(), task.id).run();
-      await env.DEPARTMENT_QUEUE.send({
-        taskId: task.id,
-        projectId: task.project_id,
-        employeeId: task.employee_id,
-        department: task.department,
-      });
-    }
-  },
+  async queue() {},
+  async scheduled() {},
 };

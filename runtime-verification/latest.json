@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-07-24T17:32:39.383Z",
-  "completedAt": "2026-07-24T17:34:42.233Z",
+  "startedAt": "2026-07-24T17:40:22.743Z",
+  "completedAt": "2026-07-24T17:41:54.849Z",
   "success": true,
   "worker": {
     "attempt": 1,
@@ -19,21 +19,21 @@
       "projects": 13,
       "files": 454,
       "taskTotals": {
-        "COMPLETED": 94,
-        "QUEUED": 44,
-        "RUNNING": 2
+        "COMPLETED": 111,
+        "QUEUED": 29,
+        "RUNNING": 5
       },
-      "totalTasks": 140,
-      "outputCount": 94,
+      "totalTasks": 145,
+      "outputCount": 111,
       "continuity": {
-        "checkpoint_id": "checkpoint_70bf1042-22dd-4ec2-bebe-37b9fd4e8127",
-        "version": 985,
+        "checkpoint_id": "checkpoint_dabf639d-af0c-4934-93fc-d6c3ab8017cf",
+        "version": 1035,
         "verification_status": "VERIFIED",
-        "updated_at": "2026-07-24T17:32:23.714Z"
+        "updated_at": "2026-07-24T17:40:04.939Z"
       },
       "extraction": {
-        "extracted": 316,
-        "queued": 127,
+        "extracted": 331,
+        "queued": 112,
         "retrying": 0,
         "failed": 0,
         "pending": 11
@@ -43,7 +43,7 @@
       "duplicateOutputTasks": 0,
       "countsReconcile": true,
       "projectFileTotal": 454,
-      "projectTaskTotal": 140,
+      "projectTaskTotal": 145,
       "r2Samples": [
         {
           "fileId": 1,
@@ -99,10 +99,10 @@
           "id": 4,
           "name": "Bask Fairfield Inn Tampa",
           "file_count": 292,
-          "queued_tasks": 23,
-          "running_tasks": 1,
+          "queued_tasks": 18,
+          "running_tasks": 3,
           "blocked_tasks": 0,
-          "completed_tasks": 26,
+          "completed_tasks": 34,
           "failed_tasks": 0,
           "canceled_tasks": 0
         },
@@ -110,10 +110,10 @@
           "id": 5,
           "name": "Bask StudioRes Estero",
           "file_count": 162,
-          "queued_tasks": 21,
-          "running_tasks": 1,
+          "queued_tasks": 11,
+          "running_tasks": 2,
           "blocked_tasks": 0,
-          "completed_tasks": 13,
+          "completed_tasks": 22,
           "failed_tasks": 0,
           "canceled_tasks": 0
         },
@@ -206,27 +206,27 @@
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-07-24T17:32:39.730Z"
+      "checkedAt": "2026-07-24T17:40:23.094Z"
     },
     "errors": []
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-07-24T17:32:40.282Z",
+      "capturedAt": "2026-07-24T17:40:23.670Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-07-24T17:32:40.220Z",
+        "retrievedAt": "2026-07-24T17:40:23.600Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
-          "checkpoint_id": "checkpoint_99430fc6-1b27-491d-a3a9-16fe94e6eb3d",
-          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-operational-6\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":316,\"queued\":127,\"extracting\":11,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":94,\"QUEUED\":44,\"RUNNING\":2},\"outputCount\":94,\"latestOutputAt\":\"2026-07-24T17:30:08.134Z\",\"latestActivityAt\":\"2026-07-24T17:32:30.664Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
-          "summary": "Mason Forge live state: 13 projects, 454 files, 2 running, 44 queued, 94 completed, 94 outputs, 316 files extracted.",
+          "checkpoint_id": "checkpoint_dabf639d-af0c-4934-93fc-d6c3ab8017cf",
+          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-operational-6\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":331,\"queued\":112,\"extracting\":11,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":111,\"QUEUED\":30,\"RUNNING\":4},\"outputCount\":111,\"latestOutputAt\":\"2026-07-24T17:39:53.710Z\",\"latestActivityAt\":\"2026-07-24T17:40:04.315Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
+          "summary": "Mason Forge live state: 13 projects, 454 files, 4 running, 30 queued, 111 completed, 111 outputs, 331 files extracted.",
           "verification_status": "VERIFIED",
           "source": "LIVE D1 VERIFIED STATE",
-          "version": 986,
+          "version": 1035,
           "created_at": "2026-07-24T15:05:09.403Z",
-          "updated_at": "2026-07-24T17:32:39.849Z",
+          "updated_at": "2026-07-24T17:40:04.939Z",
           "state": {
             "system": "Mason Forge Cloud",
             "deployment": "LIVE",
@@ -235,8 +235,8 @@
             "files": 454,
             "extraction": {
               "total": 454,
-              "extracted": 316,
-              "queued": 127,
+              "extracted": 331,
+              "queued": 112,
               "extracting": 11,
               "retrying": 0,
               "failed": 0,
@@ -245,13 +245,13 @@
               "accounted": 454
             },
             "taskTotals": {
-              "COMPLETED": 94,
-              "QUEUED": 44,
-              "RUNNING": 2
+              "COMPLETED": 111,
+              "QUEUED": 30,
+              "RUNNING": 4
             },
-            "outputCount": 94,
-            "latestOutputAt": "2026-07-24T17:30:08.134Z",
-            "latestActivityAt": "2026-07-24T17:32:30.664Z",
+            "outputCount": 111,
+            "latestOutputAt": "2026-07-24T17:39:53.710Z",
+            "latestActivityAt": "2026-07-24T17:40:04.315Z",
             "staleRunningTasks": 0,
             "staleExtractionJobs": 0,
             "evidenceRule": "Active work requires RUNNING task evidence or completed department outputs."
@@ -386,9 +386,9 @@
             "status": "INTAKE",
             "review_status": "NEEDS REVIEW",
             "file_count": 162,
-            "running_tasks": 1,
-            "queued_tasks": 21,
-            "completed_tasks": 13,
+            "running_tasks": 2,
+            "queued_tasks": 11,
+            "completed_tasks": 22,
             "failed_tasks": 0,
             "blocked_tasks": 0,
             "canceled_tasks": 0
@@ -401,9 +401,9 @@
             "status": "INTAKE",
             "review_status": "NEEDS REVIEW",
             "file_count": 292,
-            "running_tasks": 1,
-            "queued_tasks": 23,
-            "completed_tasks": 26,
+            "running_tasks": 3,
+            "queued_tasks": 18,
+            "completed_tasks": 34,
             "failed_tasks": 0,
             "blocked_tasks": 0,
             "canceled_tasks": 0
@@ -455,59 +455,59 @@
           }
         ],
         "taskTotals": {
-          "COMPLETED": 94,
-          "QUEUED": 44,
-          "RUNNING": 2
+          "COMPLETED": 111,
+          "QUEUED": 29,
+          "RUNNING": 5
         },
-        "outputCount": 94,
+        "outputCount": 111,
         "evidenceRule": "Do not claim active work without RUNNING task events or completed department outputs.",
         "taskTotalsRows": [
           {
             "status": "COMPLETED",
-            "count": 94
+            "count": 111
           },
           {
             "status": "QUEUED",
-            "count": 44
+            "count": 29
           },
           {
             "status": "RUNNING",
-            "count": 2
+            "count": 5
           }
         ]
       },
       "errors": [],
       "globalTasks": {
-        "COMPLETED": 94,
-        "QUEUED": 44,
-        "RUNNING": 2
+        "COMPLETED": 111,
+        "QUEUED": 29,
+        "RUNNING": 5
       },
       "projectTasks": {
-        "QUEUED": 44,
-        "RUNNING": 2,
+        "QUEUED": 29,
+        "RUNNING": 5,
         "BLOCKED": 0,
-        "COMPLETED": 94,
+        "COMPLETED": 111,
         "FAILED": 0,
         "CANCELED": 0
       },
       "projectFiles": 454
     },
     {
-      "capturedAt": "2026-07-24T17:34:41.891Z",
+      "capturedAt": "2026-07-24T17:41:54.510Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-07-24T17:34:41.852Z",
+        "retrievedAt": "2026-07-24T17:41:54.466Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
-          "checkpoint_id": "checkpoint_24ec6000-0cd5-4c7e-a665-dbe6f71b9e7d",
-          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-operational-6\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":324,\"queued\":117,\"extracting\":13,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":95,\"QUEUED\":41,\"RUNNING\":4},\"outputCount\":95,\"latestOutputAt\":\"2026-07-24T17:34:32.284Z\",\"latestActivityAt\":\"2026-07-24T17:34:38.666Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
-          "summary": "Mason Forge live state: 13 projects, 454 files, 4 running, 41 queued, 95 completed, 95 outputs, 324 files extracted.",
+          "checkpoint_id": "checkpoint_e1fa11e2-b9d1-47cc-b4d2-3f45dc7fc1fe",
+          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-operational-6\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":332,\"queued\":111,\"extracting\":11,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":115,\"QUEUED\":22,\"RUNNING\":8},\"outputCount\":115,\"latestOutputAt\":\"2026-07-24T17:41:48.143Z\",\"latestActivityAt\":\"2026-07-24T17:41:51.267Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
+          "summary": "Mason Forge live state: 13 projects, 454 files, 8 running, 22 queued, 115 completed, 115 outputs, 332 files extracted.",
           "verification_status": "VERIFIED",
           "source": "LIVE D1 VERIFIED STATE",
-          "version": 1006,
+          "version": 1050,
           "created_at": "2026-07-24T15:05:09.403Z",
-          "updated_at": "2026-07-24T17:34:39.451Z",
+          "updated_at": "2026-07-24T17:41:52.964Z",
           "state": {
             "system": "Mason Forge Cloud",
             "deployment": "LIVE",
@@ -516,9 +516,9 @@
             "files": 454,
             "extraction": {
               "total": 454,
-              "extracted": 324,
-              "queued": 117,
-              "extracting": 13,
+              "extracted": 332,
+              "queued": 111,
+              "extracting": 11,
               "retrying": 0,
               "failed": 0,
               "routedReview": 0,
@@ -526,13 +526,13 @@
               "accounted": 454
             },
             "taskTotals": {
-              "COMPLETED": 95,
-              "QUEUED": 41,
-              "RUNNING": 4
+              "COMPLETED": 115,
+              "QUEUED": 22,
+              "RUNNING": 8
             },
-            "outputCount": 95,
-            "latestOutputAt": "2026-07-24T17:34:32.284Z",
-            "latestActivityAt": "2026-07-24T17:34:38.666Z",
+            "outputCount": 115,
+            "latestOutputAt": "2026-07-24T17:41:48.143Z",
+            "latestActivityAt": "2026-07-24T17:41:51.267Z",
             "staleRunningTasks": 0,
             "staleExtractionJobs": 0,
             "evidenceRule": "Active work requires RUNNING task evidence or completed department outputs."
@@ -667,9 +667,9 @@
             "status": "INTAKE",
             "review_status": "NEEDS REVIEW",
             "file_count": 162,
-            "running_tasks": 2,
-            "queued_tasks": 19,
-            "completed_tasks": 14,
+            "running_tasks": 3,
+            "queued_tasks": 9,
+            "completed_tasks": 23,
             "failed_tasks": 0,
             "blocked_tasks": 0,
             "canceled_tasks": 0
@@ -682,9 +682,9 @@
             "status": "INTAKE",
             "review_status": "NEEDS REVIEW",
             "file_count": 292,
-            "running_tasks": 2,
-            "queued_tasks": 22,
-            "completed_tasks": 26,
+            "running_tasks": 5,
+            "queued_tasks": 13,
+            "completed_tasks": 37,
             "failed_tasks": 0,
             "blocked_tasks": 0,
             "canceled_tasks": 0
@@ -736,38 +736,38 @@
           }
         ],
         "taskTotals": {
-          "COMPLETED": 95,
-          "QUEUED": 41,
-          "RUNNING": 4
+          "COMPLETED": 115,
+          "QUEUED": 22,
+          "RUNNING": 8
         },
-        "outputCount": 95,
+        "outputCount": 115,
         "evidenceRule": "Do not claim active work without RUNNING task events or completed department outputs.",
         "taskTotalsRows": [
           {
             "status": "COMPLETED",
-            "count": 95
+            "count": 115
           },
           {
             "status": "QUEUED",
-            "count": 41
+            "count": 22
           },
           {
             "status": "RUNNING",
-            "count": 4
+            "count": 8
           }
         ]
       },
       "errors": [],
       "globalTasks": {
-        "COMPLETED": 95,
-        "QUEUED": 41,
-        "RUNNING": 4
+        "COMPLETED": 115,
+        "QUEUED": 22,
+        "RUNNING": 8
       },
       "projectTasks": {
-        "QUEUED": 41,
-        "RUNNING": 4,
+        "QUEUED": 22,
+        "RUNNING": 8,
         "BLOCKED": 0,
-        "COMPLETED": 95,
+        "COMPLETED": 115,
         "FAILED": 0,
         "CANCELED": 0
       },
@@ -779,10 +779,10 @@
     "progressionProved": true,
     "timestampsFresh": true,
     "outputsNondecreasing": true,
-    "firstOutputCount": 94,
-    "secondOutputCount": 95,
-    "firstCompleted": 94,
-    "secondCompleted": 95
+    "firstOutputCount": 111,
+    "secondOutputCount": 115,
+    "firstCompleted": 111,
+    "secondCompleted": 115
   },
   "extractionDiagnostics": {
     "4": {
@@ -790,10 +790,11 @@
       "count": 292,
       "statusCounts": {
         "EXTRACTED - NEEDS HUMAN REVIEW": 170,
-        "EXTRACTING": 10,
-        "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 3,
+        "EXTRACTING": 6,
+        "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 5,
         "EXTRACTION QUEUED": 83,
-        "EXTRACTED - VISUAL REVIEW REQUIRED: IMAGE": 26
+        "EXTRACTED - READY": 1,
+        "EXTRACTED - VISUAL REVIEW REQUIRED: IMAGE": 27
       },
       "actionableSamples": [
         {
@@ -826,14 +827,6 @@
           "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-805-TYPICAL-UPPER-FLOOR-CORRIDOR-RCP-Rev.01.pdf",
           "fileType": "pdf",
           "sizeBytes": 2588118,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 61,
-          "fileName": "A-808-TYPICAL-STAIRS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-808-TYPICAL-STAIRS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2267210,
           "reviewStatus": "EXTRACTING"
         },
         {
@@ -893,14 +886,6 @@
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
-          "id": 69,
-          "fileName": "A031-UPPER-FLOORS-LIFE-SAFETY-PLAN-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A031-UPPER-FLOORS-LIFE-SAFETY-PLAN-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2447063,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
           "id": 70,
           "fileName": "A032-ROOF-TERRACE-LIFE-SAFETY-PLAN-Rev.01.pdf",
           "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A032-ROOF-TERRACE-LIFE-SAFETY-PLAN-Rev.01.pdf",
@@ -914,14 +899,6 @@
           "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A1-22-Third-Reflected-Ceiling-Plan-Rev.01.pdf",
           "fileType": "pdf",
           "sizeBytes": 923003,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 72,
-          "fileName": "A1-23-Fourth-Reflected-Ceiling-Plan-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A1-23-Fourth-Reflected-Ceiling-Plan-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 917580,
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
@@ -1466,7 +1443,7 @@
           "relativePath": "Bask Fairfiekd Inn Tampa/Photos/9B34DD57-83E8-4EEF-9A54-9D666A8D8C45.jpeg",
           "fileType": "jpeg",
           "sizeBytes": 3221016,
-          "reviewStatus": "EXTRACTING"
+          "reviewStatus": "EXTRACTION QUEUED"
         },
         {
           "id": 277,
@@ -1474,7 +1451,7 @@
           "relativePath": "Bask Fairfiekd Inn Tampa/Photos/A5F446DC-4EE5-4657-A65B-0927AD18E065.jpeg",
           "fileType": "jpeg",
           "sizeBytes": 2863402,
-          "reviewStatus": "EXTRACTING"
+          "reviewStatus": "EXTRACTION QUEUED"
         },
         {
           "id": 278,
@@ -1499,14 +1476,6 @@
           "fileType": "jpeg",
           "sizeBytes": 3040111,
           "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 284,
-          "fileName": "C8D4F6F0-064A-4A95-880B-69211874C506.jpeg",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/C8D4F6F0-064A-4A95-880B-69211874C506.jpeg",
-          "fileType": "jpeg",
-          "sizeBytes": 3424834,
-          "reviewStatus": "EXTRACTING"
         },
         {
           "id": 285,
@@ -1546,11 +1515,11 @@
       "httpStatus": 200,
       "count": 162,
       "statusCounts": {
-        "EXTRACTION QUEUED": 34,
+        "EXTRACTION QUEUED": 28,
         "EXTRACTED - NEEDS HUMAN REVIEW": 122,
         "EXTRACTED - MANUAL REVIEW REQUIRED: DOCUMENT": 1,
-        "EXTRACTING": 3,
-        "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 2
+        "EXTRACTING": 5,
+        "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 6
       },
       "actionableSamples": [
         {
@@ -1642,14 +1611,6 @@
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
-          "id": 319,
-          "fileName": "A1.1-1ST-FLOOR-EXTERIOR-DIMENSIONED-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.1-1ST-FLOOR-EXTERIOR-DIMENSIONED-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 337607,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
           "id": 321,
           "fileName": "A1.2-2ND---4TH-FLOOR-EXTERIOR-DIMENSIONED-PLAN-Rev.0.pdf",
           "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.2-2ND---4TH-FLOOR-EXTERIOR-DIMENSIONED-PLAN-Rev.0.pdf",
@@ -1735,7 +1696,7 @@
           "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A3.11-MILLWORK-SECTIONS-Rev.0.pdf",
           "fileType": "pdf",
           "sizeBytes": 284716,
-          "reviewStatus": "EXTRACTION QUEUED"
+          "reviewStatus": "EXTRACTING"
         },
         {
           "id": 353,
@@ -1743,14 +1704,6 @@
           "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A4.2-DOOR-JAMB-DETAILS-Rev.0.pdf",
           "fileType": "pdf",
           "sizeBytes": 242105,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 369,
-          "fileName": "A7.2-WALL-ASSMEBLYS-&-SYSTEMS-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A7.2-WALL-ASSMEBLYS-&-SYSTEMS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 6800282,
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
@@ -1778,20 +1731,12 @@
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
-          "id": 421,
-          "fileName": "P2.3-THIRD-FLOOR-PLUMBING-PLAN---DOMESTIC-WATER-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Plumbing/P2.3-THIRD-FLOOR-PLUMBING-PLAN---DOMESTIC-WATER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 430526,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
           "id": 423,
           "fileName": "P3.1-ROOF-PLUMBING-PLAN-Rev.0.pdf",
           "relativePath": "Bask StudioRes Estero/Drawings/Plumbing/P3.1-ROOF-PLUMBING-PLAN-Rev.0.pdf",
           "fileType": "pdf",
           "sizeBytes": 322076,
-          "reviewStatus": "EXTRACTION QUEUED"
+          "reviewStatus": "EXTRACTING"
         },
         {
           "id": 429,
@@ -1807,14 +1752,6 @@
           "relativePath": "Bask StudioRes Estero/Drawings/Plumbing/P7.0-NATURAL-GAS-PIPING-&-WATER-HEATER-Rev.0.pdf",
           "fileType": "pdf",
           "sizeBytes": 335816,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 434,
-          "fileName": "LE-1.00-OUTDOOR-LIGHTING-PHOTOMETRIC-PLAN-Photometric-Plan-Applications-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Site-Lighting/LE-1.00-OUTDOOR-LIGHTING-PHOTOMETRIC-PLAN-Photometric-Plan-Applications-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2858238,
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
@@ -1853,6 +1790,6 @@
     }
   },
   "errors": [],
-  "sourceCommit": "3f08bf59a27bf6d1fe37b87b69bba81261caec9c",
-  "workflowRunId": "30113377958"
+  "sourceCommit": "8200e070cf9e0f0359da104049bdf7088fd5353f",
+  "workflowRunId": "30113885260"
 }

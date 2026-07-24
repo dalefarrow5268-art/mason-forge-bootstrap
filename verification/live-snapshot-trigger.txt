@@ -1,1 +1,1 @@
-Capture requested after Fairfield evidence tasks entered RUNNING/QUEUED state and extraction failures reached zero.
+Capture requested after Fairfield evidence tasks had additional time to complete and create evidence-backed outputs.

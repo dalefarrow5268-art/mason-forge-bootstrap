@@ -78,7 +78,10 @@ export async function ensureRuntimeSchema(env) {
     env.DB.prepare(`UPDATE project_files
       SET review_status = 'NEEDS EXTRACTION', updated_at = datetime('now')
       WHERE extracted_text_key IS NULL
-        AND review_status LIKE 'EXTRACTION FAILED: OpenAI 400: Invalid %file_data%'`),
+        AND (
+          review_status LIKE 'EXTRACTION FAILED: OpenAI 400: Invalid %file_data%'
+          OR review_status LIKE 'EXTRACTION FAILED: OpenAI 400: Mutually exclusive parameters:%file_id%filename%'
+        )`),
   ]);
 
   ready = true;

@@ -24,7 +24,7 @@ jobs:
       - name: Verify MCP initialization
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error             -H 'content-type: application/json'             -H 'origin: https://chatgpt.com'             --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"production-verifier","version":"1.0.0"}}}'             https://mason-forge-cloud.mason-forge-ssx.workers.dev/mcp             | jq -e '.result.serverInfo.name == "Mason Forge"'
+          curl --fail --silent --show-error             -H 'content-type: application/json'             -H 'origin: https://chatgpt.com'             --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"production-verifier","version":"1.0.0"}}}'             https://mason-forge-cloud.mason-forge-ssx.workers.dev/mcp             | jq -e '.result.serverInfo.name == "Mason Forge" and .result.protocolVersion == "2025-03-26"'
 
       - name: Verify all MCP actions
         run: |

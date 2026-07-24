@@ -1,0 +1,36 @@
+name: Verify Mason Forge MCP
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "cloud/**"
+      - ".github/workflows/verify-mason-mcp.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-production-mcp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify OAuth discovery
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error             https://mason-forge-cloud.mason-forge-ssx.workers.dev/.well-known/oauth-protected-resource             | jq -e '.resource == "https://mason-forge-cloud.mason-forge-ssx.workers.dev/mcp"'
+
+      - name: Verify MCP initialization
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error             -H 'content-type: application/json'             -H 'origin: https://chatgpt.com'             --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"production-verifier","version":"1.0.0"}}}'             https://mason-forge-cloud.mason-forge-ssx.workers.dev/mcp             | jq -e '.result.serverInfo.name == "Mason Forge"'
+
+      - name: Verify all MCP actions
+        run: |
+          set -euo pipefail
+          response="$(curl --fail --silent --show-error             -H 'content-type: application/json'             -H 'origin: https://chatgpt.com'             --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'             https://mason-forge-cloud.mason-forge-ssx.workers.dev/mcp)"
+          printf '%s' "$response" | jq -e '.result.tools | length == 15'
+          printf '%s' "$response" | jq -e '[.result.tools[].name] | index("list_project_files") != null'
+          printf '%s' "$response" | jq -e '[.result.tools[].name] | index("get_project_file") != null'
+          printf '%s' "$response" | jq -e '[.result.tools[].name] | index("get_project_continuity") != null'

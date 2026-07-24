@@ -3,6 +3,7 @@ import { failDepartmentTask, processDepartmentTask } from "./department-processo
 import { extractProjectFile, markExtractionFailure } from "./document-extractor.js";
 import { listContinuityScopes, readContinuity, writeContinuity } from "./continuity-ledger.js";
 import { connectorResponse } from "./connector.js";
+import { operationsRoute } from "./operations.js";
 
 const now = () => new Date().toISOString();
 
@@ -59,8 +60,18 @@ async function queuePendingDocumentExtractions(env) {
   return files.results?.length || 0;
 }
 
+async function kickOperations(env) {
+  const [recoveredTasks, queuedExtractions] = await Promise.all([
+    recoverLegacyBlockedTasks(env),
+    queuePendingDocumentExtractions(env),
+  ]);
+  return { recoveredTasks, queuedExtractions };
+}
+
 export default {
   async fetch(request, env, ctx) {
+    const operations = await operationsRoute(request, env, () => kickOperations(env));
+    if (operations) return operations;
     const connector = await connectorResponse(request, env);
     if (connector) return connector;
     const continuity = await continuityRoute(request, env);
@@ -88,7 +99,6 @@ export default {
   },
   async scheduled(event, env, ctx) {
     await foundation.scheduled(event, env, ctx);
-    await recoverLegacyBlockedTasks(env);
-    await queuePendingDocumentExtractions(env);
+    await kickOperations(env);
   },
 };

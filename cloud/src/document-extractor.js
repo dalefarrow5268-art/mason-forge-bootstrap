@@ -21,6 +21,52 @@ function bytesToBase64(bytes) {
   return btoa(binary);
 }
 
+function extension(name = "") {
+  const clean = String(name).toLowerCase().split("?")[0];
+  const index = clean.lastIndexOf(".");
+  return index >= 0 ? clean.slice(index + 1) : "";
+}
+
+function mimeType(file) {
+  if (file.file_type && String(file.file_type).includes("/")) return String(file.file_type).split(";")[0].trim();
+  const types = {
+    pdf: "application/pdf",
+    jpeg: "image/jpeg",
+    jpg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+    gif: "image/gif",
+    json: "application/json",
+    csv: "text/csv",
+    md: "text/markdown",
+    txt: "text/plain",
+    html: "text/html",
+    xml: "application/xml",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  };
+  return types[extension(file.file_name)] || "application/octet-stream";
+}
+
+function fileInputContent(file, bytes) {
+  const ext = extension(file.file_name);
+  const mime = mimeType(file);
+  if (["json", "csv", "md", "txt", "html", "xml"].includes(ext)) {
+    const maxTextBytes = 2 * 1024 * 1024;
+    const text = new TextDecoder("utf-8", { fatal: false }).decode(bytes.subarray(0, maxTextBytes));
+    return [{
+      type: "input_text",
+      text: `SOURCE FILE: ${file.file_name}\nCONTENT${bytes.length > maxTextBytes ? " (TRUNCATED TO 2 MIB)" : ""}:\n${text}`,
+    }];
+  }
+  const dataUrl = `data:${mime};base64,${bytesToBase64(bytes)}`;
+  if (["jpeg", "jpg", "png", "webp", "gif"].includes(ext)) {
+    return [{ type: "input_image", image_url: dataUrl, detail: "auto" }];
+  }
+  return [{ type: "input_file", filename: file.file_name, file_data: dataUrl }];
+}
+
 function extractOutputText(response) {
   if (typeof response?.output_text === "string" && response.output_text.trim()) return response.output_text.trim();
   const parts = [];
@@ -51,6 +97,7 @@ function safeJson(text) {
 async function callOpenAI(env, file, bytes) {
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
+    signal: AbortSignal.timeout(Number(env.OPENAI_REQUEST_TIMEOUT_MS || 600000)),
     headers: {
       authorization: `Bearer ${env.OPENAI_API_KEY}`,
       "content-type": "application/json",
@@ -70,11 +117,7 @@ async function callOpenAI(env, file, bytes) {
               "Use empty arrays or null when evidence is absent. Preserve useful sheet numbers, specification sections, detail references, dates, names, and numeric values exactly as shown.",
             ].join("\n"),
           },
-          {
-            type: "input_file",
-            filename: file.file_name,
-            file_data: bytesToBase64(bytes),
-          },
+          ...fileInputContent(file, bytes),
         ],
       }],
       text: { format: { type: "json_object" } },

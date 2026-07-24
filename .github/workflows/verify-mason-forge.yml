@@ -1,0 +1,58 @@
+name: Verify Mason Forge
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-cloud:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cloud
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: cloud/package-lock.json
+      - run: npm ci
+      - name: Check Worker syntax
+        run: npm run check
+      - name: Validate Cloudflare bundle
+        run: npx wrangler deploy --dry-run
+
+  verify-dashboard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Build Vite dashboard
+        run: npm run build
+      - name: Confirm build output
+        run: test -f dist/index.html
+
+  verify-server-functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check Vercel server functions
+        run: |
+          node --check api/mason.js
+          node --check api/deploy.js

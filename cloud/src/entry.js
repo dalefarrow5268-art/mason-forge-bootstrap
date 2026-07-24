@@ -1,6 +1,7 @@
 import foundation from "./index.js";
 import runtime from "./worker.js";
 import { connectorResponse } from "./connector.js";
+import { mcpResponse } from "./mcp.js";
 import { ensureRuntimeSchema } from "./ensure-schema.js";
 
 function json(data, status = 200) {
@@ -27,6 +28,12 @@ export default {
 
     try {
       await ensureRuntimeSchema(env);
+
+      if (url.pathname === "/mcp") {
+        phase = "mcp";
+        const response = await mcpResponse(request, env);
+        if (response) return response;
+      }
 
       if (url.pathname === "/health" && request.method === "GET") {
         phase = "read-only-health";

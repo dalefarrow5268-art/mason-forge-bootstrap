@@ -1,6 +1,6 @@
 {
-  "capturedAt": "2026-07-24T17:33:09.153Z",
-  "sourceCommit": "3f08bf59a27bf6d1fe37b87b69bba81261caec9c",
+  "capturedAt": "2026-07-24T17:40:49.809Z",
+  "sourceCommit": "8200e070cf9e0f0359da104049bdf7088fd5353f",
   "health": {
     "status": "online",
     "operationalReady": true,
@@ -14,31 +14,31 @@
     "projects": 13,
     "files": 454,
     "taskTotals": {
-      "COMPLETED": 94,
-      "QUEUED": 44,
-      "RUNNING": 2
+      "COMPLETED": 111,
+      "QUEUED": 25,
+      "RUNNING": 9
     },
-    "totalTasks": 140,
-    "outputCount": 94,
+    "totalTasks": 145,
+    "outputCount": 111,
     "continuity": {
-      "checkpoint_id": "checkpoint_94abafa1-ddda-48b2-a735-0d5bee156c93",
-      "version": 991,
+      "checkpoint_id": "checkpoint_514275e9-6315-4534-a4df-319388127adb",
+      "version": 1041,
       "verification_status": "VERIFIED",
-      "updated_at": "2026-07-24T17:33:08.546Z"
+      "updated_at": "2026-07-24T17:40:34.688Z"
     },
     "extraction": {
-      "extracted": 318,
-      "queued": 122,
+      "extracted": 331,
+      "queued": 111,
       "retrying": 0,
       "failed": 0,
-      "pending": 14
+      "pending": 12
     },
     "staleRunningTasks": 0,
     "completedTasksWithoutOutput": 0,
     "duplicateOutputTasks": 0,
     "countsReconcile": true,
     "projectFileTotal": 454,
-    "projectTaskTotal": 140,
+    "projectTaskTotal": 145,
     "r2Samples": [
       {
         "fileId": 1,
@@ -94,10 +94,10 @@
         "id": 4,
         "name": "Bask Fairfield Inn Tampa",
         "file_count": 292,
-        "queued_tasks": 23,
-        "running_tasks": 1,
+        "queued_tasks": 15,
+        "running_tasks": 6,
         "blocked_tasks": 0,
-        "completed_tasks": 26,
+        "completed_tasks": 34,
         "failed_tasks": 0,
         "canceled_tasks": 0
       },
@@ -105,10 +105,10 @@
         "id": 5,
         "name": "Bask StudioRes Estero",
         "file_count": 162,
-        "queued_tasks": 21,
-        "running_tasks": 1,
+        "queued_tasks": 10,
+        "running_tasks": 3,
         "blocked_tasks": 0,
-        "completed_tasks": 13,
+        "completed_tasks": 22,
         "failed_tasks": 0,
         "canceled_tasks": 0
       },
@@ -201,21 +201,21 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-07-24T17:33:09.925Z"
+    "checkedAt": "2026-07-24T17:40:50.481Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-07-24T17:33:10.285Z",
+    "retrievedAt": "2026-07-24T17:40:50.814Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",
-      "checkpoint_id": "checkpoint_94abafa1-ddda-48b2-a735-0d5bee156c93",
-      "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-operational-6\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":318,\"queued\":122,\"extracting\":14,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":94,\"QUEUED\":44,\"RUNNING\":2},\"outputCount\":94,\"latestOutputAt\":\"2026-07-24T17:30:08.134Z\",\"latestActivityAt\":\"2026-07-24T17:33:07.709Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
-      "summary": "Mason Forge live state: 13 projects, 454 files, 2 running, 44 queued, 94 completed, 94 outputs, 318 files extracted.",
+      "checkpoint_id": "checkpoint_514275e9-6315-4534-a4df-319388127adb",
+      "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-operational-6\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":331,\"queued\":112,\"extracting\":11,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":111,\"QUEUED\":25,\"RUNNING\":9},\"outputCount\":111,\"latestOutputAt\":\"2026-07-24T17:39:53.710Z\",\"latestActivityAt\":\"2026-07-24T17:40:34.006Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
+      "summary": "Mason Forge live state: 13 projects, 454 files, 9 running, 25 queued, 111 completed, 111 outputs, 331 files extracted.",
       "verification_status": "VERIFIED",
       "source": "LIVE D1 VERIFIED STATE",
-      "version": 991,
+      "version": 1041,
       "created_at": "2026-07-24T15:05:09.403Z",
-      "updated_at": "2026-07-24T17:33:08.546Z",
+      "updated_at": "2026-07-24T17:40:34.688Z",
       "state": {
         "system": "Mason Forge Cloud",
         "deployment": "LIVE",
@@ -224,9 +224,9 @@
         "files": 454,
         "extraction": {
           "total": 454,
-          "extracted": 318,
-          "queued": 122,
-          "extracting": 14,
+          "extracted": 331,
+          "queued": 112,
+          "extracting": 11,
           "retrying": 0,
           "failed": 0,
           "routedReview": 0,
@@ -234,13 +234,13 @@
           "accounted": 454
         },
         "taskTotals": {
-          "COMPLETED": 94,
-          "QUEUED": 44,
-          "RUNNING": 2
+          "COMPLETED": 111,
+          "QUEUED": 25,
+          "RUNNING": 9
         },
-        "outputCount": 94,
-        "latestOutputAt": "2026-07-24T17:30:08.134Z",
-        "latestActivityAt": "2026-07-24T17:33:07.709Z",
+        "outputCount": 111,
+        "latestOutputAt": "2026-07-24T17:39:53.710Z",
+        "latestActivityAt": "2026-07-24T17:40:34.006Z",
         "staleRunningTasks": 0,
         "staleExtractionJobs": 0,
         "evidenceRule": "Active work requires RUNNING task evidence or completed department outputs."
@@ -375,9 +375,9 @@
         "status": "INTAKE",
         "review_status": "NEEDS REVIEW",
         "file_count": 162,
-        "running_tasks": 1,
-        "queued_tasks": 21,
-        "completed_tasks": 13,
+        "running_tasks": 3,
+        "queued_tasks": 10,
+        "completed_tasks": 22,
         "failed_tasks": 0,
         "blocked_tasks": 0,
         "canceled_tasks": 0
@@ -390,9 +390,9 @@
         "status": "INTAKE",
         "review_status": "NEEDS REVIEW",
         "file_count": 292,
-        "running_tasks": 1,
-        "queued_tasks": 23,
-        "completed_tasks": 26,
+        "running_tasks": 6,
+        "queued_tasks": 15,
+        "completed_tasks": 34,
         "failed_tasks": 0,
         "blocked_tasks": 0,
         "canceled_tasks": 0
@@ -444,49 +444,49 @@
       }
     ],
     "taskTotals": {
-      "COMPLETED": 94,
-      "QUEUED": 44,
-      "RUNNING": 2
+      "COMPLETED": 111,
+      "QUEUED": 25,
+      "RUNNING": 9
     },
-    "outputCount": 94,
+    "outputCount": 111,
     "evidenceRule": "Do not claim active work without RUNNING task events or completed department outputs.",
     "taskTotalsRows": [
       {
         "status": "COMPLETED",
-        "count": 94
+        "count": 111
       },
       {
         "status": "QUEUED",
-        "count": 44
+        "count": 25
       },
       {
         "status": "RUNNING",
-        "count": 2
+        "count": 9
       }
     ]
   },
   "projects": {
     "4": {
       "fileCount": 292,
-      "taskCount": 50,
+      "taskCount": 55,
       "taskCounts": {
-        "COMPLETED": 26,
-        "QUEUED": 23,
-        "RUNNING": 1
+        "COMPLETED": 34,
+        "RUNNING": 6,
+        "QUEUED": 15
       },
-      "outputCount": 26,
-      "evidenceBatchCount": 9,
-      "routedFileCount": 180
+      "outputCount": 34,
+      "evidenceBatchCount": 10,
+      "routedFileCount": 200
     },
     "5": {
       "fileCount": 162,
       "taskCount": 35,
       "taskCounts": {
-        "COMPLETED": 13,
-        "QUEUED": 21,
-        "RUNNING": 1
+        "COMPLETED": 22,
+        "QUEUED": 10,
+        "RUNNING": 3
       },
-      "outputCount": 13,
+      "outputCount": 22,
       "evidenceBatchCount": 6,
       "routedFileCount": 120
     }
@@ -494,9 +494,12 @@
   "totalFiles": 454,
   "byStatus": {
     "EXTRACTED - NEEDS HUMAN REVIEW": 292,
-    "EXTRACTING": 14,
-    "EXTRACTION QUEUED": 122,
-    "EXTRACTED - VISUAL REVIEW REQUIRED: IMAGE": 26
+    "EXTRACTING": 12,
+    "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 10,
+    "EXTRACTION QUEUED": 111,
+    "EXTRACTED - READY": 1,
+    "EXTRACTED - VISUAL REVIEW REQUIRED: IMAGE": 27,
+    "EXTRACTED - MANUAL REVIEW REQUIRED: DOCUMENT": 1
   },
   "failedCount": 0,
   "failedReasons": {},
@@ -504,9 +507,9 @@
   "failedSamples": [],
   "pipelineEvidence": {
     "extractedCount": 292,
-    "totalTaskCount": 85,
-    "totalOutputCount": 39,
-    "evidenceBatchCount": 15,
+    "totalTaskCount": 90,
+    "totalOutputCount": 56,
+    "evidenceBatchCount": 16,
     "evidenceTasksCreated": true,
     "evidenceOutputsCreated": true,
     "noExtractionFailures": true

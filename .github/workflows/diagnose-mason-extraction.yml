@@ -116,3 +116,5 @@ jobs:
           git add verification/extraction-diagnostics.json
           git commit -m "Record Mason Forge extraction diagnostics for ${GITHUB_SHA}" || exit 0
           git push --force origin extraction-diagnostics
+
+# Fresh capture requested after deterministic schema and file_id-only repairs.

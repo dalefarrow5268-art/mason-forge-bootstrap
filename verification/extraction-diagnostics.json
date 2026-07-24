@@ -1,6 +1,6 @@
 {
-  "capturedAt": "2026-07-24T16:50:54.808Z",
-  "sourceCommit": "06ac815f67dbaf7c24605ee6b0c95d756e49fad9",
+  "capturedAt": "2026-07-24T17:02:23.575Z",
+  "sourceCommit": "9bd225e3c7514e91ed379bf79cddc21bfb747231",
   "health": {
     "status": "online",
     "operationalReady": true,
@@ -14,31 +14,30 @@
     "projects": 13,
     "files": 454,
     "taskTotals": {
-      "COMPLETED": 70,
-      "QUEUED": 19,
-      "RUNNING": 1
+      "COMPLETED": 72,
+      "QUEUED": 33
     },
-    "totalTasks": 90,
-    "outputCount": 70,
+    "totalTasks": 105,
+    "outputCount": 72,
     "continuity": {
-      "checkpoint_id": "checkpoint_0a2e1d3e-851e-490f-8aa9-e94955d368ce",
-      "version": 716,
+      "checkpoint_id": "checkpoint_a9d6ab89-62c0-4552-b3bb-8756717b3619",
+      "version": 799,
       "verification_status": "VERIFIED",
-      "updated_at": "2026-07-24T16:50:49.928Z"
+      "updated_at": "2026-07-24T17:02:08.877Z"
     },
     "extraction": {
-      "extracted": 119,
-      "queued": 321,
+      "extracted": 183,
+      "queued": 251,
       "retrying": 0,
       "failed": 0,
-      "pending": 14
+      "pending": 20
     },
     "staleRunningTasks": 0,
     "completedTasksWithoutOutput": 0,
     "duplicateOutputTasks": 0,
     "countsReconcile": true,
     "projectFileTotal": 454,
-    "projectTaskTotal": 90,
+    "projectTaskTotal": 105,
     "r2Samples": [
       {
         "fileId": 1,
@@ -94,7 +93,7 @@
         "id": 4,
         "name": "Bask Fairfield Inn Tampa",
         "file_count": 292,
-        "queued_tasks": 15,
+        "queued_tasks": 20,
         "running_tasks": 0,
         "blocked_tasks": 0,
         "completed_tasks": 10,
@@ -105,10 +104,10 @@
         "id": 5,
         "name": "Bask StudioRes Estero",
         "file_count": 162,
-        "queued_tasks": 4,
-        "running_tasks": 1,
+        "queued_tasks": 13,
+        "running_tasks": 0,
         "blocked_tasks": 0,
-        "completed_tasks": 5,
+        "completed_tasks": 7,
         "failed_tasks": 0,
         "canceled_tasks": 0
       },
@@ -201,21 +200,21 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-07-24T16:50:55.568Z"
+    "checkedAt": "2026-07-24T17:02:24.117Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-07-24T16:50:55.989Z",
+    "retrievedAt": "2026-07-24T17:02:24.480Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",
-      "checkpoint_id": "checkpoint_0a2e1d3e-851e-490f-8aa9-e94955d368ce",
-      "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-operational-6\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":119,\"queued\":321,\"extracting\":14,\"retrying\":0,\"failed\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":70,\"QUEUED\":19,\"RUNNING\":1},\"outputCount\":70,\"latestOutputAt\":\"2026-07-24T16:41:31.595Z\",\"latestActivityAt\":\"2026-07-24T16:50:49.597Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
-      "summary": "Mason Forge live state: 13 projects, 454 files, 1 running, 19 queued, 70 completed, 70 outputs, 119 files extracted.",
+      "checkpoint_id": "checkpoint_a9d6ab89-62c0-4552-b3bb-8756717b3619",
+      "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-operational-6\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":183,\"queued\":252,\"extracting\":19,\"retrying\":0,\"failed\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":72,\"QUEUED\":33},\"outputCount\":72,\"latestOutputAt\":\"2026-07-24T17:01:04.007Z\",\"latestActivityAt\":\"2026-07-24T17:02:07.674Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
+      "summary": "Mason Forge live state: 13 projects, 454 files, 0 running, 33 queued, 72 completed, 72 outputs, 183 files extracted.",
       "verification_status": "VERIFIED",
       "source": "LIVE D1 VERIFIED STATE",
-      "version": 716,
+      "version": 799,
       "created_at": "2026-07-24T15:05:09.403Z",
-      "updated_at": "2026-07-24T16:50:49.928Z",
+      "updated_at": "2026-07-24T17:02:08.877Z",
       "state": {
         "system": "Mason Forge Cloud",
         "deployment": "LIVE",
@@ -224,22 +223,21 @@
         "files": 454,
         "extraction": {
           "total": 454,
-          "extracted": 119,
-          "queued": 321,
-          "extracting": 14,
+          "extracted": 183,
+          "queued": 252,
+          "extracting": 19,
           "retrying": 0,
           "failed": 0,
           "pending": 0,
           "accounted": 454
         },
         "taskTotals": {
-          "COMPLETED": 70,
-          "QUEUED": 19,
-          "RUNNING": 1
+          "COMPLETED": 72,
+          "QUEUED": 33
         },
-        "outputCount": 70,
-        "latestOutputAt": "2026-07-24T16:41:31.595Z",
-        "latestActivityAt": "2026-07-24T16:50:49.597Z",
+        "outputCount": 72,
+        "latestOutputAt": "2026-07-24T17:01:04.007Z",
+        "latestActivityAt": "2026-07-24T17:02:07.674Z",
         "staleRunningTasks": 0,
         "staleExtractionJobs": 0,
         "evidenceRule": "Active work requires RUNNING task evidence or completed department outputs."
@@ -374,9 +372,9 @@
         "status": "INTAKE",
         "review_status": "NEEDS REVIEW",
         "file_count": 162,
-        "running_tasks": 1,
-        "queued_tasks": 4,
-        "completed_tasks": 5,
+        "running_tasks": 0,
+        "queued_tasks": 13,
+        "completed_tasks": 7,
         "failed_tasks": 0,
         "blocked_tasks": 0,
         "canceled_tasks": 0
@@ -390,7 +388,7 @@
         "review_status": "NEEDS REVIEW",
         "file_count": 292,
         "running_tasks": 0,
-        "queued_tasks": 15,
+        "queued_tasks": 20,
         "completed_tasks": 10,
         "failed_tasks": 0,
         "blocked_tasks": 0,
@@ -443,67 +441,61 @@
       }
     ],
     "taskTotals": {
-      "COMPLETED": 70,
-      "QUEUED": 19,
-      "RUNNING": 1
+      "COMPLETED": 72,
+      "QUEUED": 33
     },
-    "outputCount": 70,
+    "outputCount": 72,
     "evidenceRule": "Do not claim active work without RUNNING task events or completed department outputs.",
     "taskTotalsRows": [
       {
         "status": "COMPLETED",
-        "count": 70
+        "count": 72
       },
       {
         "status": "QUEUED",
-        "count": 19
-      },
-      {
-        "status": "RUNNING",
-        "count": 1
+        "count": 33
       }
     ]
   },
   "projects": {
     "4": {
       "fileCount": 292,
-      "taskCount": 25,
+      "taskCount": 30,
       "taskCounts": {
         "COMPLETED": 10,
-        "QUEUED": 15
+        "QUEUED": 20
       },
       "outputCount": 10,
-      "evidenceBatchCount": 4,
-      "routedFileCount": 80
+      "evidenceBatchCount": 5,
+      "routedFileCount": 100
     },
     "5": {
       "fileCount": 162,
-      "taskCount": 10,
+      "taskCount": 20,
       "taskCounts": {
-        "COMPLETED": 5,
-        "RUNNING": 1,
-        "QUEUED": 4
+        "COMPLETED": 7,
+        "QUEUED": 13
       },
-      "outputCount": 5,
-      "evidenceBatchCount": 1,
-      "routedFileCount": 20
+      "outputCount": 7,
+      "evidenceBatchCount": 3,
+      "routedFileCount": 60
     }
   },
   "totalFiles": 454,
   "byStatus": {
-    "EXTRACTED - NEEDS HUMAN REVIEW": 119,
-    "EXTRACTION QUEUED": 321,
-    "EXTRACTING": 14
+    "EXTRACTED - NEEDS HUMAN REVIEW": 183,
+    "EXTRACTION QUEUED": 251,
+    "EXTRACTING": 20
   },
   "failedCount": 0,
   "failedReasons": {},
   "failedExtensions": {},
   "failedSamples": [],
   "pipelineEvidence": {
-    "extractedCount": 119,
-    "totalTaskCount": 35,
-    "totalOutputCount": 15,
-    "evidenceBatchCount": 5,
+    "extractedCount": 183,
+    "totalTaskCount": 50,
+    "totalOutputCount": 17,
+    "evidenceBatchCount": 8,
     "evidenceTasksCreated": true,
     "evidenceOutputsCreated": true,
     "noExtractionFailures": true

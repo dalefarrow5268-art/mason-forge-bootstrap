@@ -1,0 +1,1 @@
+Trigger a fresh post-repair Mason Forge extraction and production diagnostic capture.

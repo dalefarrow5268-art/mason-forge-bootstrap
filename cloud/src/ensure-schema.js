@@ -69,6 +69,10 @@ export async function ensureRuntimeSchema(env) {
     )`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS evidence_batch_files_project
       ON evidence_batch_files(project_id, file_id)`),
+    env.DB.prepare(`DELETE FROM department_outputs
+      WHERE rowid NOT IN (
+        SELECT MIN(rowid) FROM department_outputs GROUP BY task_id
+      )`),
     env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS department_outputs_one_per_task
       ON department_outputs(task_id)`),
   ]);

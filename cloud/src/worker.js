@@ -4,6 +4,7 @@ import { extractProjectFile, markExtractionFailure } from "./document-extractor.
 import { listContinuityScopes, readContinuity, writeContinuity } from "./continuity-ledger.js";
 import { connectorResponse } from "./connector.js";
 import { operationsRoute } from "./operations.js";
+import { ensureRuntimeSchema } from "./ensure-schema.js";
 
 const now = () => new Date().toISOString();
 
@@ -70,6 +71,7 @@ async function kickOperations(env) {
 
 export default {
   async fetch(request, env, ctx) {
+    await ensureRuntimeSchema(env);
     const operations = await operationsRoute(request, env, () => kickOperations(env));
     if (operations) return operations;
     const connector = await connectorResponse(request, env);
@@ -79,6 +81,7 @@ export default {
     return foundation.fetch(request, env, ctx);
   },
   async queue(batch, env) {
+    await ensureRuntimeSchema(env);
     for (const message of batch.messages) {
       const body = message.body || {};
       if (body.kind === "EXTRACT_PROJECT_FILE") {
@@ -98,6 +101,7 @@ export default {
     }
   },
   async scheduled(event, env, ctx) {
+    await ensureRuntimeSchema(env);
     await foundation.scheduled(event, env, ctx);
     await kickOperations(env);
   },

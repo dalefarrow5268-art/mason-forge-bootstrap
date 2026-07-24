@@ -1,5 +1,6 @@
 import foundation from "./index.js";
 import { failDepartmentTask, processDepartmentTask } from "./department-processor.js";
+import { extractProjectFile, markExtractionFailure } from "./document-extractor.js";
 
 const now = () => new Date().toISOString();
 
@@ -21,6 +22,7 @@ async function recoverLegacyBlockedTasks(env) {
       WHERE id = ?
     `).bind(timestamp, task.id).run();
     await env.DEPARTMENT_QUEUE.send({
+      kind: "DEPARTMENT_TASK",
       taskId: task.id,
       projectId: task.project_id,
       employeeId: task.employee_id,
@@ -30,16 +32,57 @@ async function recoverLegacyBlockedTasks(env) {
   return blocked.results?.length || 0;
 }
 
+async function queuePendingDocumentExtractions(env) {
+  const files = await env.DB.prepare(`
+    SELECT id, project_id
+    FROM project_files
+    WHERE extracted_text_key IS NULL
+      AND review_status NOT LIKE 'EXTRACTION FAILED:%'
+      AND review_status NOT IN ('EXTRACTION QUEUED', 'EXTRACTION RETRYING')
+      AND lower(file_name) GLOB '*.*'
+    ORDER BY project_id, uploaded_at, id
+    LIMIT 10
+  `).all();
+
+  for (const file of files.results || []) {
+    await env.DB.prepare(`
+      UPDATE project_files
+      SET review_status = 'EXTRACTION QUEUED', updated_at = ?
+      WHERE id = ? AND extracted_text_key IS NULL
+    `).bind(now(), file.id).run();
+    await env.DEPARTMENT_QUEUE.send({
+      kind: "EXTRACT_PROJECT_FILE",
+      fileId: file.id,
+      projectId: file.project_id,
+    });
+  }
+  return files.results?.length || 0;
+}
+
 export default {
   fetch: foundation.fetch,
 
   async queue(batch, env) {
     for (const message of batch.messages) {
+      const body = message.body || {};
+      if (body.kind === "EXTRACT_PROJECT_FILE") {
+        try {
+          await extractProjectFile(body, env);
+          message.ack();
+        } catch (error) {
+          const terminal = Number(message.attempts || 1) >= 5;
+          await markExtractionFailure(body, env, error, terminal);
+          if (terminal) message.ack();
+          else message.retry({ delaySeconds: 120 });
+        }
+        continue;
+      }
+
       try {
-        await processDepartmentTask(message.body, env);
+        await processDepartmentTask(body, env);
         message.ack();
       } catch (error) {
-        const result = await failDepartmentTask(message.body, env, error);
+        const result = await failDepartmentTask(body, env, error);
         if (result.retry) message.retry({ delaySeconds: 60 });
         else message.ack();
       }
@@ -49,5 +92,6 @@ export default {
   async scheduled(event, env, ctx) {
     await foundation.scheduled(event, env, ctx);
     await recoverLegacyBlockedTasks(env);
+    await queuePendingDocumentExtractions(env);
   },
 };

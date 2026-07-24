@@ -21,7 +21,7 @@ import PromptLibrary from "./PromptLibrary";
 import GitBridge from "./GitBridge";
 import VSCodeBridge from "./VSCodeBridge";
 import VerificationEngine from "./VerificationEngine";
-import DeploymentBridge from "./DeploymentBridge";
+import SecureDeploymentBridge from "./SecureDeploymentBridge";
 import LocalAIBridge from "./LocalAIBridge";
 import ForgeStatusPanel from "./control-center/ForgeStatusPanel";
 
@@ -61,7 +61,7 @@ export default function Dashboard() {
       case "pipeline": return renderStandardPage(<GitBridge />);
       case "vscode": return renderStandardPage(<VSCodeBridge />);
       case "analytics": return renderStandardPage(<VerificationEngine />);
-      case "deployments": return renderStandardPage(<DeploymentBridge />);
+      case "deployments": return renderStandardPage(<SecureDeploymentBridge />);
       case "localai": return renderStandardPage(<LocalAIBridge />);
       case "forge-status": return renderStandardPage(<ForgeStatusPanel />);
       case "projects": return renderStandardPage(<SSXProjects />);

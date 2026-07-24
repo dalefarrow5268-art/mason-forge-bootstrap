@@ -83,6 +83,50 @@ async function kickOperations(env) {
   return { recoveredTasks, queuedExtractions };
 }
 
+async function ensureSystemContinuity(env) {
+  const [existing, projectCount, fileCount, outputs, taskRows] = await Promise.all([
+    env.DB.prepare("SELECT state_json FROM continuity_heads WHERE scope_type='system' AND scope_id='mason-forge'").first(),
+    env.DB.prepare("SELECT COUNT(*) count FROM projects").first(),
+    env.DB.prepare("SELECT COUNT(*) count FROM project_files").first(),
+    env.DB.prepare("SELECT COUNT(*) count FROM department_outputs").first(),
+    env.DB.prepare("SELECT status, COUNT(*) count FROM department_tasks GROUP BY status ORDER BY status").all(),
+  ]);
+
+  const taskTotals = Object.fromEntries((taskRows.results || []).map((row) => [row.status, Number(row.count || 0)]));
+  const state = {
+    system: "Mason Forge Cloud",
+    deployment: "LIVE",
+    projects: Number(projectCount?.count || 0),
+    files: Number(fileCount?.count || 0),
+    taskTotals,
+    outputCount: Number(outputs?.count || 0),
+    evidenceRule: "Active work requires RUNNING task evidence or completed department outputs.",
+  };
+
+  if (existing?.state_json === JSON.stringify(state)) return false;
+
+  const request = new Request("https://mason-forge.local/api/continuity/system/mason-forge", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      summary: `Mason Forge live state: ${state.projects} projects, ${state.files} files, ${taskTotals.RUNNING || 0} running, ${taskTotals.QUEUED || 0} queued, ${taskTotals.COMPLETED || 0} completed, ${state.outputCount} outputs.`,
+      state,
+      actor: "MASON FORGE CLOUD",
+      source: "LIVE D1 VERIFIED STATE",
+      verificationStatus: "VERIFIED",
+      facts: [
+        { key: "deployment", value: state.deployment, confidence: "VERIFIED" },
+        { key: "project_count", value: state.projects, confidence: "VERIFIED" },
+        { key: "file_count", value: state.files, confidence: "VERIFIED" },
+        { key: "task_totals", value: state.taskTotals, confidence: "VERIFIED" },
+        { key: "output_count", value: state.outputCount, confidence: "VERIFIED" },
+      ],
+    }),
+  });
+  await writeContinuity(request, "system", "mason-forge", env);
+  return true;
+}
+
 export default {
   async fetch(request, env, ctx) {
     await ensureRuntimeSchema(env);
@@ -92,6 +136,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/connector/bootstrap" && request.method === "GET" && authorized(request, env)) {
       await kickOperations(env);
+      await ensureSystemContinuity(env);
     }
 
     const connector = await connectorResponse(request, env);
@@ -119,10 +164,12 @@ export default {
         if (result.retry) message.retry({ delaySeconds: 60 }); else message.ack();
       }
     }
+    await ensureSystemContinuity(env);
   },
   async scheduled(event, env, ctx) {
     await ensureRuntimeSchema(env);
     await foundation.scheduled(event, env, ctx);
     await kickOperations(env);
+    await ensureSystemContinuity(env);
   },
 };

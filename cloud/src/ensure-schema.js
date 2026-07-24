@@ -111,6 +111,20 @@ export async function ensureRuntimeSchema(env) {
     )`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS mcp_download_grants_expiry
       ON mcp_download_grants(expires_at, revoked_at)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS mcp_upload_grants (
+      token_hash TEXT PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      file_id INTEGER NOT NULL REFERENCES project_files(id) ON DELETE CASCADE,
+      expected_size INTEGER NOT NULL,
+      expected_sha256 TEXT NOT NULL,
+      content_type TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'READY',
+      expires_at TEXT NOT NULL,
+      completed_at TEXT,
+      created_at TEXT NOT NULL
+    )`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS mcp_upload_grants_expiry
+      ON mcp_upload_grants(expires_at, status)`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS extraction_review_queue (
       file_id INTEGER PRIMARY KEY REFERENCES project_files(id) ON DELETE CASCADE,
       project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,

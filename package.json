@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "scripts": {
     "install:frontend": "npm --prefix frontend ci",
-    "build": "npm --prefix frontend run build"
+    "build": "npm --prefix frontend run build",
+    "verify:production": "node scripts/verify-production.mjs"
   }
 }

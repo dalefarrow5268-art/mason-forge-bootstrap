@@ -121,9 +121,17 @@ jobs:
             mkdir -p verification
             printf '%s\n' '{"success":false,"requestErrors":[{"error":"Live capture report was not produced."}]}' > verification/live-now.json
           }
-          git config user.name "Mason Forge Live Capture"
-          git config user.email "actions@users.noreply.github.com"
-          git checkout -B live-snapshot
-          git add verification/live-now.json
-          git commit -m "Capture Mason Forge live state for ${GITHUB_SHA}" || true
-          git push --force origin live-snapshot
+          report_path="${RUNNER_TEMP}/mason-live-now.json"
+          report_worktree="${RUNNER_TEMP}/mason-live-snapshot"
+          cp verification/live-now.json "${report_path}"
+          git fetch origin live-snapshot
+          git worktree add --detach "${report_worktree}" origin/live-snapshot
+          mkdir -p "${report_worktree}/verification"
+          cp "${report_path}" "${report_worktree}/verification/live-now.json"
+          git -C "${report_worktree}" config user.name "Mason Forge Live Capture"
+          git -C "${report_worktree}" config user.email "actions@users.noreply.github.com"
+          git -C "${report_worktree}" add verification/live-now.json
+          if ! git -C "${report_worktree}" diff --cached --quiet; then
+            git -C "${report_worktree}" commit -m "Capture Mason Forge live state for ${GITHUB_SHA}"
+            git -C "${report_worktree}" push origin HEAD:live-snapshot
+          fi

@@ -2,6 +2,7 @@ import foundation from "./index.js";
 import runtime from "./worker.js";
 import { connectorResponse } from "./connector.js";
 import { mcpResponse } from "./mcp.js";
+import { downloadGrantResponse, isOAuthDiscoveryPath, oauthResponse } from "./oauth.js";
 import { ensureRuntimeSchema } from "./ensure-schema.js";
 import { recoverQueuedDepartmentTasks } from "./queued-task-recovery.js";
 import { ensureAllProjectContinuity } from "./project-continuity.js";
@@ -35,7 +36,20 @@ export default {
     let phase = "runtime-schema";
 
     try {
+      if (isOAuthDiscoveryPath(url.pathname)) {
+        phase = "oauth-discovery";
+        return await oauthResponse(request, env);
+      }
+
       await ensureRuntimeSchema(env);
+
+      phase = "oauth";
+      const oauth = await oauthResponse(request, env);
+      if (oauth) return oauth;
+
+      phase = "download";
+      const download = await downloadGrantResponse(request, env);
+      if (download) return download;
 
       if (url.pathname === "/mcp") {
         phase = "mcp";

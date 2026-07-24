@@ -158,13 +158,48 @@ jobs:
           console.log('Mason Forge production verification passed:', JSON.stringify(verification));
           NODE
 
-      - name: Publish verified state ledger
-        if: success()
+      - name: Capture final live state
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs/promises';
+          const request = async (url) => {
+            try {
+              const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}_capture=${Date.now()}-${Math.random()}`, {
+                cache: 'no-store',
+                headers: { 'cache-control': 'no-cache, no-store, max-age=0', pragma: 'no-cache' },
+              });
+              const text = await response.text();
+              let body;
+              try { body = JSON.parse(text); } catch { body = { raw: text }; }
+              return { status: response.status, ok: response.ok, body };
+            } catch (error) {
+              return { status: 0, ok: false, error: String(error?.stack || error) };
+            }
+          };
+          let prior = {};
+          try { prior = JSON.parse(await fs.readFile('../verification/live-production-verification.json', 'utf8')); } catch {}
+          const capture = {
+            ...prior,
+            capturedAt: new Date().toISOString(),
+            sourceCommit: process.env.GITHUB_SHA,
+            finalCapture: {
+              workerHealth: await request('https://mason-forge-cloud.mason-forge-ssx.workers.dev/health'),
+              dashboard: await request('https://mason-forge-live.vercel.app/api/mason'),
+            },
+          };
+          await fs.mkdir('../verification', { recursive: true });
+          await fs.writeFile('../verification/live-production-verification.json', JSON.stringify(capture, null, 2));
+          NODE
+
+      - name: Publish live verification ledger
+        if: always()
         run: |
           cd ..
+          test -f verification/live-production-verification.json || exit 0
           git config user.name "Mason Forge Verification"
           git config user.email "actions@users.noreply.github.com"
           git checkout -B production-verification
           git add verification/live-production-verification.json
-          git commit -m "Record verified Mason Forge production state for ${GITHUB_SHA}" || exit 0
+          git commit -m "Record Mason Forge production state for ${GITHUB_SHA}" || exit 0
           git push --force origin production-verification

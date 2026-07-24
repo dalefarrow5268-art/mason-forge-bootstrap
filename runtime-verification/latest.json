@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-07-24T17:24:56.847Z",
-  "completedAt": "2026-07-24T17:26:28.621Z",
+  "startedAt": "2026-07-24T17:32:39.383Z",
+  "completedAt": "2026-07-24T17:34:42.233Z",
   "success": true,
   "worker": {
     "attempt": 1,
@@ -19,31 +19,31 @@
       "projects": 13,
       "files": 454,
       "taskTotals": {
-        "COMPLETED": 89,
-        "QUEUED": 40,
-        "RUNNING": 1
+        "COMPLETED": 94,
+        "QUEUED": 44,
+        "RUNNING": 2
       },
-      "totalTasks": 130,
-      "outputCount": 89,
+      "totalTasks": 140,
+      "outputCount": 94,
       "continuity": {
-        "checkpoint_id": "checkpoint_18c50aef-0ef2-4d19-9b58-6fe7525c6bed",
-        "version": 937,
+        "checkpoint_id": "checkpoint_70bf1042-22dd-4ec2-bebe-37b9fd4e8127",
+        "version": 985,
         "verification_status": "VERIFIED",
-        "updated_at": "2026-07-24T17:24:36.269Z"
+        "updated_at": "2026-07-24T17:32:23.714Z"
       },
       "extraction": {
-        "extracted": 288,
-        "queued": 159,
+        "extracted": 316,
+        "queued": 127,
         "retrying": 0,
         "failed": 0,
-        "pending": 7
+        "pending": 11
       },
       "staleRunningTasks": 0,
       "completedTasksWithoutOutput": 0,
       "duplicateOutputTasks": 0,
       "countsReconcile": true,
       "projectFileTotal": 454,
-      "projectTaskTotal": 130,
+      "projectTaskTotal": 140,
       "r2Samples": [
         {
           "fileId": 1,
@@ -99,10 +99,10 @@
           "id": 4,
           "name": "Bask Fairfield Inn Tampa",
           "file_count": 292,
-          "queued_tasks": 22,
+          "queued_tasks": 23,
           "running_tasks": 1,
           "blocked_tasks": 0,
-          "completed_tasks": 22,
+          "completed_tasks": 26,
           "failed_tasks": 0,
           "canceled_tasks": 0
         },
@@ -110,10 +110,10 @@
           "id": 5,
           "name": "Bask StudioRes Estero",
           "file_count": 162,
-          "queued_tasks": 18,
-          "running_tasks": 0,
+          "queued_tasks": 21,
+          "running_tasks": 1,
           "blocked_tasks": 0,
-          "completed_tasks": 12,
+          "completed_tasks": 13,
           "failed_tasks": 0,
           "canceled_tasks": 0
         },
@@ -206,27 +206,27 @@
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-07-24T17:24:57.220Z"
+      "checkedAt": "2026-07-24T17:32:39.730Z"
     },
     "errors": []
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-07-24T17:24:57.596Z",
+      "capturedAt": "2026-07-24T17:32:40.282Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-07-24T17:24:57.555Z",
+        "retrievedAt": "2026-07-24T17:32:40.220Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
-          "checkpoint_id": "checkpoint_18c50aef-0ef2-4d19-9b58-6fe7525c6bed",
-          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-operational-6\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":288,\"queued\":159,\"extracting\":7,\"retrying\":0,\"failed\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":89,\"QUEUED\":41},\"outputCount\":89,\"latestOutputAt\":\"2026-07-24T17:24:19.640Z\",\"latestActivityAt\":\"2026-07-24T17:24:35.692Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
-          "summary": "Mason Forge live state: 13 projects, 454 files, 0 running, 41 queued, 89 completed, 89 outputs, 288 files extracted.",
+          "checkpoint_id": "checkpoint_99430fc6-1b27-491d-a3a9-16fe94e6eb3d",
+          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-operational-6\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":316,\"queued\":127,\"extracting\":11,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":94,\"QUEUED\":44,\"RUNNING\":2},\"outputCount\":94,\"latestOutputAt\":\"2026-07-24T17:30:08.134Z\",\"latestActivityAt\":\"2026-07-24T17:32:30.664Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
+          "summary": "Mason Forge live state: 13 projects, 454 files, 2 running, 44 queued, 94 completed, 94 outputs, 316 files extracted.",
           "verification_status": "VERIFIED",
           "source": "LIVE D1 VERIFIED STATE",
-          "version": 937,
+          "version": 986,
           "created_at": "2026-07-24T15:05:09.403Z",
-          "updated_at": "2026-07-24T17:24:36.269Z",
+          "updated_at": "2026-07-24T17:32:39.849Z",
           "state": {
             "system": "Mason Forge Cloud",
             "deployment": "LIVE",
@@ -235,301 +235,23 @@
             "files": 454,
             "extraction": {
               "total": 454,
-              "extracted": 288,
-              "queued": 159,
-              "extracting": 7,
-              "retrying": 0,
-              "failed": 0,
-              "pending": 0,
-              "accounted": 454
-            },
-            "taskTotals": {
-              "COMPLETED": 89,
-              "QUEUED": 41
-            },
-            "outputCount": 89,
-            "latestOutputAt": "2026-07-24T17:24:19.640Z",
-            "latestActivityAt": "2026-07-24T17:24:35.692Z",
-            "staleRunningTasks": 0,
-            "staleExtractionJobs": 0,
-            "evidenceRule": "Active work requires RUNNING task evidence or completed department outputs."
-          }
-        },
-        "projects": [
-          {
-            "id": 13,
-            "name": "SSX",
-            "location": null,
-            "client": null,
-            "status": "INTAKE",
-            "review_status": "NEEDS REVIEW",
-            "file_count": 0,
-            "running_tasks": 0,
-            "queued_tasks": 0,
-            "completed_tasks": 5,
-            "failed_tasks": 0,
-            "blocked_tasks": 0,
-            "canceled_tasks": 0
-          },
-          {
-            "id": 12,
-            "name": "test",
-            "location": null,
-            "client": null,
-            "status": "INTAKE",
-            "review_status": "NEEDS REVIEW",
-            "file_count": 0,
-            "running_tasks": 0,
-            "queued_tasks": 0,
-            "completed_tasks": 5,
-            "failed_tasks": 0,
-            "blocked_tasks": 0,
-            "canceled_tasks": 0
-          },
-          {
-            "id": 11,
-            "name": "Jericho, NY AGC Hotel",
-            "location": "Jericho, NY",
-            "client": "AGC",
-            "status": "INTAKE",
-            "review_status": "NEEDS REVIEW",
-            "file_count": 0,
-            "running_tasks": 0,
-            "queued_tasks": 0,
-            "completed_tasks": 5,
-            "failed_tasks": 0,
-            "blocked_tasks": 0,
-            "canceled_tasks": 0
-          },
-          {
-            "id": 10,
-            "name": "TMC Helix Park Autograph Hotel by Marriott",
-            "location": "Houston, TX",
-            "client": "Concord Hospitality / W.A. Randolph - Burton Construction JV",
-            "status": "INTAKE",
-            "review_status": "NEEDS REVIEW",
-            "file_count": 0,
-            "running_tasks": 0,
-            "queued_tasks": 0,
-            "completed_tasks": 5,
-            "failed_tasks": 0,
-            "blocked_tasks": 0,
-            "canceled_tasks": 0
-          },
-          {
-            "id": 9,
-            "name": "Walmart 1490.1011 - Rockford, IL - SUP-SP-2027",
-            "location": "Rockford, IL",
-            "client": "Walmart",
-            "status": "INTAKE",
-            "review_status": "NEEDS REVIEW",
-            "file_count": 0,
-            "running_tasks": 0,
-            "queued_tasks": 0,
-            "completed_tasks": 5,
-            "failed_tasks": 0,
-            "blocked_tasks": 0,
-            "canceled_tasks": 0
-          },
-          {
-            "id": 8,
-            "name": "Kensington Parking Deck Schaumburg, IL",
-            "location": null,
-            "client": null,
-            "status": "INTAKE",
-            "review_status": "NEEDS REVIEW",
-            "file_count": 0,
-            "running_tasks": 0,
-            "queued_tasks": 0,
-            "completed_tasks": 5,
-            "failed_tasks": 0,
-            "blocked_tasks": 0,
-            "canceled_tasks": 0
-          },
-          {
-            "id": 7,
-            "name": "Autograph by Marriott, Jericho",
-            "location": null,
-            "client": null,
-            "status": "INTAKE",
-            "review_status": "NEEDS REVIEW",
-            "file_count": 0,
-            "running_tasks": 0,
-            "queued_tasks": 0,
-            "completed_tasks": 5,
-            "failed_tasks": 0,
-            "blocked_tasks": 0,
-            "canceled_tasks": 0
-          },
-          {
-            "id": 6,
-            "name": "Dayton Convention Center Hotel",
-            "location": null,
-            "client": null,
-            "status": "INTAKE",
-            "review_status": "NEEDS REVIEW",
-            "file_count": 0,
-            "running_tasks": 0,
-            "queued_tasks": 0,
-            "completed_tasks": 5,
-            "failed_tasks": 0,
-            "blocked_tasks": 0,
-            "canceled_tasks": 0
-          },
-          {
-            "id": 5,
-            "name": "Bask StudioRes Estero",
-            "location": "22910 Lyden Drive, Estero FL 33928",
-            "client": "Tulip Associates, LLC",
-            "status": "INTAKE",
-            "review_status": "NEEDS REVIEW",
-            "file_count": 162,
-            "running_tasks": 0,
-            "queued_tasks": 18,
-            "completed_tasks": 12,
-            "failed_tasks": 0,
-            "blocked_tasks": 0,
-            "canceled_tasks": 0
-          },
-          {
-            "id": 4,
-            "name": "Bask Fairfield Inn Tampa",
-            "location": "9301 N. 29th Street, Tampa FL 33612",
-            "client": null,
-            "status": "INTAKE",
-            "review_status": "NEEDS REVIEW",
-            "file_count": 292,
-            "running_tasks": 1,
-            "queued_tasks": 22,
-            "completed_tasks": 22,
-            "failed_tasks": 0,
-            "blocked_tasks": 0,
-            "canceled_tasks": 0
-          },
-          {
-            "id": 3,
-            "name": "Bask Development",
-            "location": null,
-            "client": null,
-            "status": "INTAKE",
-            "review_status": "NEEDS REVIEW",
-            "file_count": 0,
-            "running_tasks": 0,
-            "queued_tasks": 0,
-            "completed_tasks": 5,
-            "failed_tasks": 0,
-            "blocked_tasks": 0,
-            "canceled_tasks": 0
-          },
-          {
-            "id": 2,
-            "name": "Priority 08 - Enterprise Operations",
-            "location": "National / Multi-Site",
-            "client": "SubSource Exchange",
-            "status": "INTAKE",
-            "review_status": "NEEDS REVIEW",
-            "file_count": 0,
-            "running_tasks": 0,
-            "queued_tasks": 0,
-            "completed_tasks": 5,
-            "failed_tasks": 0,
-            "blocked_tasks": 0,
-            "canceled_tasks": 0
-          },
-          {
-            "id": 1,
-            "name": "Walmart 1490.1011 - Rockford_ IL - SUP-SP-2027",
-            "location": null,
-            "client": null,
-            "status": "INTAKE",
-            "review_status": "NEEDS REVIEW",
-            "file_count": 0,
-            "running_tasks": 0,
-            "queued_tasks": 0,
-            "completed_tasks": 5,
-            "failed_tasks": 0,
-            "blocked_tasks": 0,
-            "canceled_tasks": 0
-          }
-        ],
-        "taskTotals": {
-          "COMPLETED": 89,
-          "QUEUED": 40,
-          "RUNNING": 1
-        },
-        "outputCount": 89,
-        "evidenceRule": "Do not claim active work without RUNNING task events or completed department outputs.",
-        "taskTotalsRows": [
-          {
-            "status": "COMPLETED",
-            "count": 89
-          },
-          {
-            "status": "QUEUED",
-            "count": 40
-          },
-          {
-            "status": "RUNNING",
-            "count": 1
-          }
-        ]
-      },
-      "errors": [],
-      "globalTasks": {
-        "COMPLETED": 89,
-        "QUEUED": 40,
-        "RUNNING": 1
-      },
-      "projectTasks": {
-        "QUEUED": 40,
-        "RUNNING": 1,
-        "BLOCKED": 0,
-        "COMPLETED": 89,
-        "FAILED": 0,
-        "CANCELED": 0
-      },
-      "projectFiles": 454
-    },
-    {
-      "capturedAt": "2026-07-24T17:26:28.311Z",
-      "httpStatus": 200,
-      "data": {
-        "retrievedAt": "2026-07-24T17:26:28.292Z",
-        "continuity": {
-          "scope_type": "system",
-          "scope_id": "mason-forge",
-          "checkpoint_id": "checkpoint_804953dd-4af5-4488-8486-74c70f0b838c",
-          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-operational-6\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":292,\"queued\":151,\"extracting\":11,\"retrying\":0,\"failed\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":90,\"QUEUED\":44,\"RUNNING\":1},\"outputCount\":90,\"latestOutputAt\":\"2026-07-24T17:26:19.351Z\",\"latestActivityAt\":\"2026-07-24T17:26:19.351Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
-          "summary": "Mason Forge live state: 13 projects, 454 files, 1 running, 44 queued, 90 completed, 90 outputs, 292 files extracted.",
-          "verification_status": "VERIFIED",
-          "source": "LIVE D1 VERIFIED STATE",
-          "version": 946,
-          "created_at": "2026-07-24T15:05:09.403Z",
-          "updated_at": "2026-07-24T17:26:19.865Z",
-          "state": {
-            "system": "Mason Forge Cloud",
-            "deployment": "LIVE",
-            "releaseId": "2026-07-24-operational-6",
-            "projects": 13,
-            "files": 454,
-            "extraction": {
-              "total": 454,
-              "extracted": 292,
-              "queued": 151,
+              "extracted": 316,
+              "queued": 127,
               "extracting": 11,
               "retrying": 0,
               "failed": 0,
+              "routedReview": 0,
               "pending": 0,
               "accounted": 454
             },
             "taskTotals": {
-              "COMPLETED": 90,
+              "COMPLETED": 94,
               "QUEUED": 44,
-              "RUNNING": 1
+              "RUNNING": 2
             },
-            "outputCount": 90,
-            "latestOutputAt": "2026-07-24T17:26:19.351Z",
-            "latestActivityAt": "2026-07-24T17:26:19.351Z",
+            "outputCount": 94,
+            "latestOutputAt": "2026-07-24T17:30:08.134Z",
+            "latestActivityAt": "2026-07-24T17:32:30.664Z",
             "staleRunningTasks": 0,
             "staleExtractionJobs": 0,
             "evidenceRule": "Active work requires RUNNING task evidence or completed department outputs."
@@ -665,8 +387,8 @@
             "review_status": "NEEDS REVIEW",
             "file_count": 162,
             "running_tasks": 1,
-            "queued_tasks": 17,
-            "completed_tasks": 12,
+            "queued_tasks": 21,
+            "completed_tasks": 13,
             "failed_tasks": 0,
             "blocked_tasks": 0,
             "canceled_tasks": 0
@@ -680,8 +402,8 @@
             "review_status": "NEEDS REVIEW",
             "file_count": 292,
             "running_tasks": 1,
-            "queued_tasks": 26,
-            "completed_tasks": 23,
+            "queued_tasks": 23,
+            "completed_tasks": 26,
             "failed_tasks": 0,
             "blocked_tasks": 0,
             "canceled_tasks": 0
@@ -733,20 +455,20 @@
           }
         ],
         "taskTotals": {
-          "COMPLETED": 90,
-          "QUEUED": 43,
+          "COMPLETED": 94,
+          "QUEUED": 44,
           "RUNNING": 2
         },
-        "outputCount": 90,
+        "outputCount": 94,
         "evidenceRule": "Do not claim active work without RUNNING task events or completed department outputs.",
         "taskTotalsRows": [
           {
             "status": "COMPLETED",
-            "count": 90
+            "count": 94
           },
           {
             "status": "QUEUED",
-            "count": 43
+            "count": 44
           },
           {
             "status": "RUNNING",
@@ -756,15 +478,296 @@
       },
       "errors": [],
       "globalTasks": {
-        "COMPLETED": 90,
-        "QUEUED": 43,
+        "COMPLETED": 94,
+        "QUEUED": 44,
         "RUNNING": 2
       },
       "projectTasks": {
-        "QUEUED": 43,
+        "QUEUED": 44,
         "RUNNING": 2,
         "BLOCKED": 0,
-        "COMPLETED": 90,
+        "COMPLETED": 94,
+        "FAILED": 0,
+        "CANCELED": 0
+      },
+      "projectFiles": 454
+    },
+    {
+      "capturedAt": "2026-07-24T17:34:41.891Z",
+      "httpStatus": 200,
+      "data": {
+        "retrievedAt": "2026-07-24T17:34:41.852Z",
+        "continuity": {
+          "scope_type": "system",
+          "scope_id": "mason-forge",
+          "checkpoint_id": "checkpoint_24ec6000-0cd5-4c7e-a665-dbe6f71b9e7d",
+          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-operational-6\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":324,\"queued\":117,\"extracting\":13,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":95,\"QUEUED\":41,\"RUNNING\":4},\"outputCount\":95,\"latestOutputAt\":\"2026-07-24T17:34:32.284Z\",\"latestActivityAt\":\"2026-07-24T17:34:38.666Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
+          "summary": "Mason Forge live state: 13 projects, 454 files, 4 running, 41 queued, 95 completed, 95 outputs, 324 files extracted.",
+          "verification_status": "VERIFIED",
+          "source": "LIVE D1 VERIFIED STATE",
+          "version": 1006,
+          "created_at": "2026-07-24T15:05:09.403Z",
+          "updated_at": "2026-07-24T17:34:39.451Z",
+          "state": {
+            "system": "Mason Forge Cloud",
+            "deployment": "LIVE",
+            "releaseId": "2026-07-24-operational-6",
+            "projects": 13,
+            "files": 454,
+            "extraction": {
+              "total": 454,
+              "extracted": 324,
+              "queued": 117,
+              "extracting": 13,
+              "retrying": 0,
+              "failed": 0,
+              "routedReview": 0,
+              "pending": 0,
+              "accounted": 454
+            },
+            "taskTotals": {
+              "COMPLETED": 95,
+              "QUEUED": 41,
+              "RUNNING": 4
+            },
+            "outputCount": 95,
+            "latestOutputAt": "2026-07-24T17:34:32.284Z",
+            "latestActivityAt": "2026-07-24T17:34:38.666Z",
+            "staleRunningTasks": 0,
+            "staleExtractionJobs": 0,
+            "evidenceRule": "Active work requires RUNNING task evidence or completed department outputs."
+          }
+        },
+        "projects": [
+          {
+            "id": 13,
+            "name": "SSX",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 12,
+            "name": "test",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 11,
+            "name": "Jericho, NY AGC Hotel",
+            "location": "Jericho, NY",
+            "client": "AGC",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 10,
+            "name": "TMC Helix Park Autograph Hotel by Marriott",
+            "location": "Houston, TX",
+            "client": "Concord Hospitality / W.A. Randolph - Burton Construction JV",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 9,
+            "name": "Walmart 1490.1011 - Rockford, IL - SUP-SP-2027",
+            "location": "Rockford, IL",
+            "client": "Walmart",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 8,
+            "name": "Kensington Parking Deck Schaumburg, IL",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 7,
+            "name": "Autograph by Marriott, Jericho",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 6,
+            "name": "Dayton Convention Center Hotel",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 5,
+            "name": "Bask StudioRes Estero",
+            "location": "22910 Lyden Drive, Estero FL 33928",
+            "client": "Tulip Associates, LLC",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 162,
+            "running_tasks": 2,
+            "queued_tasks": 19,
+            "completed_tasks": 14,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 4,
+            "name": "Bask Fairfield Inn Tampa",
+            "location": "9301 N. 29th Street, Tampa FL 33612",
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 292,
+            "running_tasks": 2,
+            "queued_tasks": 22,
+            "completed_tasks": 26,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 3,
+            "name": "Bask Development",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 2,
+            "name": "Priority 08 - Enterprise Operations",
+            "location": "National / Multi-Site",
+            "client": "SubSource Exchange",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 1,
+            "name": "Walmart 1490.1011 - Rockford_ IL - SUP-SP-2027",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          }
+        ],
+        "taskTotals": {
+          "COMPLETED": 95,
+          "QUEUED": 41,
+          "RUNNING": 4
+        },
+        "outputCount": 95,
+        "evidenceRule": "Do not claim active work without RUNNING task events or completed department outputs.",
+        "taskTotalsRows": [
+          {
+            "status": "COMPLETED",
+            "count": 95
+          },
+          {
+            "status": "QUEUED",
+            "count": 41
+          },
+          {
+            "status": "RUNNING",
+            "count": 4
+          }
+        ]
+      },
+      "errors": [],
+      "globalTasks": {
+        "COMPLETED": 95,
+        "QUEUED": 41,
+        "RUNNING": 4
+      },
+      "projectTasks": {
+        "QUEUED": 41,
+        "RUNNING": 4,
+        "BLOCKED": 0,
+        "COMPLETED": 95,
         "FAILED": 0,
         "CANCELED": 0
       },
@@ -776,19 +779,21 @@
     "progressionProved": true,
     "timestampsFresh": true,
     "outputsNondecreasing": true,
-    "firstOutputCount": 89,
-    "secondOutputCount": 90,
-    "firstCompleted": 89,
-    "secondCompleted": 90
+    "firstOutputCount": 94,
+    "secondOutputCount": 95,
+    "firstCompleted": 94,
+    "secondCompleted": 95
   },
   "extractionDiagnostics": {
     "4": {
       "httpStatus": 200,
       "count": 292,
       "statusCounts": {
-        "EXTRACTED - NEEDS HUMAN REVIEW": 180,
+        "EXTRACTED - NEEDS HUMAN REVIEW": 170,
         "EXTRACTING": 10,
-        "EXTRACTION QUEUED": 102
+        "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 3,
+        "EXTRACTION QUEUED": 83,
+        "EXTRACTED - VISUAL REVIEW REQUIRED: IMAGE": 26
       },
       "actionableSamples": [
         {
@@ -808,44 +813,12 @@
           "reviewStatus": "EXTRACTING"
         },
         {
-          "id": 53,
-          "fileName": "A-610-WINDOW-SCHEDULE-&-DETAILS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-610-WINDOW-SCHEDULE-&-DETAILS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2432943,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 54,
-          "fileName": "A-800-FOOD-SERVICE-EQUIPMENT-PLANS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-800-FOOD-SERVICE-EQUIPMENT-PLANS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2211211,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
           "id": 55,
           "fileName": "A-801-FOOD-SERVICE-EQUIPMENT-ELEVATIONS-Rev.01.pdf",
           "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-801-FOOD-SERVICE-EQUIPMENT-ELEVATIONS-Rev.01.pdf",
           "fileType": "pdf",
           "sizeBytes": 2113606,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 56,
-          "fileName": "A-802-THE-CORNER-MARKET-EQUIPMENT-PLANS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-802-THE-CORNER-MARKET-EQUIPMENT-PLANS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2102940,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 57,
-          "fileName": "A-804-ENLARGED-PLANS-UPPER-FLOOR-LOBBIES-&-CORRIDORS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-804-ENLARGED-PLANS-UPPER-FLOOR-LOBBIES-&-CORRIDORS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2908261,
-          "reviewStatus": "EXTRACTION QUEUED"
+          "reviewStatus": "EXTRACTING"
         },
         {
           "id": 58,
@@ -853,23 +826,7 @@
           "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-805-TYPICAL-UPPER-FLOOR-CORRIDOR-RCP-Rev.01.pdf",
           "fileType": "pdf",
           "sizeBytes": 2588118,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 59,
-          "fileName": "A-806-GUEST-LAUNDRY-AND-DISPENSER-PLANS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-806-GUEST-LAUNDRY-AND-DISPENSER-PLANS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2596559,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 60,
-          "fileName": "A-807-GUEST-LAUNDRY-AND-ICE-DISPENSER-EQUIPMENT-PLANS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-807-GUEST-LAUNDRY-AND-ICE-DISPENSER-EQUIPMENT-PLANS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2128638,
-          "reviewStatus": "EXTRACTION QUEUED"
+          "reviewStatus": "EXTRACTING"
         },
         {
           "id": 61,
@@ -877,7 +834,7 @@
           "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-808-TYPICAL-STAIRS-Rev.01.pdf",
           "fileType": "pdf",
           "sizeBytes": 2267210,
-          "reviewStatus": "EXTRACTION QUEUED"
+          "reviewStatus": "EXTRACTING"
         },
         {
           "id": 62,
@@ -1416,52 +1373,12 @@
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
-          "id": 193,
-          "fileName": "ID424-KING-SUITE-ADA-GUESTROOM-Rev.1.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Interior/ID424-KING-SUITE-ADA-GUESTROOM-Rev.1.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 248483,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 195,
-          "fileName": "ID431-QUEEN-QUEEN-ADA-GUESTROOM-Rev.1.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Interior/ID431-QUEEN-QUEEN-ADA-GUESTROOM-Rev.1.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 227191,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
           "id": 197,
           "fileName": "ID433-QUEEN-QUEEN-SUITE-ADA-GUESTROOM-Rev.1.pdf",
           "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Interior/ID433-QUEEN-QUEEN-SUITE-ADA-GUESTROOM-Rev.1.pdf",
           "fileType": "pdf",
           "sizeBytes": 249867,
           "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 199,
-          "fileName": "ID441-GUESTROOM-ADA-RESTROOMS-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Interior/ID441-GUESTROOM-ADA-RESTROOMS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 197281,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 202,
-          "fileName": "ID501-DETAILS---FEATURE-WALL-Rev.1.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Interior/ID501-DETAILS---FEATURE-WALL-Rev.1.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 813374,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 204,
-          "fileName": "ID503-DETAILS---QUICK-PRINT-AND-PUBLIC-RESTROOMS-Rev.1.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Interior/ID503-DETAILS---QUICK-PRINT-AND-PUBLIC-RESTROOMS-Rev.1.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 234834,
-          "reviewStatus": "EXTRACTING"
         },
         {
           "id": 205,
@@ -1480,22 +1397,6 @@
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
-          "id": 215,
-          "fileName": "M1.1-FIRST-FLOOR-MECHANICAL-PLAN-Rev.10.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Mechanical/M1.1-FIRST-FLOOR-MECHANICAL-PLAN-Rev.10.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 700578,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 216,
-          "fileName": "M1.2-SECOND-FLOOR-MECHANICAL-PLAN-Rev.05.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Mechanical/M1.2-SECOND-FLOOR-MECHANICAL-PLAN-Rev.05.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 407617,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
           "id": 219,
           "fileName": "M1.5-FIFTH-FLOOR-MECHANICAL-PLAN-Rev.05.pdf",
           "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Mechanical/M1.5-FIFTH-FLOOR-MECHANICAL-PLAN-Rev.05.pdf",
@@ -1510,38 +1411,6 @@
           "fileType": "pdf",
           "sizeBytes": 2027715,
           "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 225,
-          "fileName": "P1.1-FIRST-FLOOR-SANITARY-PLAN-Rev.10.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Plumbing/P1.1-FIRST-FLOOR-SANITARY-PLAN-Rev.10.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 695685,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 227,
-          "fileName": "P1.3-THIRD-FLOOR-PLUMBING-PLAN-Rev.08.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Plumbing/P1.3-THIRD-FLOOR-PLUMBING-PLAN-Rev.08.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 462695,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 228,
-          "fileName": "P1.4-FOURTH-FLOOR-PLUMBING-PLAN-Rev.08.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Plumbing/P1.4-FOURTH-FLOOR-PLUMBING-PLAN-Rev.08.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 465573,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 229,
-          "fileName": "P1.5-FIFTH-FLOOR-PLUMBING-PLAN-Rev.08.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Plumbing/P1.5-FIFTH-FLOOR-PLUMBING-PLAN-Rev.08.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 464436,
-          "reviewStatus": "EXTRACTION QUEUED"
         },
         {
           "id": 236,
@@ -1590,6 +1459,86 @@
           "fileType": "jpeg",
           "sizeBytes": 2533564,
           "reviewStatus": "EXTRACTION QUEUED"
+        },
+        {
+          "id": 276,
+          "fileName": "9B34DD57-83E8-4EEF-9A54-9D666A8D8C45.jpeg",
+          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/9B34DD57-83E8-4EEF-9A54-9D666A8D8C45.jpeg",
+          "fileType": "jpeg",
+          "sizeBytes": 3221016,
+          "reviewStatus": "EXTRACTING"
+        },
+        {
+          "id": 277,
+          "fileName": "A5F446DC-4EE5-4657-A65B-0927AD18E065.jpeg",
+          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/A5F446DC-4EE5-4657-A65B-0927AD18E065.jpeg",
+          "fileType": "jpeg",
+          "sizeBytes": 2863402,
+          "reviewStatus": "EXTRACTING"
+        },
+        {
+          "id": 278,
+          "fileName": "A8C68E62-BCAA-489C-A1EE-0076A0C752F1.jpeg",
+          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/A8C68E62-BCAA-489C-A1EE-0076A0C752F1.jpeg",
+          "fileType": "jpeg",
+          "sizeBytes": 3132576,
+          "reviewStatus": "EXTRACTING"
+        },
+        {
+          "id": 279,
+          "fileName": "A9015BB8-075B-4428-B5FC-843E4394157A.jpeg",
+          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/A9015BB8-075B-4428-B5FC-843E4394157A.jpeg",
+          "fileType": "jpeg",
+          "sizeBytes": 3206893,
+          "reviewStatus": "EXTRACTION QUEUED"
+        },
+        {
+          "id": 282,
+          "fileName": "BB30C698-1ADB-4A22-BEC7-9FB30B5B5C01.jpeg",
+          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/BB30C698-1ADB-4A22-BEC7-9FB30B5B5C01.jpeg",
+          "fileType": "jpeg",
+          "sizeBytes": 3040111,
+          "reviewStatus": "EXTRACTION QUEUED"
+        },
+        {
+          "id": 284,
+          "fileName": "C8D4F6F0-064A-4A95-880B-69211874C506.jpeg",
+          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/C8D4F6F0-064A-4A95-880B-69211874C506.jpeg",
+          "fileType": "jpeg",
+          "sizeBytes": 3424834,
+          "reviewStatus": "EXTRACTING"
+        },
+        {
+          "id": 285,
+          "fileName": "EA297AAC-F4CB-48D9-9619-7317DF7135C3.jpeg",
+          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/EA297AAC-F4CB-48D9-9619-7317DF7135C3.jpeg",
+          "fileType": "jpeg",
+          "sizeBytes": 3176034,
+          "reviewStatus": "EXTRACTION QUEUED"
+        },
+        {
+          "id": 286,
+          "fileName": "EC31CC24-6C74-44CD-99A3-09E6125E6843.jpeg",
+          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/EC31CC24-6C74-44CD-99A3-09E6125E6843.jpeg",
+          "fileType": "jpeg",
+          "sizeBytes": 2966179,
+          "reviewStatus": "EXTRACTION QUEUED"
+        },
+        {
+          "id": 287,
+          "fileName": "F12AEBFC-5DFC-4F8D-9566-22B716A7E557.jpeg",
+          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/F12AEBFC-5DFC-4F8D-9566-22B716A7E557.jpeg",
+          "fileType": "jpeg",
+          "sizeBytes": 3421479,
+          "reviewStatus": "EXTRACTION QUEUED"
+        },
+        {
+          "id": 289,
+          "fileName": "F8577051-D3DA-4B5D-BBEC-55B199CDE801.jpeg",
+          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/F8577051-D3DA-4B5D-BBEC-55B199CDE801.jpeg",
+          "fileType": "jpeg",
+          "sizeBytes": 2258768,
+          "reviewStatus": "EXTRACTION QUEUED"
         }
       ]
     },
@@ -1597,9 +1546,11 @@
       "httpStatus": 200,
       "count": 162,
       "statusCounts": {
-        "EXTRACTION QUEUED": 49,
-        "EXTRACTED - NEEDS HUMAN REVIEW": 112,
-        "EXTRACTING": 1
+        "EXTRACTION QUEUED": 34,
+        "EXTRACTED - NEEDS HUMAN REVIEW": 122,
+        "EXTRACTED - MANUAL REVIEW REQUIRED: DOCUMENT": 1,
+        "EXTRACTING": 3,
+        "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 2
       },
       "actionableSamples": [
         {
@@ -1616,22 +1567,6 @@
           "relativePath": "01 - Department Work/Carol Contacts/Project Contact Register.json",
           "fileType": "json",
           "sizeBytes": 104,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 300,
-          "fileName": "Investigation Status.json",
-          "relativePath": "01 - Department Work/Mason Holmes/Investigation Status.json",
-          "fileType": "json",
-          "sizeBytes": 10930,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 303,
-          "fileName": "Document Register.md",
-          "relativePath": "01 - Department Work/Peter Files/Document Register.md",
-          "fileType": "md",
-          "sizeBytes": 21795,
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
@@ -1672,7 +1607,7 @@
           "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A0.10-4TH-FLOOR-LIFE-SAFETY-PLAN-Rev.0.pdf",
           "fileType": "pdf",
           "sizeBytes": 344527,
-          "reviewStatus": "EXTRACTION QUEUED"
+          "reviewStatus": "EXTRACTING"
         },
         {
           "id": 310,
@@ -1728,7 +1663,7 @@
           "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.3-1ST-FLOOR-OVERALL-PLAN-Rev.0.pdf",
           "fileType": "pdf",
           "sizeBytes": 502120,
-          "reviewStatus": "EXTRACTION QUEUED"
+          "reviewStatus": "EXTRACTING"
         },
         {
           "id": 323,
@@ -1752,14 +1687,6 @@
           "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.4-2ND-FLOOR-OVERALL-PLAN-Rev.0.pdf",
           "fileType": "pdf",
           "sizeBytes": 333864,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 326,
-          "fileName": "A1.4A-2ND-FLOOR,-WING-A-INTERIOR-DIMENSIONED-AND-NOTED-FLOOR-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.4A-2ND-FLOOR,-WING-A-INTERIOR-DIMENSIONED-AND-NOTED-FLOOR-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 281747,
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
@@ -1835,14 +1762,6 @@
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
-          "id": 386,
-          "fileName": "E1.5-ROOF-ELECTRICAL---POWER-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Electrical/E1.5-ROOF-ELECTRICAL---POWER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 363678,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
           "id": 389,
           "fileName": "E2.3-THIRD-FLOOR-ELECTRICAL---LIGHTING-Rev.0.pdf",
           "relativePath": "Bask StudioRes Estero/Drawings/Electrical/E2.3-THIRD-FLOOR-ELECTRICAL---LIGHTING-Rev.0.pdf",
@@ -1856,30 +1775,6 @@
           "relativePath": "Bask StudioRes Estero/Drawings/Fire-Protection/FP1.1-1ST-&-2ND-FLOOR-FIRE-PROTECTION-PLANS-Rev.0.pdf",
           "fileType": "pdf",
           "sizeBytes": 629950,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 407,
-          "fileName": "IR-3.03-IRRIGATION-DETAILS,-NOTES,-&-GUIDELINES-(Sheet-4-of-4)-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Landscape/IR-3.03-IRRIGATION-DETAILS,-NOTES,-&-GUIDELINES-(Sheet-4-of-4)-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 1461533,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 411,
-          "fileName": "M1.4-FOURTH-FLOOR-MECHANICAL-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Mechanical/M1.4-FOURTH-FLOOR-MECHANICAL-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 1507686,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 418,
-          "fileName": "P1.4-4TH-FLOOR-PLUMBING-PLAN---SANITARY-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Plumbing/P1.4-4TH-FLOOR-PLUMBING-PLAN---SANITARY-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 434404,
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
@@ -1915,35 +1810,11 @@
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
-          "id": 433,
-          "fileName": "P9.0-GENERAL-NOTES-&-LEGEND-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Plumbing/P9.0-GENERAL-NOTES-&-LEGEND-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 703002,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
           "id": 434,
           "fileName": "LE-1.00-OUTDOOR-LIGHTING-PHOTOMETRIC-PLAN-Photometric-Plan-Applications-Rev.0.pdf",
           "relativePath": "Bask StudioRes Estero/Drawings/Site-Lighting/LE-1.00-OUTDOOR-LIGHTING-PHOTOMETRIC-PLAN-Photometric-Plan-Applications-Rev.0.pdf",
           "fileType": "pdf",
           "sizeBytes": 2858238,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 437,
-          "fileName": "S.000-COVER-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Structural/S.000-COVER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 1144163,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 438,
-          "fileName": "S.001-GENERAL-NOTES-7-REQUIREMENTS-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Structural/S.001-GENERAL-NOTES-7-REQUIREMENTS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 246092,
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
@@ -1955,35 +1826,11 @@
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
-          "id": 445,
-          "fileName": "S.105-ROOF-FRAMING-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Structural/S.105-ROOF-FRAMING-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 300890,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
           "id": 447,
           "fileName": "S.202-SECTIONS-&-DETAILS-Rev.0.pdf",
           "relativePath": "Bask StudioRes Estero/Drawings/Structural/S.202-SECTIONS-&-DETAILS-Rev.0.pdf",
           "fileType": "pdf",
           "sizeBytes": 424857,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 449,
-          "fileName": "S.204-SECTIONS-&-DETAILS-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Structural/S.204-SECTIONS-&-DETAILS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 335312,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 450,
-          "fileName": "S.205-CMU-SECTIONS-&-DETAILS-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Structural/S.205-CMU-SECTIONS-&-DETAILS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 514435,
           "reviewStatus": "EXTRACTION QUEUED"
         },
         {
@@ -2006,6 +1853,6 @@
     }
   },
   "errors": [],
-  "sourceCommit": "7b781d86fa648b18f3b3e0779daee0aab1a21ef3",
-  "workflowRunId": "30112875708"
+  "sourceCommit": "3f08bf59a27bf6d1fe37b87b69bba81261caec9c",
+  "workflowRunId": "30113377958"
 }

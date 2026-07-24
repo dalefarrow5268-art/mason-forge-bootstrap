@@ -1,0 +1,3 @@
+Deploy Mason Forge Cloud release 2026-07-24-oauth-compatibility-11.
+Source commit: b6963f84cb86ae5ce855fa3a982d955a7361c610
+Reason: Explicitly approved ChatGPT OAuth compatibility deployment.

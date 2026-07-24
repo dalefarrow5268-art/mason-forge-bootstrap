@@ -75,6 +75,10 @@ export async function ensureRuntimeSchema(env) {
       )`),
     env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS department_outputs_one_per_task
       ON department_outputs(task_id)`),
+    env.DB.prepare(`UPDATE project_files
+      SET review_status = 'NEEDS EXTRACTION', updated_at = datetime('now')
+      WHERE extracted_text_key IS NULL
+        AND review_status LIKE 'EXTRACTION FAILED: OpenAI 400: Invalid %file_data%'`),
   ]);
 
   ready = true;

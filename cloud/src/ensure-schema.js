@@ -111,6 +111,38 @@ export async function ensureRuntimeSchema(env) {
     )`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS mcp_download_grants_expiry
       ON mcp_download_grants(expires_at, revoked_at)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS extraction_review_queue (
+      file_id INTEGER PRIMARY KEY REFERENCES project_files(id) ON DELETE CASCADE,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      review_type TEXT NOT NULL,
+      source_kind TEXT NOT NULL,
+      reason TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'PENDING',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS extraction_review_queue_project
+      ON extraction_review_queue(project_id, status, review_type)`),
+    env.DB.prepare(`INSERT OR IGNORE INTO extraction_review_queue
+      (file_id, project_id, review_type, source_kind, reason, status, created_at, updated_at)
+      SELECT id, project_id, 'VISUAL', 'IMAGE',
+        'Image evidence requires visual verification.', 'PENDING', datetime('now'), datetime('now')
+      FROM project_files
+      WHERE extracted_text_key IS NOT NULL
+        AND (
+          lower(file_name) GLOB '*.jpeg' OR lower(file_name) GLOB '*.jpg'
+          OR lower(file_name) GLOB '*.png' OR lower(file_name) GLOB '*.webp'
+          OR lower(file_name) GLOB '*.gif'
+        )`),
+    env.DB.prepare(`UPDATE project_files
+      SET review_status = 'EXTRACTED - VISUAL REVIEW REQUIRED: IMAGE', updated_at = datetime('now')
+      WHERE extracted_text_key IS NOT NULL
+        AND review_status = 'EXTRACTED - NEEDS HUMAN REVIEW'
+        AND (
+          lower(file_name) GLOB '*.jpeg' OR lower(file_name) GLOB '*.jpg'
+          OR lower(file_name) GLOB '*.png' OR lower(file_name) GLOB '*.webp'
+          OR lower(file_name) GLOB '*.gif'
+        )`),
     env.DB.prepare(`DELETE FROM department_outputs
       WHERE rowid NOT IN (
         SELECT MIN(rowid) FROM department_outputs GROUP BY task_id

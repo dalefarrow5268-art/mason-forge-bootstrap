@@ -18,7 +18,9 @@ export async function ensureProjectContinuity(projectId, env) {
       SUM(CASE WHEN extracted_text_key IS NULL AND review_status='EXTRACTING' THEN 1 ELSE 0 END) extracting,
       SUM(CASE WHEN extracted_text_key IS NULL AND review_status='EXTRACTION RETRYING' THEN 1 ELSE 0 END) retrying,
       SUM(CASE WHEN extracted_text_key IS NULL AND review_status LIKE 'EXTRACTION FAILED:%' THEN 1 ELSE 0 END) failed,
+      SUM(CASE WHEN extracted_text_key IS NULL AND review_status LIKE '%REVIEW REQUIRED:%' THEN 1 ELSE 0 END) routed_review,
       SUM(CASE WHEN extracted_text_key IS NULL AND review_status NOT LIKE 'EXTRACTION FAILED:%'
+        AND review_status NOT LIKE '%REVIEW REQUIRED:%'
         AND review_status NOT IN ('EXTRACTION QUEUED','EXTRACTING','EXTRACTION RETRYING') THEN 1 ELSE 0 END) pending
       FROM project_files WHERE project_id=?`).bind(projectId).first(),
     env.DB.prepare("SELECT status, COUNT(*) count FROM department_tasks WHERE project_id=? GROUP BY status ORDER BY status").bind(projectId).all(),
@@ -37,9 +39,11 @@ export async function ensureProjectContinuity(projectId, env) {
     extracting: number(files?.extracting),
     retrying: number(files?.retrying),
     failed: number(files?.failed),
+    routedReview: number(files?.routed_review),
     pending: number(files?.pending),
   };
-  extraction.accounted = extraction.extracted + extraction.queued + extraction.extracting + extraction.retrying + extraction.failed + extraction.pending;
+  extraction.accounted = extraction.extracted + extraction.queued + extraction.extracting + extraction.retrying
+    + extraction.failed + extraction.routedReview + extraction.pending;
 
   const state = {
     project,

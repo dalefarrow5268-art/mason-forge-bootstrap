@@ -6,6 +6,7 @@
   "scripts": {
     "check": "find src -name '*.js' -print0 | xargs -0 -n1 node --check",
     "test:connector": "node scripts/test-mcp-contract.mjs",
+    "test:extraction": "node scripts/test-extraction-classification.mjs",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:local": "wrangler d1 execute mason-forge-cloud --local --file schema/0001_initial.sql",

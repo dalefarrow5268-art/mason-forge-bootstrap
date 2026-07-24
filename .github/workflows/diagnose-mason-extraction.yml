@@ -110,11 +110,19 @@ jobs:
         if: always()
         run: |
           test -f verification/extraction-diagnostics.json || exit 1
-          git config user.name "Mason Forge Diagnostics"
-          git config user.email "actions@users.noreply.github.com"
-          git checkout -B extraction-diagnostics
-          git add verification/extraction-diagnostics.json
-          git commit -m "Record Mason Forge extraction diagnostics for ${GITHUB_SHA}" || exit 0
-          git push --force origin extraction-diagnostics
+          report_path="${RUNNER_TEMP}/mason-extraction-diagnostics.json"
+          report_worktree="${RUNNER_TEMP}/mason-extraction-diagnostics"
+          cp verification/extraction-diagnostics.json "${report_path}"
+          git fetch origin extraction-diagnostics
+          git worktree add --detach "${report_worktree}" origin/extraction-diagnostics
+          mkdir -p "${report_worktree}/verification"
+          cp "${report_path}" "${report_worktree}/verification/extraction-diagnostics.json"
+          git -C "${report_worktree}" config user.name "Mason Forge Diagnostics"
+          git -C "${report_worktree}" config user.email "actions@users.noreply.github.com"
+          git -C "${report_worktree}" add verification/extraction-diagnostics.json
+          if ! git -C "${report_worktree}" diff --cached --quiet; then
+            git -C "${report_worktree}" commit -m "Record Mason Forge extraction diagnostics for ${GITHUB_SHA}"
+            git -C "${report_worktree}" push origin HEAD:extraction-diagnostics
+          fi
 
 # Fresh capture requested after deterministic schema and file_id-only repairs.

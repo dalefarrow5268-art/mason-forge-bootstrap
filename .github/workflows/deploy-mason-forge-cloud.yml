@@ -46,6 +46,9 @@ jobs:
       - name: Validate every Worker module
         run: npm run check
 
+      - name: Test MCP and OAuth contract
+        run: npm run test:connector
+
       - name: Read release marker
         id: release
         run: |
@@ -81,12 +84,20 @@ jobs:
             printf '%s\n' '{"success":false,"errors":["Verification report was not produced."]}' > runtime-verification/latest.json
           }
           node -e "const fs=require('fs');const p='runtime-verification/latest.json';const x=JSON.parse(fs.readFileSync(p));x.sourceCommit=process.env.GITHUB_SHA;x.workflowRunId=process.env.GITHUB_RUN_ID;fs.writeFileSync(p,JSON.stringify(x,null,2)+'\\n');"
-          git config user.name "Mason Forge Verification"
-          git config user.email "actions@users.noreply.github.com"
-          git checkout -B production-verification
-          git add runtime-verification/latest.json
-          git commit -m "Record Mason Forge production verification for ${GITHUB_SHA}" || true
-          git push --force origin production-verification
+          report_path="${RUNNER_TEMP}/mason-production-verification.json"
+          report_worktree="${RUNNER_TEMP}/mason-production-verification"
+          cp runtime-verification/latest.json "${report_path}"
+          git fetch origin production-verification
+          git worktree add --detach "${report_worktree}" origin/production-verification
+          mkdir -p "${report_worktree}/runtime-verification"
+          cp "${report_path}" "${report_worktree}/runtime-verification/latest.json"
+          git -C "${report_worktree}" config user.name "Mason Forge Verification"
+          git -C "${report_worktree}" config user.email "actions@users.noreply.github.com"
+          git -C "${report_worktree}" add runtime-verification/latest.json
+          if ! git -C "${report_worktree}" diff --cached --quiet; then
+            git -C "${report_worktree}" commit -m "Record Mason Forge production verification for ${GITHUB_SHA}"
+            git -C "${report_worktree}" push origin HEAD:production-verification
+          fi
 
       - name: Enforce production verification
         if: always() && steps.live_verify.outcome != 'success'

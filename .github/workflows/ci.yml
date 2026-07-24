@@ -7,7 +7,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - run: npm install
-      - run: npm run test
-      - run: npm run build
+          node-version: "22"
+      - name: Install Worker dependencies
+        run: npm --prefix cloud ci
+      - name: Validate Worker and connector contract
+        run: |
+          npm --prefix cloud run check
+          npm --prefix cloud run test:connector
+      - name: Install dashboard dependencies
+        run: npm --prefix frontend ci
+      - name: Build dashboard
+        run: npm --prefix frontend run build

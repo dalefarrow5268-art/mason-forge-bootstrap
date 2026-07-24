@@ -24,6 +24,8 @@ jobs:
       - run: npm ci
       - name: Check Worker syntax
         run: npm run check
+      - name: Test MCP and OAuth contract
+        run: npm run test:connector
       - name: Validate Cloudflare bundle
         run: npx wrangler deploy --dry-run
 

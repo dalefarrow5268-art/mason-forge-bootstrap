@@ -69,6 +69,48 @@ export async function ensureRuntimeSchema(env) {
     )`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS evidence_batch_files_project
       ON evidence_batch_files(project_id, file_id)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS mcp_oauth_clients (
+      client_id TEXT PRIMARY KEY,
+      client_name TEXT NOT NULL,
+      redirect_uris_json TEXT NOT NULL,
+      token_endpoint_auth_method TEXT NOT NULL DEFAULT 'none',
+      created_at TEXT NOT NULL
+    )`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS mcp_oauth_codes (
+      code_hash TEXT PRIMARY KEY,
+      client_id TEXT NOT NULL,
+      redirect_uri TEXT NOT NULL,
+      code_challenge TEXT NOT NULL,
+      scope TEXT NOT NULL,
+      resource TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      used_at TEXT,
+      created_at TEXT NOT NULL
+    )`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS mcp_oauth_codes_expiry
+      ON mcp_oauth_codes(expires_at, used_at)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS mcp_oauth_tokens (
+      token_hash TEXT PRIMARY KEY,
+      token_kind TEXT NOT NULL,
+      client_id TEXT NOT NULL,
+      scope TEXT NOT NULL,
+      resource TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      revoked_at TEXT,
+      created_at TEXT NOT NULL
+    )`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS mcp_oauth_tokens_expiry
+      ON mcp_oauth_tokens(token_kind, expires_at, revoked_at)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS mcp_download_grants (
+      token_hash TEXT PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      file_id INTEGER NOT NULL REFERENCES project_files(id) ON DELETE CASCADE,
+      expires_at TEXT NOT NULL,
+      revoked_at TEXT,
+      created_at TEXT NOT NULL
+    )`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS mcp_download_grants_expiry
+      ON mcp_download_grants(expires_at, revoked_at)`),
     env.DB.prepare(`DELETE FROM department_outputs
       WHERE rowid NOT IN (
         SELECT MIN(rowid) FROM department_outputs GROUP BY task_id

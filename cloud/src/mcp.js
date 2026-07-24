@@ -6,6 +6,7 @@ const protocolVersion = "2025-06-18";
 const tools = [
   ["get_system_state", "Retrieve the verified Mason Forge system state and project summaries.", {}],
   ["list_project_files", "List every registered file in a project.", { projectId: { type: "integer", enum: [4, 5], description: "4 = Fairfield Inn Tampa; 5 = StudioRes Estero" } }],
+  ["reconcile_project_files", "Verify every project file database record against R2 and report conservative cleanup candidates.", { projectId: { type: "integer", enum: [4, 5], description: "4 = Fairfield Inn Tampa; 5 = StudioRes Estero" } }],
   ["get_project_file", "Retrieve one project file's metadata and extracted text/evidence.", { projectId: { type: "integer", enum: [4, 5] }, fileId: { type: "integer" } }],
   ["get_project_file_source", "Create a short-lived download link for one original project file.", { projectId: { type: "integer", enum: [4, 5] }, fileId: { type: "integer" } }],
   ["get_project_status", "Retrieve a consolidated project status summary.", { projectId: { type: "integer", enum: [4, 5] } }],
@@ -62,6 +63,7 @@ function routeForTool(name, args = {}) {
   switch (name) {
     case "get_system_state": return "/api/connector/bootstrap";
     case "list_project_files": return `/api/projects/${projectId}/files`;
+    case "reconcile_project_files": return `/api/projects/${projectId}/file-reconciliation`;
     case "get_project_file": return `/api/projects/${projectId}/files/${fileId}`;
     case "get_project_status": return `/api/projects/${projectId}/status`;
     case "get_project_tasks": return `/api/projects/${projectId}/tasks`;

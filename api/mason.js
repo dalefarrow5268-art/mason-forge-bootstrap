@@ -1,7 +1,7 @@
 function connectorPathAllowed(path) {
   if (["/health", "/api/connector/bootstrap", "/api/continuity", "/api/continuity/system/mason-forge"].includes(path)) return true;
   if (/^\/api\/continuity\/[^/]+\/[^/]+$/.test(path)) return true;
-  return /^\/api\/projects\/\d+\/(status|files|tasks|outputs|findings|evidence|rfis|contacts|continuity)$/.test(path)
+  return /^\/api\/projects\/\d+\/(status|files|file-reconciliation|tasks|outputs|findings|evidence|rfis|contacts|continuity)$/.test(path)
     || /^\/api\/projects\/\d+\/files\/\d+(\/source)?$/.test(path);
 }
 

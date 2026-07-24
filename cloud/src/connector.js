@@ -59,6 +59,7 @@ export function connectorOpenApi(origin) {
       ]),
       "/api/projects/{projectId}/status": get("getProjectStatus", "Retrieve complete project status"),
       "/api/projects/{projectId}/files": get("listProjectFiles", "List every registered file in a project"),
+      "/api/projects/{projectId}/file-reconciliation": get("reconcileProjectFiles", "Verify database file records against R2 storage"),
       "/api/projects/{projectId}/files/{fileId}": get("getProjectFile", "Retrieve file metadata and extracted content", fileParameters),
       "/api/projects/{projectId}/files/{fileId}/source": get("downloadProjectFile", "Retrieve the original project file", fileParameters),
       "/api/projects/{projectId}/tasks": get("listProjectTasks", "Retrieve department tasks and task events"),
@@ -83,6 +84,133 @@ async function listFiles(projectId, env) {
     sha256, revision, document_date, review_status, extracted_text_key, source_class, uploaded_at, updated_at
     FROM project_files WHERE project_id = ? ORDER BY relative_path, id`).bind(projectId).all();
   return json({ project, count: result.results?.length || 0, files: result.results || [] });
+}
+
+function normalizedFileValue(value) {
+  return String(value || "").trim().replaceAll("\\", "/").replace(/\/+/g, "/").toLowerCase();
+}
+
+function duplicateGroups(files, valueFor) {
+  const groups = new Map();
+  for (const file of files) {
+    const value = valueFor(file);
+    if (!value) continue;
+    const rows = groups.get(value) || [];
+    rows.push(file);
+    groups.set(value, rows);
+  }
+  return [...groups.entries()]
+    .filter(([, rows]) => rows.length > 1)
+    .map(([value, rows]) => ({ value, fileIds: rows.map((row) => Number(row.id)) }));
+}
+
+async function mapConcurrent(values, concurrency, mapper) {
+  const results = new Array(values.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(concurrency, values.length) }, async () => {
+    while (cursor < values.length) {
+      const index = cursor++;
+      results[index] = await mapper(values[index], index);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
+async function reconcileFiles(projectId, env) {
+  const project = await requireProject(projectId, env);
+  if (!project) return json({ error: "Project not found." }, 404);
+  const result = await env.DB.prepare(`SELECT id, project_id, r2_key, file_name, relative_path, file_type,
+    size_bytes, sha256, revision, document_date, review_status, extracted_text_key, source_class,
+    uploaded_at, updated_at
+    FROM project_files WHERE project_id = ? ORDER BY id`).bind(projectId).all();
+  const files = result.results || [];
+  const inspected = await mapConcurrent(files, 20, async (file) => {
+    const [source, extraction] = await Promise.all([
+      file.r2_key ? env.PROJECT_FILES.head(file.r2_key) : null,
+      file.extracted_text_key ? env.PROJECT_FILES.head(file.extracted_text_key) : null,
+    ]);
+    return {
+      ...file,
+      sourcePresent: Boolean(source),
+      sourceSize: source ? Number(source.size || 0) : null,
+      sourceEtag: source?.etag || source?.httpEtag || null,
+      extractionPresent: file.extracted_text_key ? Boolean(extraction) : null,
+    };
+  });
+
+  const missingSource = inspected.filter((file) => !file.sourcePresent);
+  const missingExtraction = inspected.filter((file) => file.extracted_text_key && !file.extractionPresent);
+  const placeholders = inspected.filter((file) =>
+    !String(file.r2_key || "").trim()
+    || !String(file.file_name || "").trim()
+    || !String(file.relative_path || "").trim()
+    || Number(file.size_bytes || 0) <= 0
+  );
+  const failedUploads = inspected.filter((file) => /UPLOAD FAILED|FAILED UPLOAD/i.test(String(file.review_status || "")));
+  const staleUploadPending = inspected.filter((file) =>
+    /UPLOAD PENDING/i.test(String(file.review_status || ""))
+    && Date.parse(file.updated_at || file.uploaded_at || "") < Date.now() - 24 * 60 * 60 * 1000
+  );
+  const sizeMismatches = inspected.filter((file) =>
+    file.sourcePresent && Number(file.size_bytes || 0) !== Number(file.sourceSize || 0)
+  );
+  const duplicateR2Keys = duplicateGroups(inspected, (file) => String(file.r2_key || "").trim());
+  const duplicatePaths = duplicateGroups(inspected, (file) => normalizedFileValue(file.relative_path));
+  const duplicateNames = duplicateGroups(inspected, (file) => normalizedFileValue(file.file_name));
+  const duplicateHashes = duplicateGroups(inspected, (file) => String(file.sha256 || "").trim().toLowerCase());
+  const duplicateEtags = duplicateGroups(
+    inspected.filter((file) => file.sourcePresent && file.sourceEtag),
+    (file) => `${String(file.sourceEtag).replaceAll('"', "")}:${Number(file.sourceSize || 0)}`,
+  );
+  const invalidIds = new Set([
+    ...missingSource,
+    ...placeholders,
+    ...failedUploads,
+    ...staleUploadPending,
+  ].map((file) => Number(file.id)));
+  const issueRows = (rows) => rows.map((file) => ({
+    fileId: Number(file.id),
+    fileName: file.file_name,
+    relativePath: file.relative_path,
+    reviewStatus: file.review_status,
+    r2Key: file.r2_key,
+  }));
+
+  return json({
+    project: { id: Number(project.id), name: project.name },
+    checkedAt: new Date().toISOString(),
+    definitiveDatabaseCount: files.length,
+    sourceObjectsPresent: inspected.length - missingSource.length,
+    proposedRetainedCount: files.length - invalidIds.size,
+    reconciled: missingSource.length === 0 && missingExtraction.length === 0
+      && placeholders.length === 0 && failedUploads.length === 0
+      && staleUploadPending.length === 0 && sizeMismatches.length === 0
+      && duplicateR2Keys.length === 0 && duplicatePaths.length === 0,
+    issues: {
+      missingSource: issueRows(missingSource),
+      missingExtraction: issueRows(missingExtraction),
+      placeholders: issueRows(placeholders),
+      failedUploads: issueRows(failedUploads),
+      staleUploadPending: issueRows(staleUploadPending),
+      sizeMismatches: sizeMismatches.map((file) => ({
+        ...issueRows([file])[0],
+        databaseSize: Number(file.size_bytes || 0),
+        r2Size: Number(file.sourceSize || 0),
+      })),
+      duplicateR2Keys,
+      duplicatePaths,
+      duplicateNames,
+      duplicateHashes,
+      duplicateEtags,
+    },
+    cleanupCandidateFileIds: [...invalidIds].sort((a, b) => a - b),
+    notes: [
+      "cleanupCandidateFileIds contains only missing source objects, structural placeholders, explicit failed uploads, and upload-pending records older than 24 hours.",
+      "Duplicate name and ETag groups are review candidates only and are never automatic deletion targets.",
+      "An extracted-text key is verified separately from its source object.",
+    ],
+  });
 }
 
 async function getFile(projectId, fileId, env, source = false) {
@@ -241,12 +369,13 @@ export async function connectorResponse(request, env) {
   if (sourceMatch) return getFile(Number(sourceMatch[1]), Number(sourceMatch[2]), env, true);
   const fileMatch = url.pathname.match(/^\/api\/projects\/(\d+)\/files\/(\d+)$/);
   if (fileMatch) return getFile(Number(fileMatch[1]), Number(fileMatch[2]), env);
-  const routeMatch = url.pathname.match(/^\/api\/projects\/(\d+)\/(status|files|tasks|outputs|findings|evidence|rfis|contacts|continuity)$/);
+  const routeMatch = url.pathname.match(/^\/api\/projects\/(\d+)\/(status|files|file-reconciliation|tasks|outputs|findings|evidence|rfis|contacts|continuity)$/);
   if (!routeMatch) return null;
   const projectId = Number(routeMatch[1]);
   const route = routeMatch[2];
   if (route === "status") return completeStatus(projectId, env);
   if (route === "files") return listFiles(projectId, env);
+  if (route === "file-reconciliation") return reconcileFiles(projectId, env);
   if (route === "tasks") return listTasks(projectId, env);
   if (route === "outputs") return listOutputs(projectId, env);
   if (route === "findings") return listFindings(projectId, env);

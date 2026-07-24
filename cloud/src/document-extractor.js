@@ -49,22 +49,62 @@ function mimeType(file) {
   return types[extension(file.file_name)] || "application/octet-stream";
 }
 
-function fileInputContent(file, bytes) {
+async function uploadOpenAIFile(env, file, bytes) {
+  const form = new FormData();
+  form.set("purpose", "user_data");
+  form.set("file", new File([bytes], file.file_name, { type: mimeType(file) }));
+  const response = await fetch("https://api.openai.com/v1/files", {
+    method: "POST",
+    signal: AbortSignal.timeout(Number(env.OPENAI_REQUEST_TIMEOUT_MS || 600000)),
+    headers: { authorization: `Bearer ${env.OPENAI_API_KEY}` },
+    body: form,
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload?.id) {
+    const message = `OpenAI file upload ${response.status}: ${payload?.error?.message || JSON.stringify(payload)}`;
+    if ([400, 413, 415, 422].includes(response.status)) throw permanentError(message);
+    throw new Error(message);
+  }
+  return payload.id;
+}
+
+async function deleteOpenAIFile(env, fileId) {
+  if (!fileId) return;
+  try {
+    await fetch(`https://api.openai.com/v1/files/${encodeURIComponent(fileId)}`, {
+      method: "DELETE",
+      signal: AbortSignal.timeout(30000),
+      headers: { authorization: `Bearer ${env.OPENAI_API_KEY}` },
+    });
+  } catch (error) {
+    console.error("Temporary OpenAI extraction file cleanup failed", { fileId, error: String(error?.message || error) });
+  }
+}
+
+async function fileInputContent(env, file, bytes) {
   const ext = extension(file.file_name);
-  const mime = mimeType(file);
   if (["json", "csv", "md", "txt", "html", "xml"].includes(ext)) {
     const maxTextBytes = 2 * 1024 * 1024;
     const text = new TextDecoder("utf-8", { fatal: false }).decode(bytes.subarray(0, maxTextBytes));
-    return [{
-      type: "input_text",
-      text: `SOURCE FILE: ${file.file_name}\nCONTENT${bytes.length > maxTextBytes ? " (TRUNCATED TO 2 MIB)" : ""}:\n${text}`,
-    }];
+    return {
+      content: [{
+        type: "input_text",
+        text: `SOURCE FILE: ${file.file_name}\nCONTENT${bytes.length > maxTextBytes ? " (TRUNCATED TO 2 MIB)" : ""}:\n${text}`,
+      }],
+      uploadedFileId: null,
+    };
   }
-  const dataUrl = `data:${mime};base64,${bytesToBase64(bytes)}`;
   if (["jpeg", "jpg", "png", "webp", "gif"].includes(ext)) {
-    return [{ type: "input_image", image_url: dataUrl, detail: "auto" }];
+    return {
+      content: [{ type: "input_image", image_url: `data:${mimeType(file)};base64,${bytesToBase64(bytes)}`, detail: "auto" }],
+      uploadedFileId: null,
+    };
   }
-  return [{ type: "input_file", filename: file.file_name, file_data: dataUrl }];
+  const uploadedFileId = await uploadOpenAIFile(env, file, bytes);
+  return {
+    content: [{ type: "input_file", file_id: uploadedFileId, filename: file.file_name }],
+    uploadedFileId,
+  };
 }
 
 function extractOutputText(response) {
@@ -95,50 +135,55 @@ function safeJson(text) {
 }
 
 async function callOpenAI(env, file, bytes) {
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    signal: AbortSignal.timeout(Number(env.OPENAI_REQUEST_TIMEOUT_MS || 600000)),
-    headers: {
-      authorization: `Bearer ${env.OPENAI_API_KEY}`,
-      "content-type": "application/json",
-      "x-client-request-id": crypto.randomUUID(),
-    },
-    body: JSON.stringify({
-      model: env.OPENAI_DOCUMENT_MODEL || env.OPENAI_MODEL || "gpt-5-mini",
-      input: [{
-        role: "user",
-        content: [
-          {
-            type: "input_text",
-            text: [
-              "Analyze this construction-project source document as evidence for Mason Forge.",
-              "Do not invent facts, quantities, dates, parties, scope, or conclusions.",
-              "Return valid JSON with keys: documentType, title, revision, documentDate, projectName, projectAddress, parties, sheetOrSectionReferences, summary, verifiedFacts, scopeItems, scheduleFacts, costFacts, contactFacts, permitOrLegalFacts, risksOrConflicts, missingInformation, extractionLimitations, confidence.",
-              "Use empty arrays or null when evidence is absent. Preserve useful sheet numbers, specification sections, detail references, dates, names, and numeric values exactly as shown.",
-            ].join("\n"),
-          },
-          ...fileInputContent(file, bytes),
-        ],
-      }],
-      text: { format: { type: "json_object" } },
-      max_output_tokens: 7000,
-      metadata: {
-        project_id: String(file.project_id),
-        project_file_id: String(file.id),
-        source: "mason-forge-r2-extractor",
+  const inputFile = await fileInputContent(env, file, bytes);
+  try {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      signal: AbortSignal.timeout(Number(env.OPENAI_REQUEST_TIMEOUT_MS || 600000)),
+      headers: {
+        authorization: `Bearer ${env.OPENAI_API_KEY}`,
+        "content-type": "application/json",
+        "x-client-request-id": crypto.randomUUID(),
       },
-    }),
-  });
+      body: JSON.stringify({
+        model: env.OPENAI_DOCUMENT_MODEL || env.OPENAI_MODEL || "gpt-5-mini",
+        input: [{
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: [
+                "Analyze this construction-project source document as evidence for Mason Forge.",
+                "Do not invent facts, quantities, dates, parties, scope, or conclusions.",
+                "Return valid JSON with keys: documentType, title, revision, documentDate, projectName, projectAddress, parties, sheetOrSectionReferences, summary, verifiedFacts, scopeItems, scheduleFacts, costFacts, contactFacts, permitOrLegalFacts, risksOrConflicts, missingInformation, extractionLimitations, confidence.",
+                "Use empty arrays or null when evidence is absent. Preserve useful sheet numbers, specification sections, detail references, dates, names, and numeric values exactly as shown.",
+              ].join("\n"),
+            },
+            ...inputFile.content,
+          ],
+        }],
+        text: { format: { type: "json_object" } },
+        max_output_tokens: 7000,
+        metadata: {
+          project_id: String(file.project_id),
+          project_file_id: String(file.id),
+          source: "mason-forge-r2-extractor",
+        },
+      }),
+    });
 
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const message = `OpenAI ${response.status}: ${payload?.error?.message || JSON.stringify(payload)}`;
-    if ([400, 413, 415, 422].includes(response.status)) throw permanentError(message);
-    throw new Error(message);
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = `OpenAI ${response.status}: ${payload?.error?.message || JSON.stringify(payload)}`;
+      if ([400, 413, 415, 422].includes(response.status)) throw permanentError(message);
+      throw new Error(message);
+    }
+    const text = extractOutputText(payload);
+    if (!text) throw new Error("OpenAI returned no document extraction output.");
+    return { payload, content: safeJson(text) };
+  } finally {
+    await deleteOpenAIFile(env, inputFile.uploadedFileId);
   }
-  const text = extractOutputText(payload);
-  if (!text) throw new Error("OpenAI returned no document extraction output.");
-  return { payload, content: safeJson(text) };
 }
 
 export async function extractProjectFile(message, env) {

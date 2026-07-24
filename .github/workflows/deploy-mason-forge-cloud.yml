@@ -43,8 +43,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate Mason Forge Worker
+      - name: Validate every Worker module
         run: npm run check
+
+      - name: Read release marker
+        id: release
+        run: |
+          RELEASE_ID=$(node -e "const fs=require('fs');const t=fs.readFileSync('wrangler.toml','utf8');const m=t.match(/^RELEASE_ID\s*=\s*\"([^\"]+)\"/m);if(!m)process.exit(1);process.stdout.write(m[1]);")
+          echo "release_id=${RELEASE_ID}" >> "$GITHUB_OUTPUT"
 
       - name: Cloudflare deployment dry run
         run: npx wrangler deploy --dry-run
@@ -58,153 +64,33 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Verify full production path
-        run: |
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs/promises';
-
-          const wranglerConfig = await fs.readFile('wrangler.toml', 'utf8');
-          const expectedRelease = wranglerConfig.match(/^RELEASE_ID\s*=\s*"([^"]+)"/m)?.[1];
-          if (!expectedRelease) throw new Error('RELEASE_ID was not found in wrangler.toml');
-          const workerHealthUrl = 'https://mason-forge-cloud.mason-forge-ssx.workers.dev/health';
-          const dashboardUrl = 'https://mason-forge-live.vercel.app/api/mason';
-          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-          const requestJson = async (url) => {
-            const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}_verify=${Date.now()}-${Math.random()}`, {
-              cache: 'no-store',
-              headers: { 'cache-control': 'no-cache, no-store, max-age=0', pragma: 'no-cache' },
-            });
-            const text = await response.text();
-            let data;
-            try { data = JSON.parse(text); } catch { throw new Error(`${url} returned non-JSON (${response.status}): ${text}`); }
-            return { response, data };
-          };
-          const sumTaskTotals = (totals = {}) => Object.values(totals).reduce((sum, value) => sum + Number(value || 0), 0);
-          const pendingTasks = (totals = {}) => Number(totals.QUEUED || 0) + Number(totals.RUNNING || 0);
-          const completedTasks = (totals = {}) => Number(totals.COMPLETED || 0);
-
-          let health;
-          for (let attempt = 1; attempt <= 24; attempt += 1) {
-            const result = await requestJson(workerHealthUrl);
-            health = result.data;
-            console.log(`Health attempt ${attempt}:`, JSON.stringify(health));
-            if (result.response.ok && health.operationalReady === true && health.releaseId === expectedRelease) break;
-            if (attempt === 24) throw new Error(`Worker failed readiness: ${JSON.stringify(health)}`);
-            await sleep(10000);
-          }
-
-          const first = (await requestJson(dashboardUrl)).data;
-          await sleep(1500);
-          const second = (await requestJson(dashboardUrl)).data;
-          if (!first.retrievedAt || !second.retrievedAt || first.retrievedAt === second.retrievedAt) {
-            throw new Error(`Dashboard response was not fresh: ${JSON.stringify({ first: first.retrievedAt, second: second.retrievedAt })}`);
-          }
-
-          let latest = second;
-          const initial = second;
-          let progressionObserved = pendingTasks(initial.taskTotals) === 0;
-          for (let attempt = 1; attempt <= 12 && !progressionObserved; attempt += 1) {
-            await sleep(15000);
-            latest = (await requestJson(dashboardUrl)).data;
-            progressionObserved = Number(latest.outputCount || 0) > Number(initial.outputCount || 0) ||
-              completedTasks(latest.taskTotals) > completedTasks(initial.taskTotals) ||
-              pendingTasks(latest.taskTotals) < pendingTasks(initial.taskTotals);
-            console.log(`Progress attempt ${attempt}:`, JSON.stringify({
-              retrievedAt: latest.retrievedAt,
-              taskTotals: latest.taskTotals,
-              outputCount: latest.outputCount,
-              progressionObserved,
-            }));
-          }
-
-          health = (await requestJson(workerHealthUrl)).data;
-          const projectTaskTotal = (latest.projects || []).reduce((sum, project) => sum +
-            Number(project.queued_tasks || 0) + Number(project.running_tasks || 0) +
-            Number(project.completed_tasks || 0) + Number(project.failed_tasks || 0) +
-            Number(project.blocked_tasks || 0) + Number(project.canceled_tasks || 0), 0);
-          const projectFileTotal = (latest.projects || []).reduce((sum, project) => sum + Number(project.file_count || 0), 0);
-          const extractionTotal = Object.values(health.extraction || {}).reduce((sum, value) => sum + Number(value || 0), 0);
-
-          const assertions = {
-            workerOperationalReady: health.operationalReady === true && health.status === 'online',
-            correctRelease: health.releaseId === expectedRelease,
-            continuityVerified: latest.continuity?.verification_status === 'VERIFIED' && health.continuity?.verification_status === 'VERIFIED',
-            freshDashboardResponses: first.retrievedAt !== second.retrievedAt,
-            noBlockedTasks: Number(latest.taskTotals?.BLOCKED || 0) === 0,
-            noFailedTasks: Number(latest.taskTotals?.FAILED || 0) === 0,
-            noStaleTasks: Number(health.staleRunningTasks || 0) === 0,
-            outputsPresent: Number(latest.outputCount || 0) > 0 && Number(health.outputCount || 0) > 0,
-            completedTasksHaveOutputs: Number(health.completedTasksWithoutOutput || 0) === 0,
-            noDuplicateTaskOutputs: Number(health.duplicateOutputTasks || 0) === 0,
-            globalTaskTotalsReconcile: sumTaskTotals(latest.taskTotals) === Number(health.totalTasks || 0),
-            projectTaskTotalsReconcile: projectTaskTotal === sumTaskTotals(latest.taskTotals),
-            projectFileTotalsReconcile: projectFileTotal === Number(health.files || 0),
-            extractionTotalsReconcile: extractionTotal === Number(health.files || 0),
-            extractionOperating: Number(health.files || 0) === 0 || Number(health.extraction?.extracted || 0) > 0 ||
-              Number(health.extraction?.queued || 0) > 0 || Number(health.extraction?.retrying || 0) > 0 ||
-              Number(health.extraction?.extracting || 0) > 0,
-            r2Verified: health.projectFileStorage === 'R2 VERIFIED' && (health.r2Samples || []).every((sample) => sample.present),
-            progressionObserved,
-          };
-          const failed = Object.entries(assertions).filter(([, passed]) => !passed).map(([name]) => name);
-          const verification = {
-            verifiedAt: new Date().toISOString(),
-            sourceCommit: process.env.GITHUB_SHA,
-            expectedRelease,
-            assertions,
-            passed: failed.length === 0,
-            failedAssertions: failed,
-            workerHealth: health,
-            dashboard: latest,
-          };
-          await fs.mkdir('../verification', { recursive: true });
-          await fs.writeFile('../verification/live-production-verification.json', JSON.stringify(verification, null, 2));
-          if (failed.length) throw new Error(`Production verification failed: ${failed.join(', ')}\n${JSON.stringify(verification)}`);
-          console.log('Mason Forge production verification passed:', JSON.stringify(verification));
-          NODE
-
-      - name: Capture final live state
-        if: always()
-        run: |
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs/promises';
-          const request = async (url) => {
-            try {
-              const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}_capture=${Date.now()}-${Math.random()}`, {
-                cache: 'no-store',
-                headers: { 'cache-control': 'no-cache, no-store, max-age=0', pragma: 'no-cache' },
-              });
-              const text = await response.text();
-              let body;
-              try { body = JSON.parse(text); } catch { body = { raw: text }; }
-              return { status: response.status, ok: response.ok, body };
-            } catch (error) {
-              return { status: 0, ok: false, error: String(error?.stack || error) };
-            }
-          };
-          let prior = {};
-          try { prior = JSON.parse(await fs.readFile('../verification/live-production-verification.json', 'utf8')); } catch {}
-          const capture = {
-            ...prior,
-            capturedAt: new Date().toISOString(),
-            sourceCommit: process.env.GITHUB_SHA,
-            finalCapture: {
-              workerHealth: await request('https://mason-forge-cloud.mason-forge-ssx.workers.dev/health'),
-              dashboard: await request('https://mason-forge-live.vercel.app/api/mason'),
-            },
-          };
-          await fs.mkdir('../verification', { recursive: true });
-          await fs.writeFile('../verification/live-production-verification.json', JSON.stringify(capture, null, 2));
-          NODE
+      - name: Verify live production end to end
+        id: live_verify
+        continue-on-error: true
+        run: node scripts/verify-live.mjs
+        env:
+          VERIFY_REPORT_PATH: ../runtime-verification/latest.json
+          EXPECTED_RELEASE_ID: ${{ steps.release.outputs.release_id }}
 
       - name: Publish live verification ledger
         if: always()
+        working-directory: .
         run: |
-          cd ..
-          test -f verification/live-production-verification.json || exit 0
+          test -f runtime-verification/latest.json || {
+            mkdir -p runtime-verification
+            printf '%s\n' '{"success":false,"errors":["Verification report was not produced."]}' > runtime-verification/latest.json
+          }
+          node -e "const fs=require('fs');const p='runtime-verification/latest.json';const x=JSON.parse(fs.readFileSync(p));x.sourceCommit=process.env.GITHUB_SHA;x.workflowRunId=process.env.GITHUB_RUN_ID;fs.writeFileSync(p,JSON.stringify(x,null,2)+'\\n');"
           git config user.name "Mason Forge Verification"
           git config user.email "actions@users.noreply.github.com"
           git checkout -B production-verification
-          git add verification/live-production-verification.json
-          git commit -m "Record Mason Forge production state for ${GITHUB_SHA}" || exit 0
+          git add runtime-verification/latest.json
+          git commit -m "Record Mason Forge production verification for ${GITHUB_SHA}" || true
           git push --force origin production-verification
+
+      - name: Enforce production verification
+        if: always() && steps.live_verify.outcome != 'success'
+        working-directory: .
+        run: |
+          cat runtime-verification/latest.json || true
+          exit 1

@@ -1,9 +1,9 @@
-const ALLOWED_PATHS = new Set([
-  "/health",
-  "/api/connector/bootstrap",
-  "/api/continuity",
-  "/api/continuity/system/mason-forge",
-]);
+function connectorPathAllowed(path) {
+  if (["/health", "/api/connector/bootstrap", "/api/continuity", "/api/continuity/system/mason-forge"].includes(path)) return true;
+  if (/^\/api\/continuity\/[^/]+\/[^/]+$/.test(path)) return true;
+  return /^\/api\/projects\/\d+\/(status|files|tasks|outputs|findings|evidence|rfis|contacts|continuity)$/.test(path)
+    || /^\/api\/projects\/\d+\/files\/\d+(\/source)?$/.test(path);
+}
 
 function disableCaching(response) {
   response.setHeader("cache-control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
@@ -16,16 +16,13 @@ function disableCaching(response) {
 
 export default async function handler(request, response) {
   disableCaching(response);
-
-  if (request.method !== "GET") {
-    return response.status(405).json({ error: "Method not allowed." });
-  }
+  if (request.method !== "GET") return response.status(405).json({ error: "Method not allowed." });
 
   const requestedPath = typeof request.query?.path === "string"
     ? `/${request.query.path.replace(/^\/+/, "")}`
     : "/api/connector/bootstrap";
 
-  if (!ALLOWED_PATHS.has(requestedPath)) {
+  if (!connectorPathAllowed(requestedPath)) {
     return response.status(403).json({ error: "Path is not available through the dashboard proxy." });
   }
 
@@ -34,8 +31,7 @@ export default async function handler(request, response) {
   if (!apiToken) return response.status(503).json({ error: "MASON_API_TOKEN is not configured on the server." });
 
   const nonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const separator = requestedPath.includes("?") ? "&" : "?";
-  const upstreamUrl = `${apiUrl}${requestedPath}${separator}_fresh=${encodeURIComponent(nonce)}`;
+  const upstreamUrl = `${apiUrl}${requestedPath}${requestedPath.includes("?") ? "&" : "?"}_fresh=${encodeURIComponent(nonce)}`;
 
   try {
     const upstream = await fetch(upstreamUrl, {
@@ -46,12 +42,19 @@ export default async function handler(request, response) {
         pragma: "no-cache",
       },
     });
-    const text = await upstream.text();
+    const contentType = upstream.headers.get("content-type") || "application/octet-stream";
+    const disposition = upstream.headers.get("content-disposition");
     response.status(upstream.status);
-    response.setHeader("content-type", upstream.headers.get("content-type") || "application/json; charset=utf-8");
+    response.setHeader("content-type", contentType);
+    if (disposition) response.setHeader("content-disposition", disposition);
     response.setHeader("x-mason-proxy-retrieved-at", new Date().toISOString());
     response.setHeader("x-mason-upstream-status", String(upstream.status));
-    return response.send(text);
+
+    if (contentType.includes("application/json") || contentType.startsWith("text/")) {
+      return response.send(await upstream.text());
+    }
+    const bytes = Buffer.from(await upstream.arrayBuffer());
+    return response.send(bytes);
   } catch (error) {
     return response.status(502).json({ error: "Mason Forge Cloud is unavailable.", detail: String(error?.message || error) });
   }

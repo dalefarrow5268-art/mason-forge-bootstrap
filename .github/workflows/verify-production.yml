@@ -1,0 +1,31 @@
+name: Verify Mason Forge Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      dashboard_url:
+        description: Production Vercel dashboard URL
+        required: true
+        type: string
+      expected_release:
+        description: Expected Cloudflare release ID
+        required: false
+        default: 2026-07-24-operational-1
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify dashboard, proxy and Mason Forge Cloud
+        env:
+          MASON_DASHBOARD_URL: ${{ inputs.dashboard_url }}
+          MASON_EXPECTED_RELEASE: ${{ inputs.expected_release }}
+        run: npm run verify:production

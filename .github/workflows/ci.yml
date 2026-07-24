@@ -16,5 +16,7 @@ jobs:
           npm --prefix cloud run test:connector
       - name: Install dashboard dependencies
         run: npm --prefix frontend ci
+      - name: Test dashboard data normalization
+        run: npm --prefix frontend test
       - name: Build dashboard
         run: npm --prefix frontend run build

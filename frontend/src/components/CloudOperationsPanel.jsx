@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getMasonCloudBootstrap } from "../services/masonCloud";
+import { normalizeTaskTotals } from "../services/taskTotals";
 
 export default function CloudOperationsPanel() {
   const [state, setState] = useState({ loading: true, data: null, error: "" });
@@ -16,7 +17,7 @@ export default function CloudOperationsPanel() {
   if (state.error) return <section className="engineering-planner"><p className="section-label">Cloud Operations</p><h2>Connection Required</h2><p>{state.error}</p><p>Configure the protected dashboard API environment before deployment.</p></section>;
 
   const projects = state.data?.projects || [];
-  const totals = Object.fromEntries((state.data?.taskTotals || []).map((row) => [row.status, Number(row.count)]));
+  const totals = normalizeTaskTotals(state.data?.taskTotals);
 
   return (
     <section className="engineering-planner">

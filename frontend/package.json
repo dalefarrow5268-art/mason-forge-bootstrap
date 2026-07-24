@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "echo \"Linting will be added in Milestone 2\"",
-    "test": "echo \"Testing will be added in Milestone 2\""
+    "test": "node scripts/test-task-totals.mjs"
   },
   "keywords": [
     "mason-forge",

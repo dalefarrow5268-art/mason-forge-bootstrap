@@ -1,0 +1,93 @@
+name: Diagnose Mason Forge Extraction
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "api/**"
+      - "cloud/**"
+      - ".github/workflows/diagnose-mason-extraction.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mason-forge-extraction-diagnostics
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Wait for live deployments
+        run: sleep 45
+
+      - name: Collect extraction diagnostics
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs/promises';
+          const base = 'https://mason-forge-live.vercel.app/api/mason';
+          const fetchJson = async (path) => {
+            const url = `${base}?path=${encodeURIComponent(path)}&_diagnostic=${Date.now()}-${Math.random()}`;
+            const response = await fetch(url, { cache: 'no-store', headers: { 'cache-control': 'no-store' } });
+            const text = await response.text();
+            if (!response.ok) throw new Error(`${path} HTTP ${response.status}: ${text.slice(0, 2000)}`);
+            return JSON.parse(text);
+          };
+          const files = [];
+          for (const projectId of [4, 5]) {
+            const data = await fetchJson(`api/projects/${projectId}/files`);
+            for (const file of data.files || []) files.push({ projectId, ...file });
+          }
+          const extension = (name = '') => name.includes('.') ? name.toLowerCase().split('.').pop() : '(none)';
+          const byStatus = {};
+          const failedReasons = {};
+          const failedExtensions = {};
+          const failedSamples = [];
+          for (const file of files) {
+            const status = String(file.review_status || 'UNKNOWN');
+            byStatus[status] = (byStatus[status] || 0) + 1;
+            if (status.startsWith('EXTRACTION FAILED:')) {
+              const reason = status.slice('EXTRACTION FAILED:'.length).trim();
+              failedReasons[reason] = (failedReasons[reason] || 0) + 1;
+              const ext = extension(file.file_name);
+              failedExtensions[ext] = (failedExtensions[ext] || 0) + 1;
+              if (failedSamples.length < 30) failedSamples.push({
+                projectId: file.project_id,
+                fileId: file.id,
+                extension: ext,
+                sizeBytes: Number(file.size_bytes || 0),
+                reason,
+              });
+            }
+          }
+          const report = {
+            capturedAt: new Date().toISOString(),
+            sourceCommit: process.env.GITHUB_SHA,
+            totalFiles: files.length,
+            byStatus,
+            failedCount: Object.values(failedReasons).reduce((a, b) => a + b, 0),
+            failedReasons,
+            failedExtensions,
+            failedSamples,
+          };
+          await fs.mkdir('verification', { recursive: true });
+          await fs.writeFile('verification/extraction-diagnostics.json', JSON.stringify(report, null, 2));
+          console.log(JSON.stringify(report, null, 2));
+          NODE
+
+      - name: Publish extraction diagnostics
+        if: always()
+        run: |
+          test -f verification/extraction-diagnostics.json || exit 1
+          git config user.name "Mason Forge Diagnostics"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -B extraction-diagnostics
+          git add verification/extraction-diagnostics.json
+          git commit -m "Record Mason Forge extraction diagnostics for ${GITHUB_SHA}" || exit 0
+          git push --force origin extraction-diagnostics

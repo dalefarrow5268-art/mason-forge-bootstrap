@@ -1,0 +1,38 @@
+name = "mason-forge-cloud"
+main = "src/index.js"
+compatibility_date = "2026-07-23"
+
+[vars]
+ENVIRONMENT = "production"
+SYSTEM_NAME = "Mason Forge Cloud"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mason-forge-cloud"
+database_id = "736f655b-889d-4fb2-8948-0a396d39436f"
+migrations_dir = "schema"
+
+[[r2_buckets]]
+binding = "PROJECT_FILES"
+bucket_name = "mason-forge-project-files"
+
+[[queues.producers]]
+binding = "DEPARTMENT_QUEUE"
+queue = "mason-forge-department-work"
+
+[[queues.consumers]]
+queue = "mason-forge-department-work"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+dead_letter_queue = "mason-forge-department-dead-letter"
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+[observability]
+enabled = true
+
+# Secrets are already configured in Cloudflare. Never put their plaintext
+# values in this file, a ZIP, a chat, or source control.
+

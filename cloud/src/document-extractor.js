@@ -1,3 +1,5 @@
+import { routeExtractedEvidence } from "./evidence-task-router.js";
+
 const now = () => new Date().toISOString();
 
 function bytesToBase64(bytes) {
@@ -124,7 +126,8 @@ export async function extractProjectFile(message, env) {
     WHERE id = ?
   `).bind(extractionKey, now(), file.id).run();
 
-  return { fileId: file.id, extractionKey, responseId: payload.id || null };
+  const routed = await routeExtractedEvidence(file, extractionKey, env);
+  return { fileId: file.id, extractionKey, responseId: payload.id || null, ...routed };
 }
 
 export async function markExtractionFailure(message, env, error, terminal = false) {

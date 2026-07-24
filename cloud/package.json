@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check src/index.js",
+    "check": "find src -name '*.js' -print0 | xargs -0 -n1 node --check",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:local": "wrangler d1 execute mason-forge-cloud --local --file schema/0001_initial.sql",

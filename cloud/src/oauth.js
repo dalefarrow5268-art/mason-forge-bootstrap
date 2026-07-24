@@ -114,9 +114,12 @@ async function readCimdClient(clientId) {
 
   const response = await fetch(url, {
     headers: { accept: "application/json" },
-    redirect: "error",
+    // Cloudflare Workers supports "follow" and "manual", but not "error".
+    // Keep redirects visible so client metadata cannot silently change hosts.
+    redirect: "manual",
     signal: AbortSignal.timeout(10000),
   });
+  if (response.status >= 300 && response.status < 400) return null;
   if (!response.ok) return null;
   const metadata = await response.json();
   if (metadata.client_id && metadata.client_id !== clientId) return null;

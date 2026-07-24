@@ -6,6 +6,7 @@ compatibility_date = "2026-07-23"
 ENVIRONMENT = "production"
 SYSTEM_NAME = "Mason Forge Cloud"
 OPENAI_MODEL = "gpt-5-mini"
+RELEASE_ID = "2026-07-24-operational-1"
 
 [[d1_databases]]
 binding = "DB"

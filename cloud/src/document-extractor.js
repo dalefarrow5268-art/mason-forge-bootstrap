@@ -1,6 +1,16 @@
-import { routeExtractedEvidence } from "./evidence-task-router.js";
+import { routeExtractedEvidence, routeReadyEvidenceBatches } from "./evidence-task-router.js";
 
 const now = () => new Date().toISOString();
+
+function permanentError(message) {
+  const error = new Error(message);
+  error.permanent = true;
+  return error;
+}
+
+export function isPermanentExtractionError(error) {
+  return Boolean(error?.permanent);
+}
 
 function bytesToBase64(bytes) {
   let binary = "";
@@ -44,6 +54,7 @@ async function callOpenAI(env, file, bytes) {
     headers: {
       authorization: `Bearer ${env.OPENAI_API_KEY}`,
       "content-type": "application/json",
+      "x-client-request-id": crypto.randomUUID(),
     },
     body: JSON.stringify({
       model: env.OPENAI_DOCUMENT_MODEL || env.OPENAI_MODEL || "gpt-5-mini",
@@ -76,8 +87,12 @@ async function callOpenAI(env, file, bytes) {
     }),
   });
 
-  const payload = await response.json();
-  if (!response.ok) throw new Error(`OpenAI ${response.status}: ${payload?.error?.message || JSON.stringify(payload)}`);
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = `OpenAI ${response.status}: ${payload?.error?.message || JSON.stringify(payload)}`;
+    if ([400, 413, 415, 422].includes(response.status)) throw permanentError(message);
+    throw new Error(message);
+  }
   const text = extractOutputText(payload);
   if (!text) throw new Error("OpenAI returned no document extraction output.");
   return { payload, content: safeJson(text) };
@@ -85,16 +100,35 @@ async function callOpenAI(env, file, bytes) {
 
 export async function extractProjectFile(message, env) {
   if (!env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not configured.");
+
   const file = await env.DB.prepare("SELECT * FROM project_files WHERE id = ?").bind(message.fileId).first();
   if (!file || file.extracted_text_key) return { skipped: true };
 
+  const claim = await env.DB.prepare(`
+    UPDATE project_files
+    SET review_status = 'EXTRACTING', updated_at = ?
+    WHERE id = ?
+      AND extracted_text_key IS NULL
+      AND (
+        review_status IN ('EXTRACTION QUEUED','EXTRACTION RETRYING')
+        OR (review_status = 'EXTRACTING' AND updated_at < datetime('now', '-20 minutes'))
+      )
+  `).bind(now(), file.id).run();
+
+  if (Number(claim.meta?.changes || 0) === 0) {
+    const current = await env.DB.prepare("SELECT review_status, extracted_text_key FROM project_files WHERE id = ?")
+      .bind(file.id).first();
+    if (current?.extracted_text_key) return { skipped: true };
+    return { busy: true, reviewStatus: current?.review_status || file.review_status };
+  }
+
   const maxBytes = Number(env.MAX_DOCUMENT_EXTRACTION_BYTES || 20 * 1024 * 1024);
   if (Number(file.size_bytes || 0) > maxBytes) {
-    throw new Error(`File exceeds extraction limit of ${maxBytes} bytes.`);
+    throw permanentError(`File exceeds extraction limit of ${maxBytes} bytes.`);
   }
 
   const object = await env.PROJECT_FILES.get(file.r2_key);
-  if (!object) throw new Error(`R2 object not found: ${file.r2_key}`);
+  if (!object) throw permanentError(`R2 object not found: ${file.r2_key}`);
   const bytes = new Uint8Array(await object.arrayBuffer());
   const { payload, content } = await callOpenAI(env, file, bytes);
 
@@ -123,7 +157,7 @@ export async function extractProjectFile(message, env) {
   await env.DB.prepare(`
     UPDATE project_files
     SET extracted_text_key = ?, review_status = 'EXTRACTED - NEEDS HUMAN REVIEW', updated_at = ?
-    WHERE id = ?
+    WHERE id = ? AND extracted_text_key IS NULL
   `).bind(extractionKey, now(), file.id).run();
 
   const routed = await routeExtractedEvidence(file, extractionKey, env);
@@ -131,6 +165,7 @@ export async function extractProjectFile(message, env) {
 }
 
 export async function markExtractionFailure(message, env, error, terminal = false) {
+  const file = await env.DB.prepare("SELECT project_id FROM project_files WHERE id = ?").bind(message.fileId).first();
   await env.DB.prepare(`
     UPDATE project_files
     SET review_status = ?, updated_at = ?
@@ -140,4 +175,8 @@ export async function markExtractionFailure(message, env, error, terminal = fals
     now(),
     message.fileId,
   ).run();
+
+  if (terminal && file?.project_id) {
+    await routeReadyEvidenceBatches(Number(file.project_id), env);
+  }
 }

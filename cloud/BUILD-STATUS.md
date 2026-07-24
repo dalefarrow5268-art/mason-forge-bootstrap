@@ -10,26 +10,29 @@
 - Thirteen projects were migrated.
 - Fairfield project 4 has 292 files registered in D1 and R2.
 - Estero project 5 has 162 files registered in D1 and R2.
+- The 65 initial department assignments completed with one durable output per task.
 
-## Full production release candidate included in main
+## Hardened production release included in main
 
-- Durable OpenAI-backed department processors.
-- Honest task states, retries, event history and department output records.
-- Automatic recovery of assignments blocked by the former placeholder processor.
-- R2 source-document extraction and structured evidence records.
+- Durable OpenAI-backed department processors with atomic task claiming.
+- Honest task states, retries, stale-heartbeat recovery, event history and output records.
+- Idempotent R2 source-document extraction with correct data-URL file encoding.
+- Text, image and PDF inputs routed by source type.
+- Evidence batching prevents one task explosion per source file.
 - Automatic evidence routing to Peter Files, Mason Holmes, Tommy Takeoff, Carol Contacts and Eddie Email.
-- Department processors load actual R2 evidence records before producing outputs.
+- Department processors load bounded R2 evidence records before producing outputs.
 - Continuity Ledger current-state heads, immutable checkpoints and atomic facts.
-- Continuity-first ChatGPT connector bootstrap and OpenAPI contract.
-- Authenticated dashboard cloud bootstrap endpoint.
-- Cron recovery and document-extraction queueing.
+- Continuity-first ChatGPT connector, project read endpoints and MCP route.
+- Authenticated dashboard cloud bootstrap endpoint with no-store proxying.
+- Cron and request-triggered self-healing for task recovery and document extraction.
 - Human review retained for generated work and consequential actions.
-- Runtime schema initialization replaces the brittle remote D1 migration gate.
+- Runtime schema initialization and legacy extraction-failure recovery.
+- End-to-end production verifier and durable verification ledger.
 
 ## Deployment rule
 
-This file intentionally changes under `cloud/**` to trigger a brand-new production GitHub Actions workflow from the latest `main`. The release must not be described as deployed until the Worker health endpoint and live task/output records provide evidence of success.
+This file intentionally changes under `cloud/**` to trigger a brand-new production GitHub Actions workflow from the latest `main`. The release must not be described as deployed until the verification ledger proves fresh dashboard responses, verified continuity, reconciled project/file/task totals, R2 availability, no blocked or stale tasks, durable outputs and at least one successful source-document extraction.
 
 ## Current trigger
 
-Fresh deployment triggered after rotating the Cloudflare API token in GitHub Actions on 2026-07-24.
+Final consolidated deployment triggered on 2026-07-24 after correcting OpenAI `file_data` encoding and requeueing the 453 affected project files.

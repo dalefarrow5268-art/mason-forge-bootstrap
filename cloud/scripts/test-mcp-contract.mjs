@@ -245,9 +245,7 @@ assert.match(code, /^mfc_/);
 
 const exchangeParameters = {
   grant_type: "authorization_code",
-  client_id: registeredClient.client_id,
   code,
-  redirect_uri: redirectUri,
   code_verifier: verifier,
 };
 const exchange = await oauthResponse(formRequest(`${origin}/oauth/token`, exchangeParameters), env);
@@ -265,10 +263,13 @@ const replay = await oauthResponse(formRequest(`${origin}/oauth/token`, exchange
 assert.equal(replay.status, 400);
 assert.equal((await replay.json()).error, "invalid_grant");
 
-const refresh = await oauthResponse(formRequest(`${origin}/oauth/token`, {
-  grant_type: "refresh_token",
-  client_id: registeredClient.client_id,
-  refresh_token: tokens.refresh_token,
+const refresh = await oauthResponse(new Request(`${origin}/oauth/token`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    grant_type: "refresh_token",
+    refresh_token: tokens.refresh_token,
+  }),
 }), env);
 assert.equal(refresh.status, 200);
 const refreshedTokens = await refresh.json();

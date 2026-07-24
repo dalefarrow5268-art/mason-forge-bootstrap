@@ -91,6 +91,16 @@ jobs:
           report.failedReasons = failedReasons;
           report.failedExtensions = failedExtensions;
           report.failedSamples = failedSamples;
+          const projectValues = Object.values(report.projects);
+          report.pipelineEvidence = {
+            extractedCount: Number(byStatus['EXTRACTED - NEEDS HUMAN REVIEW'] || 0),
+            totalTaskCount: projectValues.reduce((sum, project) => sum + Number(project.taskCount || 0), 0),
+            totalOutputCount: projectValues.reduce((sum, project) => sum + Number(project.outputCount || 0), 0),
+            evidenceBatchCount: projectValues.reduce((sum, project) => sum + Number(project.evidenceBatchCount || 0), 0),
+            evidenceTasksCreated: projectValues.some((project) => Number(project.taskCount || 0) > 5),
+            evidenceOutputsCreated: projectValues.some((project) => Number(project.outputCount || 0) > 5),
+            noExtractionFailures: Object.keys(failedReasons).length === 0,
+          };
           await fs.mkdir('verification', { recursive: true });
           await fs.writeFile('verification/extraction-diagnostics.json', JSON.stringify(report, null, 2));
           console.log(JSON.stringify(report, null, 2));

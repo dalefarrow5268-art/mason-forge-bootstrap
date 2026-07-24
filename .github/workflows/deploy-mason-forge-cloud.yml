@@ -54,17 +54,23 @@ jobs:
 
       - name: Verify full operational readiness
         run: |
-          node <<'NODE'
+          node --input-type=module <<'NODE'
           const url = 'https://mason-forge-cloud.mason-forge-ssx.workers.dev/health';
           const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
           let last;
-          for (let attempt = 1; attempt <= 12; attempt += 1) {
-            const response = await fetch(`${url}?attempt=${attempt}&t=${Date.now()}`, { cache: 'no-store' });
+          for (let attempt = 1; attempt <= 18; attempt += 1) {
+            const response = await fetch(`${url}?attempt=${attempt}&t=${Date.now()}`, {
+              cache: 'no-store',
+              headers: { 'cache-control': 'no-cache, no-store, max-age=0', pragma: 'no-cache' },
+            });
             const text = await response.text();
             try { last = JSON.parse(text); } catch { throw new Error(`Health returned non-JSON: ${text}`); }
-            console.log(`Attempt ${attempt}:`, last);
+            console.log(`Attempt ${attempt}:`, JSON.stringify(last));
+            const noBlocked = Number(last.taskTotals?.BLOCKED || 0) === 0;
+            const totalsReconcile = Number(last.totalTasks || 0) === Object.values(last.taskTotals || {})
+              .reduce((sum, value) => sum + Number(value || 0), 0);
             if (response.ok && last.status === 'online' && last.operationalReady === true &&
-                last.continuity?.verification_status === 'VERIFIED' &&
+                last.continuity?.verification_status === 'VERIFIED' && noBlocked && totalsReconcile &&
                 Number(last.totalTasks || 0) > 0 && Number(last.outputCount || 0) > 0) {
               process.exit(0);
             }

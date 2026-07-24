@@ -1,4 +1,4 @@
-# Build Status — Production Release Candidate, July 24, 2026
+# Build Status — Full Production Release Candidate, July 24, 2026
 
 ## Previously deployed and verified
 
@@ -11,12 +11,14 @@
 - Fairfield project 4 has 292 files registered in D1 and R2.
 - Estero project 5 has 162 files registered in D1 and R2.
 
-## Production release candidate included in main
+## Full production release candidate included in main
 
 - Durable OpenAI-backed department processors.
 - Honest task states, retries, event history and department output records.
 - Automatic recovery of assignments blocked by the former placeholder processor.
 - R2 source-document extraction and structured evidence records.
+- Automatic evidence routing to Peter Files, Mason Holmes, Tommy Takeoff, Carol Contacts and Eddie Email.
+- Department processors load actual R2 evidence records before producing outputs.
 - Continuity Ledger current-state heads, immutable checkpoints and atomic facts.
 - Continuity-first ChatGPT connector bootstrap and OpenAPI contract.
 - Authenticated dashboard cloud bootstrap endpoint.

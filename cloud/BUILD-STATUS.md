@@ -24,7 +24,8 @@
 - Authenticated dashboard cloud bootstrap endpoint.
 - Cron recovery and document-extraction queueing.
 - Human review retained for generated work and consequential actions.
+- Runtime schema initialization replaces the brittle remote D1 migration gate.
 
 ## Deployment rule
 
-This file intentionally changes under `cloud/**` to trigger the production GitHub Actions workflow. The release must not be described as deployed until the workflow, Worker health endpoint, D1 migrations, task events and output records provide evidence of success.
+This file intentionally changes under `cloud/**` to trigger a brand-new production GitHub Actions workflow from the latest `main`. The release must not be described as deployed until the Worker health endpoint and live task/output records provide evidence of success.

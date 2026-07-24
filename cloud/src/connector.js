@@ -77,13 +77,12 @@ export async function connectorResponse(request, env) {
   const [head, projects, tasks, outputs] = await Promise.all([
     env.DB.prepare("SELECT * FROM continuity_heads WHERE scope_type = 'system' AND scope_id = 'mason-forge'").first(),
     env.DB.prepare(`SELECT p.id, p.name, p.location, p.client, p.status, p.review_status,
-      COUNT(DISTINCT f.id) file_count,
-      SUM(CASE WHEN t.status='RUNNING' THEN 1 ELSE 0 END) running_tasks,
-      SUM(CASE WHEN t.status='QUEUED' THEN 1 ELSE 0 END) queued_tasks,
-      SUM(CASE WHEN t.status='COMPLETED' THEN 1 ELSE 0 END) completed_tasks,
-      SUM(CASE WHEN t.status='FAILED' THEN 1 ELSE 0 END) failed_tasks
-      FROM projects p LEFT JOIN project_files f ON f.project_id=p.id
-      LEFT JOIN department_tasks t ON t.project_id=p.id GROUP BY p.id ORDER BY p.updated_at DESC`).all(),
+      (SELECT COUNT(*) FROM project_files f WHERE f.project_id = p.id) AS file_count,
+      (SELECT COUNT(*) FROM department_tasks t WHERE t.project_id = p.id AND t.status = 'RUNNING') AS running_tasks,
+      (SELECT COUNT(*) FROM department_tasks t WHERE t.project_id = p.id AND t.status = 'QUEUED') AS queued_tasks,
+      (SELECT COUNT(*) FROM department_tasks t WHERE t.project_id = p.id AND t.status = 'COMPLETED') AS completed_tasks,
+      (SELECT COUNT(*) FROM department_tasks t WHERE t.project_id = p.id AND t.status = 'FAILED') AS failed_tasks
+      FROM projects p ORDER BY p.updated_at DESC`).all(),
     env.DB.prepare("SELECT status, COUNT(*) count FROM department_tasks GROUP BY status").all(),
     env.DB.prepare("SELECT COUNT(*) count FROM department_outputs").first(),
   ]);

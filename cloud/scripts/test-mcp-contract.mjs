@@ -249,7 +249,6 @@ const exchangeParameters = {
   code,
   redirect_uri: redirectUri,
   code_verifier: verifier,
-  resource,
 };
 const exchange = await oauthResponse(formRequest(`${origin}/oauth/token`, exchangeParameters), env);
 assert.equal(exchange.status, 200);
@@ -270,7 +269,6 @@ const refresh = await oauthResponse(formRequest(`${origin}/oauth/token`, {
   grant_type: "refresh_token",
   client_id: registeredClient.client_id,
   refresh_token: tokens.refresh_token,
-  resource,
 }), env);
 assert.equal(refresh.status, 200);
 const refreshedTokens = await refresh.json();

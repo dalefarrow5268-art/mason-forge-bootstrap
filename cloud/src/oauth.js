@@ -351,8 +351,8 @@ async function issueTokens(env, { clientId, scope, resource }) {
 }
 
 async function exchangeAuthorizationCode(parameters, env, origin) {
-  if (!parameters.client_id || !parameters.code || !parameters.redirect_uri || !validCodeVerifier(parameters.code_verifier)) {
-    return oauthError("invalid_request", "client_id, code, redirect_uri, and a PKCE code_verifier are required.");
+  if (!parameters.code || !validCodeVerifier(parameters.code_verifier)) {
+    return oauthError("invalid_request", "code and a PKCE code_verifier are required.");
   }
   if (parameters.resource && parameters.resource !== canonicalResource(origin)) {
     return oauthError("invalid_target", "The protected resource is invalid.");
@@ -364,12 +364,11 @@ async function exchangeAuthorizationCode(parameters, env, origin) {
     FROM mcp_oauth_codes
     WHERE code_hash = ? AND used_at IS NULL AND expires_at > ?
   `).bind(codeHash, new Date().toISOString()).first();
-  const requestedResource = parameters.resource || row?.resource;
   if (!row
-    || row.client_id !== parameters.client_id
-    || row.redirect_uri !== parameters.redirect_uri
-    || row.resource !== requestedResource
-    || requestedResource !== canonicalResource(origin)
+    || row.resource !== canonicalResource(origin)
+    || (parameters.client_id && row.client_id !== parameters.client_id)
+    || (parameters.redirect_uri && row.redirect_uri !== parameters.redirect_uri)
+    || (parameters.resource && row.resource !== parameters.resource)
     || (await sha256(parameters.code_verifier)) !== row.code_challenge) {
     return oauthError("invalid_grant", "The authorization code is invalid or expired.");
   }
@@ -389,8 +388,8 @@ async function exchangeAuthorizationCode(parameters, env, origin) {
 }
 
 async function exchangeRefreshToken(parameters, env, origin) {
-  if (!parameters.client_id || !parameters.refresh_token) {
-    return oauthError("invalid_request", "client_id and refresh_token are required.");
+  if (!parameters.refresh_token) {
+    return oauthError("invalid_request", "refresh_token is required.");
   }
   if (parameters.resource && parameters.resource !== canonicalResource(origin)) {
     return oauthError("invalid_target", "The protected resource is invalid.");
@@ -402,11 +401,10 @@ async function exchangeRefreshToken(parameters, env, origin) {
     FROM mcp_oauth_tokens
     WHERE token_hash = ? AND token_kind = 'refresh' AND revoked_at IS NULL AND expires_at > ?
   `).bind(refreshHash, new Date().toISOString()).first();
-  const requestedResource = parameters.resource || row?.resource;
   if (!row
-    || row.client_id !== parameters.client_id
-    || row.resource !== requestedResource
-    || requestedResource !== canonicalResource(origin)) {
+    || row.resource !== canonicalResource(origin)
+    || (parameters.client_id && row.client_id !== parameters.client_id)
+    || (parameters.resource && row.resource !== parameters.resource)) {
     return oauthError("invalid_grant", "The refresh token is invalid or expired.");
   }
 
@@ -427,10 +425,14 @@ async function exchangeRefreshToken(parameters, env, origin) {
 async function token(request, env, origin) {
   if (request.method !== "POST") return oauthError("invalid_request", "Use POST to exchange OAuth tokens.", 405);
   const contentType = request.headers.get("content-type") || "";
-  if (!contentType.includes("application/x-www-form-urlencoded")) {
-    return oauthError("invalid_request", "Token requests must use application/x-www-form-urlencoded.");
+  let parameters;
+  if (contentType.includes("application/x-www-form-urlencoded")) {
+    parameters = Object.fromEntries(new URLSearchParams(await request.text()));
+  } else if (contentType.includes("application/json")) {
+    parameters = await request.json();
+  } else {
+    return oauthError("invalid_request", "Token requests must use application/x-www-form-urlencoded or application/json.");
   }
-  const parameters = Object.fromEntries(new URLSearchParams(await request.text()));
   if (parameters.grant_type === "authorization_code") {
     return exchangeAuthorizationCode(parameters, env, origin);
   }

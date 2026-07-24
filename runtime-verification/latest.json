@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-07-24T23:56:46.600Z",
-  "completedAt": "2026-07-24T23:56:51.138Z",
+  "startedAt": "2026-07-24T23:58:00.792Z",
+  "completedAt": "2026-07-24T23:58:04.588Z",
   "success": true,
   "worker": {
     "attempt": 1,
@@ -11,7 +11,7 @@
       "operationalReady": true,
       "service": "Mason Forge Cloud",
       "environment": "production",
-      "releaseId": "2026-07-24-oauth-compatibility-12",
+      "releaseId": "2026-07-24-mcp-discovery-13",
       "database": "D1 VERIFIED",
       "projectFileStorage": "R2 VERIFIED",
       "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
@@ -204,31 +204,31 @@
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-07-24T23:56:47.573Z"
+      "checkedAt": "2026-07-24T23:58:01.271Z"
     },
     "errors": []
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-07-24T23:56:48.143Z",
+      "capturedAt": "2026-07-24T23:58:01.692Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-07-24T23:56:48.053Z",
+        "retrievedAt": "2026-07-24T23:58:01.656Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
-          "checkpoint_id": "checkpoint_08856e29-8c48-453a-88d5-f3c5f20ba2a7",
-          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-oauth-compatibility-12\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":454,\"queued\":0,\"extracting\":0,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":195},\"outputCount\":195,\"latestOutputAt\":\"2026-07-24T18:32:09.027Z\",\"latestActivityAt\":\"2026-07-24T18:32:09.027Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
+          "checkpoint_id": "checkpoint_3c110542-ff3c-4886-8a93-33097eabd597",
+          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-mcp-discovery-13\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":454,\"queued\":0,\"extracting\":0,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":195},\"outputCount\":195,\"latestOutputAt\":\"2026-07-24T18:32:09.027Z\",\"latestActivityAt\":\"2026-07-24T18:32:09.027Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
           "summary": "Mason Forge live state: 13 projects, 454 files, 0 running, 0 queued, 195 completed, 195 outputs, 454 files extracted.",
           "verification_status": "VERIFIED",
           "source": "LIVE D1 VERIFIED STATE",
-          "version": 1419,
+          "version": 1420,
           "created_at": "2026-07-24T15:05:09.403Z",
-          "updated_at": "2026-07-24T22:00:01.237Z",
+          "updated_at": "2026-07-24T23:58:01.490Z",
           "state": {
             "system": "Mason Forge Cloud",
             "deployment": "LIVE",
-            "releaseId": "2026-07-24-oauth-compatibility-12",
+            "releaseId": "2026-07-24-mcp-discovery-13",
             "projects": 13,
             "files": 454,
             "extraction": {
@@ -477,25 +477,25 @@
       "projectFiles": 454
     },
     {
-      "capturedAt": "2026-07-24T23:56:50.439Z",
+      "capturedAt": "2026-07-24T23:58:04.084Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-07-24T23:56:50.373Z",
+        "retrievedAt": "2026-07-24T23:58:04.022Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
-          "checkpoint_id": "checkpoint_08856e29-8c48-453a-88d5-f3c5f20ba2a7",
-          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-oauth-compatibility-12\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":454,\"queued\":0,\"extracting\":0,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":195},\"outputCount\":195,\"latestOutputAt\":\"2026-07-24T18:32:09.027Z\",\"latestActivityAt\":\"2026-07-24T18:32:09.027Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
+          "checkpoint_id": "checkpoint_3c110542-ff3c-4886-8a93-33097eabd597",
+          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-mcp-discovery-13\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":454,\"queued\":0,\"extracting\":0,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":195},\"outputCount\":195,\"latestOutputAt\":\"2026-07-24T18:32:09.027Z\",\"latestActivityAt\":\"2026-07-24T18:32:09.027Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
           "summary": "Mason Forge live state: 13 projects, 454 files, 0 running, 0 queued, 195 completed, 195 outputs, 454 files extracted.",
           "verification_status": "VERIFIED",
           "source": "LIVE D1 VERIFIED STATE",
-          "version": 1419,
+          "version": 1420,
           "created_at": "2026-07-24T15:05:09.403Z",
-          "updated_at": "2026-07-24T22:00:01.237Z",
+          "updated_at": "2026-07-24T23:58:01.490Z",
           "state": {
             "system": "Mason Forge Cloud",
             "deployment": "LIVE",
-            "releaseId": "2026-07-24-oauth-compatibility-12",
+            "releaseId": "2026-07-24-mcp-discovery-13",
             "projects": 13,
             "files": 454,
             "extraction": {
@@ -780,6 +780,6 @@
     }
   },
   "errors": [],
-  "sourceCommit": "7ff2a7fdc7a62ae693d8aa25ef5b957f603a2be9",
-  "workflowRunId": "30135067550"
+  "sourceCommit": "1357669a31be3f7c9a4dee71046e35076e912cbe",
+  "workflowRunId": "30135128294"
 }

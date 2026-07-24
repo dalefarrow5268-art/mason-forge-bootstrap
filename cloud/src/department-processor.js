@@ -62,15 +62,15 @@ function departmentInstructions(task, employee, hasExtractedEvidence) {
       ? "Structured source-document evidence is supplied. Cite source file IDs, file names, sheet references, specification sections, and exact values whenever available."
       : "Only file-register metadata is available. Produce an intake-stage deliverable and state every evidence limitation explicitly.",
     "Do not claim a takeoff, RFI, legal conclusion, schedule forecast, or due-diligence finding is complete without sufficient source evidence.",
-    "Return valid JSON with keys: summary, verifiedFacts, limitations, findings, recommendedNextActions, evidenceRegister, confidence.",
+    "Return valid JSON with keys: summary, verifiedFacts, limitations, findings, recommendedNextActions, evidenceRegister, departmentDeliverable, confidence.",
     "Every finding must include its evidence source. All consequential actions require human review.",
   ];
   const specialized = {
-    "Project File Department": "Classify documents, identify likely revisions and duplicates, reconcile the document register, and flag unreadable or missing source material.",
-    "Project Investigation Department": "Identify evidence-backed risks, conflicts, missing information, project-party verification needs, permit or legal research needs, and candidate RFIs.",
-    "Project Takeoff Department": "Identify measurable scopes, plan/detail/spec references, measurement prerequisites, and blockers. Create quantities only when the supplied evidence supports them.",
-    "Project Contact Department": "Identify and reconcile owners, developers, architects, engineers, contractors, municipalities, vendors, and other contacts. Separate verified contact facts from inferences.",
-    "Project Communications Department": "Prepare draft RFIs, clarification requests, bidder communications, and internal summaries from approved evidence. Never send communications.",
+    "Project File Department": "Deliver a document register, revision/supersession register, duplicate candidates, missing-document register, and unreadable-file register.",
+    "Project Investigation Department": "Deliver an investigation summary, chronology, party map, risk/conflict register, public-record research queue, and candidate RFIs.",
+    "Project Takeoff Department": "Deliver remaining scope, evidence-supported quantities, quantity gaps, measurement blockers, exclusions, and trade-interface register.",
+    "Project Contact Department": "Deliver verified and candidate contacts for owner, developer, GC, municipality, inspectors, subcontractors, designers, and vendors, including missing fields.",
+    "Project Communications Department": "Deliver communication history, commitments, unanswered questions, response gaps, responsible parties, and human-review-only draft outreach. Never send communications.",
   };
   return [...common, specialized[task.department] || "Create an honest evidence-backed department work product.", `Employee job description: ${employee?.job_description_json || task.instructions}`].join("\n");
 }
@@ -98,6 +98,18 @@ async function readExtractionRecords(env, files, limit = 25) {
 }
 
 async function callOpenAI(env, task, project, employee, files, evidenceRecords) {
+  const finalSynthesis = task.workstream === "FINAL EVIDENCE SYNTHESIS";
+  const [priorOutputs, reviewQueue] = finalSynthesis
+    ? await Promise.all([
+      env.DB.prepare(`SELECT id, title, content_json, evidence_register_json, confidence, created_at
+        FROM department_outputs WHERE project_id=? AND employee_id=?
+        ORDER BY created_at LIMIT 100`).bind(task.project_id, task.employee_id).all(),
+      env.DB.prepare(`SELECT q.file_id, q.review_type, q.source_kind, q.reason, q.status,
+        f.file_name, f.relative_path FROM extraction_review_queue q
+        JOIN project_files f ON f.id=q.file_id WHERE q.project_id=?
+        ORDER BY q.status, q.review_type, f.relative_path`).bind(task.project_id).all(),
+    ])
+    : [{ results: [] }, { results: [] }];
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     signal: AbortSignal.timeout(Number(env.OPENAI_REQUEST_TIMEOUT_MS || 600000)),
@@ -134,6 +146,14 @@ async function callOpenAI(env, task, project, employee, files, evidenceRecords) 
               extractionKey: file.extracted_text_key,
             })),
             extractedEvidence: evidenceRecords,
+            priorDepartmentOutputs: (priorOutputs.results || []).map((output) => ({
+              ...output,
+              content: safeJson(output.content_json),
+              evidenceRegister: safeJson(output.evidence_register_json),
+              content_json: undefined,
+              evidence_register_json: undefined,
+            })),
+            extractionReviewQueue: reviewQueue.results || [],
           }),
         },
       ],
@@ -185,7 +205,7 @@ export async function processDepartmentTask(message, env) {
 
   const fileQuery = sourceFileIds.length
     ? `SELECT id, file_name, relative_path, file_type, size_bytes, sha256, revision, document_date, review_status, extracted_text_key, source_class, uploaded_at FROM project_files WHERE project_id = ? AND id IN (${sourceFileIds.map(() => "?").join(",")}) ORDER BY relative_path`
-    : "SELECT id, file_name, relative_path, file_type, size_bytes, sha256, revision, document_date, review_status, extracted_text_key, source_class, uploaded_at FROM project_files WHERE project_id = ? ORDER BY CASE WHEN extracted_text_key IS NOT NULL THEN 0 ELSE 1 END, relative_path LIMIT 250";
+    : "SELECT id, file_name, relative_path, file_type, size_bytes, sha256, revision, document_date, review_status, extracted_text_key, source_class, uploaded_at FROM project_files WHERE project_id = ? ORDER BY CASE WHEN extracted_text_key IS NOT NULL THEN 0 ELSE 1 END, relative_path LIMIT 500";
 
   const [project, employee, filesResult] = await Promise.all([
     env.DB.prepare("SELECT * FROM projects WHERE id = ?").bind(task.project_id).first(),

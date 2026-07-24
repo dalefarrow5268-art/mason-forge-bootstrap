@@ -25,6 +25,9 @@ async function getJson(url, label) {
 }
 
 function countStatuses(rows = []) {
+  if (!Array.isArray(rows)) {
+    return Object.fromEntries(Object.entries(rows || {}).map(([status, count]) => [String(status), Number(count || 0)]));
+  }
   return Object.fromEntries(rows.map((row) => [String(row.status), Number(row.count || 0)]));
 }
 
@@ -76,17 +79,52 @@ function validateHealth(result) {
   const extraction = health.extraction || {};
   const extractionTotal = sum([extraction.extracted, extraction.queued, extraction.extracting, extraction.retrying, extraction.failed, extraction.pending]);
   if (extractionTotal !== Number(health.files || 0)) errors.push(`Extraction accounting ${extractionTotal} does not match ${Number(health.files || 0)} files.`);
+  if (Number(health.files || 0) > 0 && Number(extraction.extracted || 0) < 1) errors.push("No project file has completed extraction.");
   return errors;
 }
 
+async function collectExtractionDiagnostics() {
+  const result = {};
+  for (const projectId of [4, 5]) {
+    try {
+      const endpoint = `${DASHBOARD_BOOTSTRAP}?path=${encodeURIComponent(`api/projects/${projectId}/files`)}`;
+      const response = await getJson(endpoint, `Project ${projectId} files`);
+      const files = response.data.files || [];
+      const statusCounts = {};
+      for (const file of files) statusCounts[file.review_status || "UNKNOWN"] = Number(statusCounts[file.review_status || "UNKNOWN"] || 0) + 1;
+      result[projectId] = {
+        httpStatus: response.status,
+        count: files.length,
+        statusCounts,
+        actionableSamples: files
+          .filter((file) => file.extracted_text_key == null || String(file.review_status || "").startsWith("EXTRACTION FAILED:"))
+          .slice(0, 100)
+          .map((file) => ({
+            id: file.id,
+            fileName: file.file_name,
+            relativePath: file.relative_path,
+            fileType: file.file_type,
+            sizeBytes: file.size_bytes,
+            reviewStatus: file.review_status,
+            r2Key: file.r2_key,
+          })),
+      };
+    } catch (error) {
+      result[projectId] = { error: String(error?.stack || error) };
+    }
+  }
+  return result;
+}
+
 const report = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   startedAt: isoNow(),
   completedAt: null,
   success: false,
   worker: null,
   dashboardSamples: [],
   progression: null,
+  extractionDiagnostics: null,
   errors: [],
 };
 
@@ -141,10 +179,12 @@ try {
   if (!outputsNondecreasing) report.errors.push("Output count decreased between samples.");
   if (activeAtStart && !progressionProved) report.errors.push("Queued/running work did not produce a new completion or output during verification.");
 
+  report.extractionDiagnostics = await collectExtractionDiagnostics();
   report.errors = [...new Set(report.errors)];
   report.success = report.errors.length === 0;
 } catch (error) {
   report.errors.push(String(error?.stack || error));
+  report.extractionDiagnostics = await collectExtractionDiagnostics();
 } finally {
   report.completedAt = isoNow();
   await mkdir(dirname(REPORT_PATH), { recursive: true });

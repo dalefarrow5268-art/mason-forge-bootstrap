@@ -1,17 +1,17 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-07-24T17:40:22.743Z",
-  "completedAt": "2026-07-24T17:41:54.849Z",
+  "startedAt": "2026-07-24T20:09:39.951Z",
+  "completedAt": "2026-07-24T20:09:54.221Z",
   "success": true,
   "worker": {
-    "attempt": 1,
+    "attempt": 2,
     "httpStatus": 200,
     "data": {
       "status": "online",
       "operationalReady": true,
       "service": "Mason Forge Cloud",
       "environment": "production",
-      "releaseId": "2026-07-24-operational-6",
+      "releaseId": "2026-07-24-controlled-uploads-7",
       "database": "D1 VERIFIED",
       "projectFileStorage": "R2 VERIFIED",
       "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
@@ -19,31 +19,29 @@
       "projects": 13,
       "files": 454,
       "taskTotals": {
-        "COMPLETED": 111,
-        "QUEUED": 29,
-        "RUNNING": 5
+        "COMPLETED": 195
       },
-      "totalTasks": 145,
-      "outputCount": 111,
+      "totalTasks": 195,
+      "outputCount": 195,
       "continuity": {
-        "checkpoint_id": "checkpoint_dabf639d-af0c-4934-93fc-d6c3ab8017cf",
-        "version": 1035,
+        "checkpoint_id": "checkpoint_75c7be76-3885-4fd1-b757-06f5bdfa4adb",
+        "version": 1409,
         "verification_status": "VERIFIED",
-        "updated_at": "2026-07-24T17:40:04.939Z"
+        "updated_at": "2026-07-24T18:32:10.100Z"
       },
       "extraction": {
-        "extracted": 331,
-        "queued": 112,
+        "extracted": 454,
+        "queued": 0,
         "retrying": 0,
         "failed": 0,
-        "pending": 11
+        "pending": 0
       },
       "staleRunningTasks": 0,
       "completedTasksWithoutOutput": 0,
       "duplicateOutputTasks": 0,
       "countsReconcile": true,
       "projectFileTotal": 454,
-      "projectTaskTotal": 145,
+      "projectTaskTotal": 195,
       "r2Samples": [
         {
           "fileId": 1,
@@ -99,10 +97,10 @@
           "id": 4,
           "name": "Bask Fairfield Inn Tampa",
           "file_count": 292,
-          "queued_tasks": 18,
-          "running_tasks": 3,
+          "queued_tasks": 0,
+          "running_tasks": 0,
           "blocked_tasks": 0,
-          "completed_tasks": 34,
+          "completed_tasks": 85,
           "failed_tasks": 0,
           "canceled_tasks": 0
         },
@@ -110,10 +108,10 @@
           "id": 5,
           "name": "Bask StudioRes Estero",
           "file_count": 162,
-          "queued_tasks": 11,
-          "running_tasks": 2,
+          "queued_tasks": 0,
+          "running_tasks": 0,
           "blocked_tasks": 0,
-          "completed_tasks": 22,
+          "completed_tasks": 55,
           "failed_tasks": 0,
           "canceled_tasks": 0
         },
@@ -206,38 +204,38 @@
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-07-24T17:40:23.094Z"
+      "checkedAt": "2026-07-24T20:09:51.152Z"
     },
     "errors": []
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-07-24T17:40:23.670Z",
+      "capturedAt": "2026-07-24T20:09:51.715Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-07-24T17:40:23.600Z",
+        "retrievedAt": "2026-07-24T20:09:51.660Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
-          "checkpoint_id": "checkpoint_dabf639d-af0c-4934-93fc-d6c3ab8017cf",
-          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-operational-6\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":331,\"queued\":112,\"extracting\":11,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":111,\"QUEUED\":30,\"RUNNING\":4},\"outputCount\":111,\"latestOutputAt\":\"2026-07-24T17:39:53.710Z\",\"latestActivityAt\":\"2026-07-24T17:40:04.315Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
-          "summary": "Mason Forge live state: 13 projects, 454 files, 4 running, 30 queued, 111 completed, 111 outputs, 331 files extracted.",
+          "checkpoint_id": "checkpoint_154f0f1f-c6b7-4e0c-85cd-d3f506608072",
+          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-controlled-uploads-7\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":454,\"queued\":0,\"extracting\":0,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":195},\"outputCount\":195,\"latestOutputAt\":\"2026-07-24T18:32:09.027Z\",\"latestActivityAt\":\"2026-07-24T18:32:09.027Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
+          "summary": "Mason Forge live state: 13 projects, 454 files, 0 running, 0 queued, 195 completed, 195 outputs, 454 files extracted.",
           "verification_status": "VERIFIED",
           "source": "LIVE D1 VERIFIED STATE",
-          "version": 1035,
+          "version": 1410,
           "created_at": "2026-07-24T15:05:09.403Z",
-          "updated_at": "2026-07-24T17:40:04.939Z",
+          "updated_at": "2026-07-24T20:09:51.406Z",
           "state": {
             "system": "Mason Forge Cloud",
             "deployment": "LIVE",
-            "releaseId": "2026-07-24-operational-6",
+            "releaseId": "2026-07-24-controlled-uploads-7",
             "projects": 13,
             "files": 454,
             "extraction": {
               "total": 454,
-              "extracted": 331,
-              "queued": 112,
-              "extracting": 11,
+              "extracted": 454,
+              "queued": 0,
+              "extracting": 0,
               "retrying": 0,
               "failed": 0,
               "routedReview": 0,
@@ -245,13 +243,11 @@
               "accounted": 454
             },
             "taskTotals": {
-              "COMPLETED": 111,
-              "QUEUED": 30,
-              "RUNNING": 4
+              "COMPLETED": 195
             },
-            "outputCount": 111,
-            "latestOutputAt": "2026-07-24T17:39:53.710Z",
-            "latestActivityAt": "2026-07-24T17:40:04.315Z",
+            "outputCount": 195,
+            "latestOutputAt": "2026-07-24T18:32:09.027Z",
+            "latestActivityAt": "2026-07-24T18:32:09.027Z",
             "staleRunningTasks": 0,
             "staleExtractionJobs": 0,
             "evidenceRule": "Active work requires RUNNING task evidence or completed department outputs."
@@ -386,9 +382,9 @@
             "status": "INTAKE",
             "review_status": "NEEDS REVIEW",
             "file_count": 162,
-            "running_tasks": 2,
-            "queued_tasks": 11,
-            "completed_tasks": 22,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 55,
             "failed_tasks": 0,
             "blocked_tasks": 0,
             "canceled_tasks": 0
@@ -401,9 +397,9 @@
             "status": "INTAKE",
             "review_status": "NEEDS REVIEW",
             "file_count": 292,
-            "running_tasks": 3,
-            "queued_tasks": 18,
-            "completed_tasks": 34,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 85,
             "failed_tasks": 0,
             "blocked_tasks": 0,
             "canceled_tasks": 0
@@ -455,70 +451,58 @@
           }
         ],
         "taskTotals": {
-          "COMPLETED": 111,
-          "QUEUED": 29,
-          "RUNNING": 5
+          "COMPLETED": 195
         },
-        "outputCount": 111,
+        "outputCount": 195,
         "evidenceRule": "Do not claim active work without RUNNING task events or completed department outputs.",
         "taskTotalsRows": [
           {
             "status": "COMPLETED",
-            "count": 111
-          },
-          {
-            "status": "QUEUED",
-            "count": 29
-          },
-          {
-            "status": "RUNNING",
-            "count": 5
+            "count": 195
           }
         ]
       },
       "errors": [],
       "globalTasks": {
-        "COMPLETED": 111,
-        "QUEUED": 29,
-        "RUNNING": 5
+        "COMPLETED": 195
       },
       "projectTasks": {
-        "QUEUED": 29,
-        "RUNNING": 5,
+        "QUEUED": 0,
+        "RUNNING": 0,
         "BLOCKED": 0,
-        "COMPLETED": 111,
+        "COMPLETED": 195,
         "FAILED": 0,
         "CANCELED": 0
       },
       "projectFiles": 454
     },
     {
-      "capturedAt": "2026-07-24T17:41:54.510Z",
+      "capturedAt": "2026-07-24T20:09:53.859Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-07-24T17:41:54.466Z",
+        "retrievedAt": "2026-07-24T20:09:53.836Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
-          "checkpoint_id": "checkpoint_e1fa11e2-b9d1-47cc-b4d2-3f45dc7fc1fe",
-          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-operational-6\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":332,\"queued\":111,\"extracting\":11,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":115,\"QUEUED\":22,\"RUNNING\":8},\"outputCount\":115,\"latestOutputAt\":\"2026-07-24T17:41:48.143Z\",\"latestActivityAt\":\"2026-07-24T17:41:51.267Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
-          "summary": "Mason Forge live state: 13 projects, 454 files, 8 running, 22 queued, 115 completed, 115 outputs, 332 files extracted.",
+          "checkpoint_id": "checkpoint_154f0f1f-c6b7-4e0c-85cd-d3f506608072",
+          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-controlled-uploads-7\",\"projects\":13,\"files\":454,\"extraction\":{\"total\":454,\"extracted\":454,\"queued\":0,\"extracting\":0,\"retrying\":0,\"failed\":0,\"routedReview\":0,\"pending\":0,\"accounted\":454},\"taskTotals\":{\"COMPLETED\":195},\"outputCount\":195,\"latestOutputAt\":\"2026-07-24T18:32:09.027Z\",\"latestActivityAt\":\"2026-07-24T18:32:09.027Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
+          "summary": "Mason Forge live state: 13 projects, 454 files, 0 running, 0 queued, 195 completed, 195 outputs, 454 files extracted.",
           "verification_status": "VERIFIED",
           "source": "LIVE D1 VERIFIED STATE",
-          "version": 1050,
+          "version": 1410,
           "created_at": "2026-07-24T15:05:09.403Z",
-          "updated_at": "2026-07-24T17:41:52.964Z",
+          "updated_at": "2026-07-24T20:09:51.406Z",
           "state": {
             "system": "Mason Forge Cloud",
             "deployment": "LIVE",
-            "releaseId": "2026-07-24-operational-6",
+            "releaseId": "2026-07-24-controlled-uploads-7",
             "projects": 13,
             "files": 454,
             "extraction": {
               "total": 454,
-              "extracted": 332,
-              "queued": 111,
-              "extracting": 11,
+              "extracted": 454,
+              "queued": 0,
+              "extracting": 0,
               "retrying": 0,
               "failed": 0,
               "routedReview": 0,
@@ -526,13 +510,11 @@
               "accounted": 454
             },
             "taskTotals": {
-              "COMPLETED": 115,
-              "QUEUED": 22,
-              "RUNNING": 8
+              "COMPLETED": 195
             },
-            "outputCount": 115,
-            "latestOutputAt": "2026-07-24T17:41:48.143Z",
-            "latestActivityAt": "2026-07-24T17:41:51.267Z",
+            "outputCount": 195,
+            "latestOutputAt": "2026-07-24T18:32:09.027Z",
+            "latestActivityAt": "2026-07-24T18:32:09.027Z",
             "staleRunningTasks": 0,
             "staleExtractionJobs": 0,
             "evidenceRule": "Active work requires RUNNING task evidence or completed department outputs."
@@ -667,9 +649,9 @@
             "status": "INTAKE",
             "review_status": "NEEDS REVIEW",
             "file_count": 162,
-            "running_tasks": 3,
-            "queued_tasks": 9,
-            "completed_tasks": 23,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 55,
             "failed_tasks": 0,
             "blocked_tasks": 0,
             "canceled_tasks": 0
@@ -682,9 +664,9 @@
             "status": "INTAKE",
             "review_status": "NEEDS REVIEW",
             "file_count": 292,
-            "running_tasks": 5,
-            "queued_tasks": 13,
-            "completed_tasks": 37,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 85,
             "failed_tasks": 0,
             "blocked_tasks": 0,
             "canceled_tasks": 0
@@ -736,38 +718,26 @@
           }
         ],
         "taskTotals": {
-          "COMPLETED": 115,
-          "QUEUED": 22,
-          "RUNNING": 8
+          "COMPLETED": 195
         },
-        "outputCount": 115,
+        "outputCount": 195,
         "evidenceRule": "Do not claim active work without RUNNING task events or completed department outputs.",
         "taskTotalsRows": [
           {
             "status": "COMPLETED",
-            "count": 115
-          },
-          {
-            "status": "QUEUED",
-            "count": 22
-          },
-          {
-            "status": "RUNNING",
-            "count": 8
+            "count": 195
           }
         ]
       },
       "errors": [],
       "globalTasks": {
-        "COMPLETED": 115,
-        "QUEUED": 22,
-        "RUNNING": 8
+        "COMPLETED": 195
       },
       "projectTasks": {
-        "QUEUED": 22,
-        "RUNNING": 8,
+        "QUEUED": 0,
+        "RUNNING": 0,
         "BLOCKED": 0,
-        "COMPLETED": 115,
+        "COMPLETED": 195,
         "FAILED": 0,
         "CANCELED": 0
       },
@@ -775,14 +745,14 @@
     }
   ],
   "progression": {
-    "activeAtStart": true,
-    "progressionProved": true,
+    "activeAtStart": false,
+    "progressionProved": false,
     "timestampsFresh": true,
     "outputsNondecreasing": true,
-    "firstOutputCount": 111,
-    "secondOutputCount": 115,
-    "firstCompleted": 111,
-    "secondCompleted": 115
+    "firstOutputCount": 195,
+    "secondOutputCount": 195,
+    "firstCompleted": 195,
+    "secondCompleted": 195
   },
   "extractionDiagnostics": {
     "4": {
@@ -790,1006 +760,26 @@
       "count": 292,
       "statusCounts": {
         "EXTRACTED - NEEDS HUMAN REVIEW": 170,
-        "EXTRACTING": 6,
-        "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 5,
-        "EXTRACTION QUEUED": 83,
-        "EXTRACTED - READY": 1,
-        "EXTRACTED - VISUAL REVIEW REQUIRED: IMAGE": 27
+        "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 65,
+        "EXTRACTED - READY": 17,
+        "EXTRACTED - VISUAL REVIEW REQUIRED: IMAGE": 40
       },
-      "actionableSamples": [
-        {
-          "id": 51,
-          "fileName": "A-574-ROOF-PLAN-AND-ROOF-SHADE-CANOPY-DETAILS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-574-ROOF-PLAN-AND-ROOF-SHADE-CANOPY-DETAILS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2786461,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 52,
-          "fileName": "A-600-DOOR-SCHEDULE-&-DETAILS-Rev.03.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-600-DOOR-SCHEDULE-&-DETAILS-Rev.03.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 204705,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 55,
-          "fileName": "A-801-FOOD-SERVICE-EQUIPMENT-ELEVATIONS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-801-FOOD-SERVICE-EQUIPMENT-ELEVATIONS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2113606,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 58,
-          "fileName": "A-805-TYPICAL-UPPER-FLOOR-CORRIDOR-RCP-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-805-TYPICAL-UPPER-FLOOR-CORRIDOR-RCP-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2588118,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 62,
-          "fileName": "A-809-LAUNDRY-PLANS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-809-LAUNDRY-PLANS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 448662,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 63,
-          "fileName": "A-810-LAUNDRY-EQUIPMENT-PLAN-Rev.02.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A-810-LAUNDRY-EQUIPMENT-PLAN-Rev.02.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 741285,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 64,
-          "fileName": "A002-CODE-SHEET-Rev.03.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A002-CODE-SHEET-Rev.03.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 303048,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 65,
-          "fileName": "A004-STATEMENT-OF-SPECIAL-INSPECTIONS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A004-STATEMENT-OF-SPECIAL-INSPECTIONS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 5021291,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 66,
-          "fileName": "A008---A-Accessibility-Standards-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A008---A-Accessibility-Standards-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2755420,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 67,
-          "fileName": "A008---B-Accessibility-Standards-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A008---B-Accessibility-Standards-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2847445,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 68,
-          "fileName": "A030-FIRST-FLOOR-LIFE-SAFETY-PLAN-Rev.04.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A030-FIRST-FLOOR-LIFE-SAFETY-PLAN-Rev.04.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 787701,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 70,
-          "fileName": "A032-ROOF-TERRACE-LIFE-SAFETY-PLAN-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A032-ROOF-TERRACE-LIFE-SAFETY-PLAN-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2187609,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 71,
-          "fileName": "A1-22-Third-Reflected-Ceiling-Plan-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A1-22-Third-Reflected-Ceiling-Plan-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 923003,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 73,
-          "fileName": "A1-24-Fifth-Reflected-Ceiling-Plan-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A1-24-Fifth-Reflected-Ceiling-Plan-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 926769,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 74,
-          "fileName": "A111-First-Floor-Plan-Rev.09.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A111-First-Floor-Plan-Rev.09.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 582139,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 75,
-          "fileName": "A112-Second-Floor-Plan-Rev.05.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A112-Second-Floor-Plan-Rev.05.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 749488,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 76,
-          "fileName": "A113-Third-Floor-Plan-Rev.04.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A113-Third-Floor-Plan-Rev.04.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 605415,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 77,
-          "fileName": "A114-Fourth-Floor-Plan-Rev.04.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A114-Fourth-Floor-Plan-Rev.04.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 717461,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 78,
-          "fileName": "A115-Fifth-Floor-Plan-Rev.04.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A115-Fifth-Floor-Plan-Rev.04.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 702191,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 79,
-          "fileName": "A116-Roof-Plan-Rev.03.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A116-Roof-Plan-Rev.03.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 275652,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 80,
-          "fileName": "A117-Roof-2-Plan-Rev.02.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A117-Roof-2-Plan-Rev.02.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 210270,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 82,
-          "fileName": "A200-Front-and-Back-Exterior-Elevations-Rev.04.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A200-Front-and-Back-Exterior-Elevations-Rev.04.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 553055,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 83,
-          "fileName": "A201-Side-Exterior-Elevations-Rev.03.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A201-Side-Exterior-Elevations-Rev.03.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 604456,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 84,
-          "fileName": "A203-ELEVATION-DETAILS-Rev.02.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A203-ELEVATION-DETAILS-Rev.02.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 441243,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 85,
-          "fileName": "A300-Building-Sections-1-Rev.02.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A300-Building-Sections-1-Rev.02.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 316542,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 86,
-          "fileName": "A310-Building-Section-2-Rev.02.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A310-Building-Section-2-Rev.02.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 386514,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 87,
-          "fileName": "A312-EXTERIOR-WALL-SECTIONS-Rev.02.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A312-EXTERIOR-WALL-SECTIONS-Rev.02.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 465279,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 89,
-          "fileName": "A314-EXTERIOR-WALL-SECTIONS-Rev.04.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A314-EXTERIOR-WALL-SECTIONS-Rev.04.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 585354,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 90,
-          "fileName": "A406A-FITNESS-ROOM-DETAILS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A406A-FITNESS-ROOM-DETAILS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2389250,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 91,
-          "fileName": "A435A-ACCESSIBLE-GUESTROOM-BATHROOMS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A435A-ACCESSIBLE-GUESTROOM-BATHROOMS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2617006,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 92,
-          "fileName": "A435B-GUESTROOM-BATHROOM-DETAILS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A435B-GUESTROOM-BATHROOM-DETAILS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2922121,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 93,
-          "fileName": "A490-STAIR-1-Rev.02.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A490-STAIR-1-Rev.02.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 467111,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 94,
-          "fileName": "A491-Stair-2-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A491-Stair-2-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 835344,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 95,
-          "fileName": "A492-Elevator-section-and-details-Rev.02.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A492-Elevator-section-and-details-Rev.02.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 394822,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 96,
-          "fileName": "A504-WELCOME-DESK-DETAILS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A504-WELCOME-DESK-DETAILS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2496146,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 97,
-          "fileName": "A508-CONNECT-AND-PRINT-DETAILS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A508-CONNECT-AND-PRINT-DETAILS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2491674,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 98,
-          "fileName": "A509A-THE-CORNER-MARKET-WITHOUT-BEER-&-WINE---ALT-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A509A-THE-CORNER-MARKET-WITHOUT-BEER-&-WINE---ALT-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2719154,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 99,
-          "fileName": "A510-THE-CORNER-MARKET-DETAILS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A510-THE-CORNER-MARKET-DETAILS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2479635,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 101,
-          "fileName": "A512-BREAKFAST-BUFFET-DETAILS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A512-BREAKFAST-BUFFET-DETAILS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2578227,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 102,
-          "fileName": "A513-BREAKFAST-AREA-GRAPHICS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A513-BREAKFAST-AREA-GRAPHICS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 3506243,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 103,
-          "fileName": "A550-ROOF-DETAILS-Rev.02.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A550-ROOF-DETAILS-Rev.02.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 444684,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 104,
-          "fileName": "A572A-PORTE-COCHERE-DETAILS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Architectural/A572A-PORTE-COCHERE-DETAILS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 3160011,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 105,
-          "fileName": "10-DRAWING-NUMBER-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Civil/10-DRAWING-NUMBER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 168906,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 106,
-          "fileName": "12-DRAWING-NUMBER-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Civil/12-DRAWING-NUMBER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 649330,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 108,
-          "fileName": "13-DRAWING-NUMBER-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Civil/13-DRAWING-NUMBER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 663633,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 109,
-          "fileName": "14-DRAWING-NUMBER-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Civil/14-DRAWING-NUMBER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 330262,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 110,
-          "fileName": "15-DRAWING-NUMBER-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Civil/15-DRAWING-NUMBER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 215275,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 111,
-          "fileName": "16-DRAWING-NUMBER-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Civil/16-DRAWING-NUMBER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 202779,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 112,
-          "fileName": "17-DRAWING-NUMBER-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Civil/17-DRAWING-NUMBER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 4423217,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 113,
-          "fileName": "18-DRAWING-NUMBER-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Civil/18-DRAWING-NUMBER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 4127660,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 115,
-          "fileName": "1A-NOTE-THAT-THIS-DRAWING-MAY-HAVE-BEEN-ALTERED-IN-SIZE-BY-REPRODUCTION.-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Civil/1A-NOTE-THAT-THIS-DRAWING-MAY-HAVE-BEEN-ALTERED-IN-SIZE-BY-REPRODUCTION.-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 1015389,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 116,
-          "fileName": "20-DRAWING-NUMBER-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Civil/20-DRAWING-NUMBER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 1153828,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 117,
-          "fileName": "21-DRAWING-NUMBER-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Civil/21-DRAWING-NUMBER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 569212,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 118,
-          "fileName": "22-DRAWING-NUMBER-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Civil/22-DRAWING-NUMBER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 436653,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 119,
-          "fileName": "23-DRAWING-NUMBER-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Civil/23-DRAWING-NUMBER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 508033,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 121,
-          "fileName": "4-DRAWING-NUMBER-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Civil/4-DRAWING-NUMBER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 578025,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 149,
-          "fileName": "E5.0-ELECTRICAL-RISER-DIAGRAM-Rev.10.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Electrical/E5.0-ELECTRICAL-RISER-DIAGRAM-Rev.10.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 455797,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 150,
-          "fileName": "E5.1-ELECTRICAL-DETAILS-Rev.09.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Electrical/E5.1-ELECTRICAL-DETAILS-Rev.09.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 365659,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 152,
-          "fileName": "E5.3-ELECTRICAL-PANEL-SCHEDULES-Rev.09.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Electrical/E5.3-ELECTRICAL-PANEL-SCHEDULES-Rev.09.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 1550387,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 155,
-          "fileName": "F1-00-COVER-SHEET-Rev.1.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/FIRE-ALARM-SYSTEM/F1-00-COVER-SHEET-Rev.1.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 739428,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 157,
-          "fileName": "F11-00-FIRE-ALARM-BATTERY-CALCS-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/FIRE-ALARM-SYSTEM/F11-00-FIRE-ALARM-BATTERY-CALCS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 613040,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 160,
-          "fileName": "F14-00-FIRE-ALARM-VOLTAGE-DROPS-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/FIRE-ALARM-SYSTEM/F14-00-FIRE-ALARM-VOLTAGE-DROPS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 611114,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 163,
-          "fileName": "F17-00-ELEVATOR-EQUIPMENT-DETAILS-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/FIRE-ALARM-SYSTEM/F17-00-ELEVATOR-EQUIPMENT-DETAILS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 1253402,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 165,
-          "fileName": "F2-00-FIRE-ALARM-1ST-FLOOR-PLAN-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/FIRE-ALARM-SYSTEM/F2-00-FIRE-ALARM-1ST-FLOOR-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 761354,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 167,
-          "fileName": "F4-00-FIRE-ALARM-3RD-FLOOR-PLAN-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/FIRE-ALARM-SYSTEM/F4-00-FIRE-ALARM-3RD-FLOOR-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 719960,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 171,
-          "fileName": "F8-00-FIRE-ALARM-NAC-RISER-DIAGRAM-Rev.0.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/FIRE-ALARM-SYSTEM/F8-00-FIRE-ALARM-NAC-RISER-DIAGRAM-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 596421,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 175,
-          "fileName": "ID121-LEVEL-1-FINISH-PLAN-Rev.1.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Interior/ID121-LEVEL-1-FINISH-PLAN-Rev.1.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 312218,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 177,
-          "fileName": "ID123-LEVEL-3-FINISH-PLAN-Rev.1.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Interior/ID123-LEVEL-3-FINISH-PLAN-Rev.1.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 242901,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 178,
-          "fileName": "ID124-LEVEL-4-FINISH-PLAN-Rev.1.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Interior/ID124-LEVEL-4-FINISH-PLAN-Rev.1.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 246979,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 197,
-          "fileName": "ID433-QUEEN-QUEEN-SUITE-ADA-GUESTROOM-Rev.1.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Interior/ID433-QUEEN-QUEEN-SUITE-ADA-GUESTROOM-Rev.1.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 249867,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 205,
-          "fileName": "ID504-DETAILS---COMMUNAL-TABLE-&-COFFEE-BAR-Rev.1.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Interior/ID504-DETAILS---COMMUNAL-TABLE-&-COFFEE-BAR-Rev.1.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 185077,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 454,
-          "fileName": "ID505-DETAILS---COMMUNAL-TABLE-&-COFFEE-BAR-90%-TO-MARRIOTT-BID-SET-100%-TO-MARRIOTT-GEN-4.5-REVISIONS-REVISION-1-----Rev.1.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Interior/ID505-DETAILS---COMMUNAL-TABLE-&-COFFEE-BAR-90%-TO-MARRIOTT-BID-SET-100%-TO-MARRIOTT-GEN-4.5-REVISIONS-REVISION-1-----Rev.1.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 124869,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 219,
-          "fileName": "M1.5-FIFTH-FLOOR-MECHANICAL-PLAN-Rev.05.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Mechanical/M1.5-FIFTH-FLOOR-MECHANICAL-PLAN-Rev.05.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 382264,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 222,
-          "fileName": "M2.1-MECHANICAL-SCHEDULES-Rev.02.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Mechanical/M2.1-MECHANICAL-SCHEDULES-Rev.02.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 2027715,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 236,
-          "fileName": "P5.3-PLUMBING-RISERS-Rev.10.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Plumbing/P5.3-PLUMBING-RISERS-Rev.10.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 509652,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 247,
-          "fileName": "S401-FRAMING-SECTIONS-Rev.01.pdf",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Drawings/Structural/S401-FRAMING-SECTIONS-Rev.01.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 554161,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 264,
-          "fileName": "4E5BB78E-F3D3-460F-A5F8-723EEE94B865.jpeg",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/4E5BB78E-F3D3-460F-A5F8-723EEE94B865.jpeg",
-          "fileType": "jpeg",
-          "sizeBytes": 2931411,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 266,
-          "fileName": "555E8CE8-9950-4818-89F7-5930DD21102D.jpeg",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/555E8CE8-9950-4818-89F7-5930DD21102D.jpeg",
-          "fileType": "jpeg",
-          "sizeBytes": 2702149,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 273,
-          "fileName": "8E911FEC-34E4-476E-B292-EFA68E82607B.jpeg",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/8E911FEC-34E4-476E-B292-EFA68E82607B.jpeg",
-          "fileType": "jpeg",
-          "sizeBytes": 3325180,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 275,
-          "fileName": "92E2E7CF-47A2-4BB2-A032-953AD07F88DB.jpeg",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/92E2E7CF-47A2-4BB2-A032-953AD07F88DB.jpeg",
-          "fileType": "jpeg",
-          "sizeBytes": 2533564,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 276,
-          "fileName": "9B34DD57-83E8-4EEF-9A54-9D666A8D8C45.jpeg",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/9B34DD57-83E8-4EEF-9A54-9D666A8D8C45.jpeg",
-          "fileType": "jpeg",
-          "sizeBytes": 3221016,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 277,
-          "fileName": "A5F446DC-4EE5-4657-A65B-0927AD18E065.jpeg",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/A5F446DC-4EE5-4657-A65B-0927AD18E065.jpeg",
-          "fileType": "jpeg",
-          "sizeBytes": 2863402,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 278,
-          "fileName": "A8C68E62-BCAA-489C-A1EE-0076A0C752F1.jpeg",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/A8C68E62-BCAA-489C-A1EE-0076A0C752F1.jpeg",
-          "fileType": "jpeg",
-          "sizeBytes": 3132576,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 279,
-          "fileName": "A9015BB8-075B-4428-B5FC-843E4394157A.jpeg",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/A9015BB8-075B-4428-B5FC-843E4394157A.jpeg",
-          "fileType": "jpeg",
-          "sizeBytes": 3206893,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 282,
-          "fileName": "BB30C698-1ADB-4A22-BEC7-9FB30B5B5C01.jpeg",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/BB30C698-1ADB-4A22-BEC7-9FB30B5B5C01.jpeg",
-          "fileType": "jpeg",
-          "sizeBytes": 3040111,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 285,
-          "fileName": "EA297AAC-F4CB-48D9-9619-7317DF7135C3.jpeg",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/EA297AAC-F4CB-48D9-9619-7317DF7135C3.jpeg",
-          "fileType": "jpeg",
-          "sizeBytes": 3176034,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 286,
-          "fileName": "EC31CC24-6C74-44CD-99A3-09E6125E6843.jpeg",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/EC31CC24-6C74-44CD-99A3-09E6125E6843.jpeg",
-          "fileType": "jpeg",
-          "sizeBytes": 2966179,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 287,
-          "fileName": "F12AEBFC-5DFC-4F8D-9566-22B716A7E557.jpeg",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/F12AEBFC-5DFC-4F8D-9566-22B716A7E557.jpeg",
-          "fileType": "jpeg",
-          "sizeBytes": 3421479,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 289,
-          "fileName": "F8577051-D3DA-4B5D-BBEC-55B199CDE801.jpeg",
-          "relativePath": "Bask Fairfiekd Inn Tampa/Photos/F8577051-D3DA-4B5D-BBEC-55B199CDE801.jpeg",
-          "fileType": "jpeg",
-          "sizeBytes": 2258768,
-          "reviewStatus": "EXTRACTION QUEUED"
-        }
-      ]
+      "actionableSamples": []
     },
     "5": {
       "httpStatus": 200,
       "count": 162,
       "statusCounts": {
-        "EXTRACTION QUEUED": 28,
+        "EXTRACTED - MANUAL REVIEW REQUIRED: DOCUMENT": 4,
         "EXTRACTED - NEEDS HUMAN REVIEW": 122,
-        "EXTRACTED - MANUAL REVIEW REQUIRED: DOCUMENT": 1,
-        "EXTRACTING": 5,
-        "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 6
+        "EXTRACTED - READY": 4,
+        "EXTRACTED - VISUAL REVIEW REQUIRED: SCAN": 3,
+        "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 29
       },
-      "actionableSamples": [
-        {
-          "id": 292,
-          "fileName": "SSX Project Identity Card.json",
-          "relativePath": "00 - Project Identity/SSX Project Identity Card.json",
-          "fileType": "json",
-          "sizeBytes": 2907,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 297,
-          "fileName": "Project Contact Register.json",
-          "relativePath": "01 - Department Work/Carol Contacts/Project Contact Register.json",
-          "fileType": "json",
-          "sizeBytes": 104,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 304,
-          "fileName": "Takeoff Readiness.md",
-          "relativePath": "01 - Department Work/Tommy Takeoff/Takeoff Readiness.md",
-          "fileType": "md",
-          "sizeBytes": 13627,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 307,
-          "fileName": "Estero Budget.pdf",
-          "relativePath": "Bask StudioRes Estero/Budget/Estero Budget.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 142605,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 306,
-          "fileName": "budget_details.csv",
-          "relativePath": "Bask StudioRes Estero/Budget/budget_details.csv",
-          "fileType": "csv",
-          "sizeBytes": 60235,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 308,
-          "fileName": "A0.1-COVER--CODE-INFO-&-INDEX-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A0.1-COVER--CODE-INFO-&-INDEX-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 752223,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 309,
-          "fileName": "A0.10-4TH-FLOOR-LIFE-SAFETY-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A0.10-4TH-FLOOR-LIFE-SAFETY-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 344527,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 310,
-          "fileName": "A0.2-GENERAL-NOTES-PRODUCT-APPROVAL-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A0.2-GENERAL-NOTES-PRODUCT-APPROVAL-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 129163,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 311,
-          "fileName": "A0.3-ARCHITECTURAL-OUTLINE-SPECIFICATIONS-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A0.3-ARCHITECTURAL-OUTLINE-SPECIFICATIONS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 165469,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 315,
-          "fileName": "A0.7-1ST-FLOOR-LIFE-SAFETY-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A0.7-1ST-FLOOR-LIFE-SAFETY-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 519532,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 318,
-          "fileName": "A1-ARCHITECTURAL-SITE-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1-ARCHITECTURAL-SITE-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 1057540,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 321,
-          "fileName": "A1.2-2ND---4TH-FLOOR-EXTERIOR-DIMENSIONED-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.2-2ND---4TH-FLOOR-EXTERIOR-DIMENSIONED-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 326307,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 322,
-          "fileName": "A1.3-1ST-FLOOR-OVERALL-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.3-1ST-FLOOR-OVERALL-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 502120,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 323,
-          "fileName": "A1.3A-1ST-FLOOR,-WING-A-INTERIOR-DIMENSIONED-AND-NOTED-FLOOR-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.3A-1ST-FLOOR,-WING-A-INTERIOR-DIMENSIONED-AND-NOTED-FLOOR-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 345080,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 324,
-          "fileName": "A1.3B-1ST-FLOOR,-WING-B-INTERIOR-DIMENSIONED-AND-NOTED-FLOOR-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.3B-1ST-FLOOR,-WING-B-INTERIOR-DIMENSIONED-AND-NOTED-FLOOR-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 339279,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 325,
-          "fileName": "A1.4-2ND-FLOOR-OVERALL-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.4-2ND-FLOOR-OVERALL-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 333864,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 327,
-          "fileName": "A1.4B-2ND-FLOOR,-WING-B-INTERIOR-DIMENSIONED-AND-NOTED-FLOOR-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.4B-2ND-FLOOR,-WING-B-INTERIOR-DIMENSIONED-AND-NOTED-FLOOR-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 263638,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 329,
-          "fileName": "A1.5A-3RD-FLOOR,-WING-A-INTERIOR-DIMENSIONED-AND-NOTED-FLOOR-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.5A-3RD-FLOOR,-WING-A-INTERIOR-DIMENSIONED-AND-NOTED-FLOOR-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 279766,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 331,
-          "fileName": "A1.6-4TH-FLOOR-OVERALL-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.6-4TH-FLOOR-OVERALL-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 342414,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 332,
-          "fileName": "A1.6A-4TH-FLOOR,-WING-A-INTERIOR-DIMENSIONED-AND-NOTED-FLOOR-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.6A-4TH-FLOOR,-WING-A-INTERIOR-DIMENSIONED-AND-NOTED-FLOOR-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 283029,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 334,
-          "fileName": "A1.7-1ST-FLOOR-REFLECTED-CEILING-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A1.7-1ST-FLOOR-REFLECTED-CEILING-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 544483,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 342,
-          "fileName": "A3.11-MILLWORK-SECTIONS-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A3.11-MILLWORK-SECTIONS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 284716,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 353,
-          "fileName": "A4.2-DOOR-JAMB-DETAILS-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Architectural/A4.2-DOOR-JAMB-DETAILS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 242105,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 374,
-          "fileName": "C-04-DRAINAGE-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Civil/C-04-DRAINAGE-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 716632,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 389,
-          "fileName": "E2.3-THIRD-FLOOR-ELECTRICAL---LIGHTING-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Electrical/E2.3-THIRD-FLOOR-ELECTRICAL---LIGHTING-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 1505477,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 400,
-          "fileName": "FP1.1-1ST-&-2ND-FLOOR-FIRE-PROTECTION-PLANS-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Fire-Protection/FP1.1-1ST-&-2ND-FLOOR-FIRE-PROTECTION-PLANS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 629950,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 423,
-          "fileName": "P3.1-ROOF-PLUMBING-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Plumbing/P3.1-ROOF-PLUMBING-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 322076,
-          "reviewStatus": "EXTRACTING"
-        },
-        {
-          "id": 429,
-          "fileName": "P6.2-GUESTROOM-RISERS-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Plumbing/P6.2-GUESTROOM-RISERS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 292134,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 430,
-          "fileName": "P7.0-NATURAL-GAS-PIPING-&-WATER-HEATER-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Plumbing/P7.0-NATURAL-GAS-PIPING-&-WATER-HEATER-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 335816,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 444,
-          "fileName": "S.104-4TH-FLOOR-FRAMING-PLAN-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Structural/S.104-4TH-FLOOR-FRAMING-PLAN-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 293384,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 447,
-          "fileName": "S.202-SECTIONS-&-DETAILS-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Structural/S.202-SECTIONS-&-DETAILS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 424857,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 451,
-          "fileName": "S.206-SECTIONS-&-DETAILS-Rev.0.pdf",
-          "relativePath": "Bask StudioRes Estero/Drawings/Structural/S.206-SECTIONS-&-DETAILS-Rev.0.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 321564,
-          "reviewStatus": "EXTRACTION QUEUED"
-        },
-        {
-          "id": 452,
-          "fileName": "Estero Schedule June 2026.pdf",
-          "relativePath": "Bask StudioRes Estero/Schedule/Estero Schedule June 2026.pdf",
-          "fileType": "pdf",
-          "sizeBytes": 483619,
-          "reviewStatus": "EXTRACTION QUEUED"
-        }
-      ]
+      "actionableSamples": []
     }
   },
   "errors": [],
-  "sourceCommit": "8200e070cf9e0f0359da104049bdf7088fd5353f",
-  "workflowRunId": "30113885260"
+  "sourceCommit": "93acf2003141d2c89657234fd03025a781cac344",
+  "workflowRunId": "30122979627"
 }

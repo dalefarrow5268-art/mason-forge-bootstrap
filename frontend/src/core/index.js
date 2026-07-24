@@ -15,80 +15,14 @@ import knowledgeService from "./KnowledgeService";
 const masonCore = new MasonCore();
 
 const initialAIWorkers = [
-  {
-    id: "MF-AI-001",
-    name: "Mason Core",
-    department: "Mission Control",
-    role: "Engineering Conductor",
-    status: "Online",
-    currentJob: "Idle",
-    health: 100,
-  },
-  {
-    id: "MF-AI-002",
-    name: "Knowledge Engine",
-    department: "Memory",
-    role: "Knowledge Specialist",
-    status: "Online",
-    currentJob: "Idle",
-    health: 100,
-  },
-  {
-    id: "MF-AI-003",
-    name: "Build Engine",
-    department: "Engineering",
-    role: "Code Generation Specialist",
-    status: "Online",
-    currentJob: "Idle",
-    health: 100,
-  },
-  {
-    id: "MF-AI-004",
-    name: "Validation Engine",
-    department: "Quality Assurance",
-    role: "Verification Specialist",
-    status: "Online",
-    currentJob: "Idle",
-    health: 100,
-  },
-  {
-    id: "MF-AI-005",
-    name: "Deployment Engine",
-    department: "Release Operations",
-    role: "Deployment Specialist",
-    status: "Online",
-    currentJob: "Idle",
-    health: 100,
-  },
-  {
-    id: "MF-AI-006",
-    name: "Dashboard Service",
-    department: "User Interface",
-    role: "Interface Operations Specialist",
-    status: "Online",
-    currentJob: "Idle",
-    health: 100,
-  },
-  {
-    id: "MF-AI-007",
-    name: "Event Bus",
-    department: "System Coordination",
-    role: "Workflow Coordination Specialist",
-    status: "Online",
-    currentJob: "Idle",
-    health: 100,
-  },
+  { id: "MF-AI-001", name: "Mason Core", department: "Mission Control", role: "Engineering Conductor", status: "Online", currentJob: "Idle", health: 100 },
+  { id: "MF-AI-002", name: "Knowledge Engine", department: "Memory", role: "Knowledge Specialist", status: "Online", currentJob: "Idle", health: 100 },
+  { id: "MF-AI-003", name: "Build Engine", department: "Engineering", role: "Code Generation Specialist", status: "Online", currentJob: "Idle", health: 100 },
+  { id: "MF-AI-004", name: "Validation Engine", department: "Quality Assurance", role: "Verification Specialist", status: "Online", currentJob: "Idle", health: 100 },
+  { id: "MF-AI-005", name: "Deployment Engine", department: "Release Operations", role: "Deployment Specialist", status: "Online", currentJob: "Idle", health: 100 },
+  { id: "MF-AI-006", name: "Dashboard Service", department: "User Interface", role: "Interface Operations Specialist", status: "Online", currentJob: "Idle", health: 100 },
+  { id: "MF-AI-007", name: "Event Bus", department: "System Coordination", role: "Workflow Coordination Specialist", status: "Online", currentJob: "Idle", health: 100 },
 ];
-
-/*
-|--------------------------------------------------------------------------
-| Shared Core Services (Singletons)
-|--------------------------------------------------------------------------
-|
-| Every engineering module shares one Event Bus
-| and one State Manager.
-|
-*/
 
 const eventBus = new EventBus();
 
@@ -104,46 +38,13 @@ const stateManager = new StateManager({
   localAI: [],
 });
 
-const workflowCoordinator = new WorkflowCoordinator({
-  stateManager,
-  eventBus,
-});
-
+const workflowCoordinator = new WorkflowCoordinator({ stateManager, eventBus });
 workflowCoordinator.initialize();
-
-/*
-|--------------------------------------------------------------------------
-| Core Instance
-|--------------------------------------------------------------------------
-*/
 
 export { masonCore };
 export default masonCore;
 
-/*
-|--------------------------------------------------------------------------
-| Shared Services
-|--------------------------------------------------------------------------
-*/
-
-export { eventBus };
-export { stateManager };
-export { workflowCoordinator };
-export { knowledgeService };
-
-/*
-|--------------------------------------------------------------------------
-| Core Event Definitions
-|--------------------------------------------------------------------------
-*/
-
-export { default as KnowledgeEvents } from "./KnowledgeEvents";
-
-/*
-|--------------------------------------------------------------------------
-| Core Classes
-|--------------------------------------------------------------------------
-*/
+export { eventBus, stateManager, workflowCoordinator, knowledgeService };
 
 export { default as MasonCore } from "./MasonCore";
 export { default as AIEngine } from "./AIEngine";
@@ -155,40 +56,23 @@ export { default as Logger } from "./Logger";
 export { default as StateManager } from "./StateManager";
 export { default as WorkflowCoordinator } from "./WorkflowCoordinator";
 
-/*
-|--------------------------------------------------------------------------
-| Knowledge Engine
-|--------------------------------------------------------------------------
-*/
-
 export { default as KnowledgeMemory } from "./KnowledgeMemory";
 export { default as KnowledgeStore } from "./KnowledgeStore";
 export { default as KnowledgeIndex } from "./KnowledgeIndex";
 export { default as KnowledgeEngine } from "./KnowledgeEngine";
 export { default as KnowledgeService } from "./KnowledgeService";
 
-/*
-|--------------------------------------------------------------------------
-| Mason Forge Information
-|--------------------------------------------------------------------------
-*/
-
 export const ForgeInfo = {
   name: "Mason Forge™",
   slogan: "Forge it once. Reuse it forever.™",
   mission: "Engineering Operating System for SubSource Exchange™",
-
   version: "0.5.0",
   milestone: "Milestone 4",
-
   environment: "Development",
-
   engineeringAgents: 7,
   engineeringJobs: 5,
   approvalQueue: 1,
-
   platformHealth: "Operational",
-
   systems: [
     "Mission Control",
     "Knowledge Engine",
@@ -205,6 +89,5 @@ export const ForgeInfo = {
     "Shared State Manager",
     "Workflow Coordinator",
   ],
-
   motto: "We Build People.",
 };

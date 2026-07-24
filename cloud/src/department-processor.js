@@ -20,6 +20,40 @@ function safeJson(text) {
   }
 }
 
+function take(value, limit = 30) {
+  return Array.isArray(value) ? value.slice(0, limit) : value ?? null;
+}
+
+function compactEvidenceRecord(record) {
+  const extraction = record?.extraction || {};
+  return {
+    sourceFile: record?.sourceFile || null,
+    extractedAt: record?.extractedAt || null,
+    extraction: {
+      documentType: extraction.documentType || null,
+      title: extraction.title || null,
+      revision: extraction.revision || null,
+      documentDate: extraction.documentDate || null,
+      projectName: extraction.projectName || null,
+      projectAddress: extraction.projectAddress || null,
+      summary: typeof extraction.summary === "string" ? extraction.summary.slice(0, 12000) : extraction.summary || null,
+      parties: take(extraction.parties),
+      sheetOrSectionReferences: take(extraction.sheetOrSectionReferences, 50),
+      keyReferences: take(extraction.keyReferences, 50),
+      verifiedFacts: take(extraction.verifiedFacts, 50),
+      scopeItems: take(extraction.scopeItems, 50),
+      scheduleFacts: take(extraction.scheduleFacts, 40),
+      costFacts: take(extraction.costFacts, 40),
+      contactFacts: take(extraction.contactFacts, 40),
+      permitOrLegalFacts: take(extraction.permitOrLegalFacts, 40),
+      risksOrConflicts: take(extraction.risksOrConflicts, 50),
+      missingInformation: take(extraction.missingInformation, 50),
+      extractionLimitations: take(extraction.extractionLimitations, 30),
+      confidence: extraction.confidence || null,
+    },
+  };
+}
+
 function departmentInstructions(task, employee, hasExtractedEvidence) {
   const common = [
     "You are an AI employee inside Mason Forge, a construction project intelligence system.",
@@ -41,28 +75,21 @@ function departmentInstructions(task, employee, hasExtractedEvidence) {
   return [...common, specialized[task.department] || "Create an honest evidence-backed department work product.", `Employee job description: ${employee?.job_description_json || task.instructions}`].join("\n");
 }
 
-async function readExtractionRecords(env, files) {
+async function readExtractionRecords(env, files, limit = 25) {
   const records = [];
   for (const file of files) {
+    if (records.length >= limit) break;
     if (!file.extracted_text_key) continue;
     const object = await env.PROJECT_FILES.get(file.extracted_text_key);
     if (!object) {
-      records.push({
-        sourceFileId: file.id,
-        fileName: file.file_name,
-        extractionKey: file.extracted_text_key,
-        error: "Extraction record missing from R2.",
-      });
+      records.push({ sourceFile: { id: file.id, fileName: file.file_name }, error: "Extraction record missing from R2." });
       continue;
     }
     try {
-      const parsed = JSON.parse(await object.text());
-      records.push(parsed);
+      records.push(compactEvidenceRecord(JSON.parse(await object.text())));
     } catch (error) {
       records.push({
-        sourceFileId: file.id,
-        fileName: file.file_name,
-        extractionKey: file.extracted_text_key,
+        sourceFile: { id: file.id, fileName: file.file_name },
         error: `Extraction record could not be parsed: ${error.message}`,
       });
     }
@@ -73,9 +100,11 @@ async function readExtractionRecords(env, files) {
 async function callOpenAI(env, task, project, employee, files, evidenceRecords) {
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
+    signal: AbortSignal.timeout(Number(env.OPENAI_REQUEST_TIMEOUT_MS || 600000)),
     headers: {
       authorization: `Bearer ${env.OPENAI_API_KEY}`,
       "content-type": "application/json",
+      "x-client-request-id": crypto.randomUUID(),
     },
     body: JSON.stringify({
       model: env.OPENAI_MODEL || "gpt-5-mini",
@@ -93,18 +122,28 @@ async function callOpenAI(env, task, project, employee, files, evidenceRecords) 
               sourceFileIds: JSON.parse(task.source_file_ids_json || "[]"),
             },
             project,
-            fileRegister: files,
+            fileRegister: files.map((file) => ({
+              id: file.id,
+              fileName: file.file_name,
+              relativePath: file.relative_path,
+              fileType: file.file_type,
+              sizeBytes: file.size_bytes,
+              revision: file.revision,
+              documentDate: file.document_date,
+              reviewStatus: file.review_status,
+              extractionKey: file.extracted_text_key,
+            })),
             extractedEvidence: evidenceRecords,
           }),
         },
       ],
       text: { format: { type: "json_object" } },
-      max_output_tokens: 7000,
+      max_output_tokens: 6000,
       metadata: { task_id: task.id, project_id: String(task.project_id), department: task.department },
     }),
   });
 
-  const payload = await response.json();
+  const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new Error(`OpenAI ${response.status}: ${payload?.error?.message || JSON.stringify(payload)}`);
   }
@@ -134,7 +173,7 @@ export async function processDepartmentTask(message, env) {
     WHERE id = ? AND status = 'QUEUED'
   `).bind(startedAt, startedAt, startedAt, task.id).run();
   if (Number(claim.meta?.changes || 0) === 0) return { skipped: true, reason: "Task was already claimed." };
-  await event(env, task, task.status, "RUNNING", "Cloud worker claimed assignment.");
+  await event(env, task, "QUEUED", "RUNNING", "Cloud worker claimed assignment.");
 
   let sourceFileIds = [];
   try {
@@ -142,10 +181,11 @@ export async function processDepartmentTask(message, env) {
   } catch {
     sourceFileIds = [];
   }
+  sourceFileIds = sourceFileIds.slice(0, 50);
 
   const fileQuery = sourceFileIds.length
     ? `SELECT id, file_name, relative_path, file_type, size_bytes, sha256, revision, document_date, review_status, extracted_text_key, source_class, uploaded_at FROM project_files WHERE project_id = ? AND id IN (${sourceFileIds.map(() => "?").join(",")}) ORDER BY relative_path`
-    : "SELECT id, file_name, relative_path, file_type, size_bytes, sha256, revision, document_date, review_status, extracted_text_key, source_class, uploaded_at FROM project_files WHERE project_id = ? ORDER BY relative_path LIMIT 1000";
+    : "SELECT id, file_name, relative_path, file_type, size_bytes, sha256, revision, document_date, review_status, extracted_text_key, source_class, uploaded_at FROM project_files WHERE project_id = ? ORDER BY CASE WHEN extracted_text_key IS NOT NULL THEN 0 ELSE 1 END, relative_path LIMIT 250";
 
   const [project, employee, filesResult] = await Promise.all([
     env.DB.prepare("SELECT * FROM projects WHERE id = ?").bind(task.project_id).first(),
@@ -158,7 +198,7 @@ export async function processDepartmentTask(message, env) {
     .bind(now(), now(), task.id).run();
 
   const files = filesResult.results || [];
-  const evidenceRecords = await readExtractionRecords(env, files);
+  const evidenceRecords = await readExtractionRecords(env, files, 25);
 
   await env.DB.prepare("UPDATE department_tasks SET progress_percent = 60, heartbeat_at = ?, updated_at = ? WHERE id = ? AND status = 'RUNNING'")
     .bind(now(), now(), task.id).run();
@@ -170,11 +210,10 @@ export async function processDepartmentTask(message, env) {
 
   await env.DB.batch([
     env.DB.prepare(`
-      INSERT INTO department_outputs
+      INSERT OR IGNORE INTO department_outputs
         (id, task_id, project_id, employee_id, output_type, title, content_json,
          evidence_register_json, confidence, human_review_status, created_at, updated_at)
-      SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, 'REQUIRED', ?, ?
-      WHERE NOT EXISTS (SELECT 1 FROM department_outputs WHERE task_id = ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'REQUIRED', ?, ?)
     `).bind(
       outputId,
       task.id,
@@ -187,7 +226,6 @@ export async function processDepartmentTask(message, env) {
       content.confidence || (evidenceRecords.length ? "EVIDENCE REVIEW REQUIRED" : "PRELIMINARY"),
       completedAt,
       completedAt,
-      task.id,
     ),
     env.DB.prepare(`
       UPDATE department_tasks

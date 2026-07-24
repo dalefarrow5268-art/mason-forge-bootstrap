@@ -1,1 +1,1 @@
-Trigger requested after deterministic schema recovery and stranded queue recovery.
+Capture requested after Fairfield evidence tasks entered RUNNING/QUEUED state and extraction failures reached zero.

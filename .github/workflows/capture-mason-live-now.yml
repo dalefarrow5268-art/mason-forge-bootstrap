@@ -10,6 +10,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: mason-forge-live-snapshot
+  cancel-in-progress: true
+
 jobs:
   capture:
     runs-on: ubuntu-latest
@@ -20,38 +24,66 @@ jobs:
           fetch-depth: 0
 
       - name: Wait for current Worker release
-        run: sleep 20
+        run: sleep 45
 
       - name: Capture live state
+        id: capture
+        continue-on-error: true
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs/promises';
           const proxy = 'https://mason-forge-live.vercel.app/api/mason';
-          const fetchJson = async (url) => {
-            const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}_live=${Date.now()}-${Math.random()}`, {
-              cache: 'no-store',
-              headers: { 'cache-control': 'no-store, no-cache, max-age=0', pragma: 'no-cache' },
-            });
-            const text = await response.text();
-            if (!response.ok) throw new Error(`${url} HTTP ${response.status}: ${text.slice(0, 1000)}`);
-            return JSON.parse(text);
+          const request = async (url, attempts = 5) => {
+            let last = null;
+            for (let attempt = 1; attempt <= attempts; attempt += 1) {
+              try {
+                const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}_live=${Date.now()}-${Math.random()}`, {
+                  cache: 'no-store',
+                  signal: AbortSignal.timeout(45000),
+                  headers: { 'cache-control': 'no-store, no-cache, max-age=0', pragma: 'no-cache' },
+                });
+                const text = await response.text();
+                let body;
+                try { body = JSON.parse(text); } catch { body = { raw: text }; }
+                last = { ok: response.ok, status: response.status, body, attempt };
+                if (response.ok) return last;
+              } catch (error) {
+                last = { ok: false, status: 0, error: String(error?.stack || error), attempt };
+              }
+              if (attempt < attempts) await new Promise((resolve) => setTimeout(resolve, 15000));
+            }
+            return last;
           };
           const viaProxy = (path) => `${proxy}?path=${encodeURIComponent(path)}`;
           const report = {
             capturedAt: new Date().toISOString(),
             sourceCommit: process.env.GITHUB_SHA,
-            health: await fetchJson('https://mason-forge-cloud.mason-forge-ssx.workers.dev/health'),
-            bootstrap: await fetchJson(proxy),
+            healthResponse: await request('https://mason-forge-cloud.mason-forge-ssx.workers.dev/health'),
+            bootstrapResponse: await request(proxy),
             projects: {},
+            requestErrors: [],
           };
+          report.health = report.healthResponse?.body || null;
+          report.bootstrap = report.bootstrapResponse?.body || null;
+          if (!report.healthResponse?.ok) report.requestErrors.push({ endpoint: 'health', response: report.healthResponse });
+          if (!report.bootstrapResponse?.ok) report.requestErrors.push({ endpoint: 'bootstrap', response: report.bootstrapResponse });
+
           for (const projectId of [4, 5]) {
-            const [files, tasks, outputs, evidence, continuity] = await Promise.all([
-              fetchJson(viaProxy(`api/projects/${projectId}/files`)),
-              fetchJson(viaProxy(`api/projects/${projectId}/tasks`)),
-              fetchJson(viaProxy(`api/projects/${projectId}/outputs`)),
-              fetchJson(viaProxy(`api/projects/${projectId}/evidence`)),
-              fetchJson(viaProxy(`api/projects/${projectId}/continuity`)),
-            ]);
+            const responses = {
+              files: await request(viaProxy(`api/projects/${projectId}/files`)),
+              tasks: await request(viaProxy(`api/projects/${projectId}/tasks`)),
+              outputs: await request(viaProxy(`api/projects/${projectId}/outputs`)),
+              evidence: await request(viaProxy(`api/projects/${projectId}/evidence`)),
+              continuity: await request(viaProxy(`api/projects/${projectId}/continuity`)),
+            };
+            for (const [name, response] of Object.entries(responses)) {
+              if (!response?.ok) report.requestErrors.push({ projectId, endpoint: name, response });
+            }
+            const files = responses.files?.body || {};
+            const tasks = responses.tasks?.body || {};
+            const outputs = responses.outputs?.body || {};
+            const evidence = responses.evidence?.body || {};
+            const continuity = responses.continuity?.body || {};
             const statusCounts = {};
             const failureReasons = {};
             for (const file of files.files || []) {
@@ -71,30 +103,36 @@ jobs:
               evidenceBatchCount: (evidence.batches || []).length,
               routedFileCount: (evidence.files || []).filter((file) => file.batch_id).length,
               continuity: continuity.continuity || null,
+              responses: Object.fromEntries(Object.entries(responses).map(([name, response]) => [name, { ok: response?.ok || false, status: response?.status || 0, attempt: response?.attempt || null }])),
             };
           }
           report.successCriteria = {
-            operationalReady: report.health.operationalReady === true,
-            continuityVerified: report.health.continuity?.verification_status === 'VERIFIED' && Boolean(report.bootstrap.continuity),
-            zeroBlockedTasks: Number(report.health.taskTotals?.BLOCKED || 0) === 0,
-            countsReconcile: report.health.countsReconcile === true,
-            extractionProgressing: Number(report.health.extraction?.extracted || 0) > 0,
-            zeroExtractionFailures: Number(report.health.extraction?.failed || 0) === 0,
+            allRequestsSucceeded: report.requestErrors.length === 0,
+            operationalReady: report.health?.operationalReady === true,
+            continuityVerified: report.health?.continuity?.verification_status === 'VERIFIED' && Boolean(report.bootstrap?.continuity),
+            zeroBlockedTasks: Number(report.health?.taskTotals?.BLOCKED || 0) === 0,
+            countsReconcile: report.health?.countsReconcile === true,
+            extractionProgressing: Number(report.health?.extraction?.extracted || 0) > 0,
+            zeroExtractionFailures: Number(report.health?.extraction?.failed || 0) === 0,
             evidenceTasksCreated: Object.values(report.projects).some((project) => project.taskCount > 5),
             evidenceOutputsCreated: Object.values(report.projects).some((project) => project.outputCount > 5),
           };
+          report.success = Object.values(report.successCriteria).every(Boolean);
           await fs.mkdir('verification', { recursive: true });
           await fs.writeFile('verification/live-now.json', JSON.stringify(report, null, 2));
           console.log(JSON.stringify(report, null, 2));
           NODE
 
       - name: Publish live state
+        if: always()
         run: |
+          test -f verification/live-now.json || {
+            mkdir -p verification
+            printf '%s\n' '{"success":false,"requestErrors":[{"error":"Live capture report was not produced."}]}' > verification/live-now.json
+          }
           git config user.name "Mason Forge Live Capture"
           git config user.email "actions@users.noreply.github.com"
           git checkout -B live-snapshot
           git add verification/live-now.json
-          git commit -m "Capture Mason Forge live state for ${GITHUB_SHA}"
+          git commit -m "Capture Mason Forge live state for ${GITHUB_SHA}" || true
           git push --force origin live-snapshot
-
-# Retried after deterministic schema recovery was deployed on 2026-07-24.

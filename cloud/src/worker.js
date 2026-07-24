@@ -36,26 +36,16 @@ async function continuityRoute(request, env) {
 
 async function recoverLegacyBlockedTasks(env) {
   const blocked = await env.DB.prepare(`SELECT id, project_id, employee_id, department FROM department_tasks
-    WHERE status = 'BLOCKED'
-    ORDER BY priority DESC, created_at LIMIT 100`).all();
-
+    WHERE status = 'BLOCKED' ORDER BY priority DESC, created_at LIMIT 100`).all();
   for (const task of blocked.results || []) {
-    const timestamp = now();
     const update = await env.DB.prepare(
       "UPDATE department_tasks SET status='QUEUED', blocked_reason=NULL, updated_at=? WHERE id=? AND status='BLOCKED'"
-    ).bind(timestamp, task.id).run();
-
+    ).bind(now(), task.id).run();
     if (Number(update.meta?.changes || 0) > 0) {
-      await env.DEPARTMENT_QUEUE.send({
-        kind: "DEPARTMENT_TASK",
-        taskId: task.id,
-        projectId: task.project_id,
-        employeeId: task.employee_id,
-        department: task.department,
-      });
+      await env.DEPARTMENT_QUEUE.send({ kind: "DEPARTMENT_TASK", taskId: task.id, projectId: task.project_id,
+        employeeId: task.employee_id, department: task.department });
     }
   }
-
   return blocked.results?.length || 0;
 }
 
@@ -77,8 +67,7 @@ async function queuePendingDocumentExtractions(env) {
 
 async function kickOperations(env) {
   const [recoveredTasks, queuedExtractions] = await Promise.all([
-    recoverLegacyBlockedTasks(env),
-    queuePendingDocumentExtractions(env),
+    recoverLegacyBlockedTasks(env), queuePendingDocumentExtractions(env),
   ]);
   return { recoveredTasks, queuedExtractions };
 }
@@ -91,29 +80,19 @@ async function ensureSystemContinuity(env) {
     env.DB.prepare("SELECT COUNT(*) count FROM department_outputs").first(),
     env.DB.prepare("SELECT status, COUNT(*) count FROM department_tasks GROUP BY status ORDER BY status").all(),
   ]);
-
   const taskTotals = Object.fromEntries((taskRows.results || []).map((row) => [row.status, Number(row.count || 0)]));
   const state = {
-    system: "Mason Forge Cloud",
-    deployment: "LIVE",
-    projects: Number(projectCount?.count || 0),
-    files: Number(fileCount?.count || 0),
-    taskTotals,
-    outputCount: Number(outputs?.count || 0),
+    system: "Mason Forge Cloud", deployment: "LIVE",
+    projects: Number(projectCount?.count || 0), files: Number(fileCount?.count || 0),
+    taskTotals, outputCount: Number(outputs?.count || 0),
     evidenceRule: "Active work requires RUNNING task evidence or completed department outputs.",
   };
-
   if (existing?.state_json === JSON.stringify(state)) return false;
-
   const request = new Request("https://mason-forge.local/api/continuity/system/mason-forge", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
+    method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify({
       summary: `Mason Forge live state: ${state.projects} projects, ${state.files} files, ${taskTotals.RUNNING || 0} running, ${taskTotals.QUEUED || 0} queued, ${taskTotals.COMPLETED || 0} completed, ${state.outputCount} outputs.`,
-      state,
-      actor: "MASON FORGE CLOUD",
-      source: "LIVE D1 VERIFIED STATE",
-      verificationStatus: "VERIFIED",
+      state, actor: "MASON FORGE CLOUD", source: "LIVE D1 VERIFIED STATE", verificationStatus: "VERIFIED",
       facts: [
         { key: "deployment", value: state.deployment, confidence: "VERIFIED" },
         { key: "project_count", value: state.projects, confidence: "VERIFIED" },
@@ -134,6 +113,10 @@ export default {
     if (operations) return operations;
 
     const url = new URL(request.url);
+    if (url.pathname === "/health" && request.method === "GET") {
+      await kickOperations(env);
+      await ensureSystemContinuity(env);
+    }
     if (url.pathname === "/api/connector/bootstrap" && request.method === "GET" && authorized(request, env)) {
       await kickOperations(env);
       await ensureSystemContinuity(env);

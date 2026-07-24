@@ -2,6 +2,7 @@ let ready = false;
 
 export async function ensureRuntimeSchema(env) {
   if (ready) return;
+
   await env.DB.batch([
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS continuity_heads (
       scope_type TEXT NOT NULL,
@@ -47,6 +48,30 @@ export async function ensureRuntimeSchema(env) {
     )`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS continuity_facts_scope
       ON continuity_facts(scope_type, scope_id, fact_key, created_at DESC)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS evidence_batches (
+      id TEXT PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      batch_key TEXT NOT NULL UNIQUE,
+      file_count INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'ROUTED',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS evidence_batches_project
+      ON evidence_batches(project_id, created_at)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS evidence_batch_files (
+      batch_id TEXT NOT NULL REFERENCES evidence_batches(id) ON DELETE CASCADE,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      file_id INTEGER NOT NULL REFERENCES project_files(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (batch_id, file_id),
+      UNIQUE (file_id)
+    )`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS evidence_batch_files_project
+      ON evidence_batch_files(project_id, file_id)`),
+    env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS department_outputs_one_per_task
+      ON department_outputs(task_id)`),
   ]);
+
   ready = true;
 }

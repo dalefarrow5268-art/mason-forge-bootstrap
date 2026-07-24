@@ -37,7 +37,9 @@ export default {
 
       if (url.pathname === "/health" && request.method === "GET") {
         phase = "read-only-health";
-        return await foundation.fetch(request, env, ctx);
+        const response = await foundation.fetch(request, env, ctx);
+        background(ctx, runtime.scheduled({ cron: "health-self-heal" }, env, ctx), "health self-heal");
+        return response;
       }
 
       if (url.pathname === "/api/connector/bootstrap" && request.method === "GET") {

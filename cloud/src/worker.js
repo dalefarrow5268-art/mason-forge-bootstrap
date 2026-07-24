@@ -1,6 +1,11 @@
 import foundation from "./index.js";
 import { failDepartmentTask, processDepartmentTask } from "./department-processor.js";
-import { extractProjectFile, markExtractionFailure } from "./document-extractor.js";
+import {
+  extractProjectFile,
+  isPermanentExtractionError,
+  markExtractionFailure,
+} from "./document-extractor.js";
+import { routeReadyEvidenceBatches } from "./evidence-task-router.js";
 import { listContinuityScopes, readContinuity, writeContinuity } from "./continuity-ledger.js";
 import { connectorResponse } from "./connector.js";
 import { operationsRoute } from "./operations.js";
@@ -35,19 +40,26 @@ async function continuityRoute(request, env) {
 }
 
 async function recoverLegacyBlockedTasks(env) {
-  const blocked = await env.DB.prepare(`SELECT id, project_id, employee_id, department FROM department_tasks
+  const blocked = await env.DB.prepare(`
+    SELECT id, project_id, employee_id, department
+    FROM department_tasks
     WHERE status = 'BLOCKED'
-      AND (blocked_reason IS NULL OR blocked_reason = 'SPECIALIZED PROCESSOR NOT YET DEPLOYED'
-        OR blocked_reason = 'STALE HEARTBEAT RECOVERY')
-    ORDER BY priority DESC, created_at LIMIT 100`).all();
+      AND (
+        blocked_reason IS NULL
+        OR upper(blocked_reason) LIKE '%PROCESSOR%NOT%DEPLOYED%'
+        OR upper(blocked_reason) LIKE '%SPECIALIZED PROCESSOR%'
+      )
+    ORDER BY priority DESC, created_at
+    LIMIT 100
+  `).all();
+
   let recovered = 0;
   for (const task of blocked.results || []) {
-    const update = await env.DB.prepare(
-      `UPDATE department_tasks SET status='QUEUED', blocked_reason=NULL, updated_at=?
-       WHERE id=? AND status='BLOCKED'
-         AND (blocked_reason IS NULL OR blocked_reason = 'SPECIALIZED PROCESSOR NOT YET DEPLOYED'
-           OR blocked_reason = 'STALE HEARTBEAT RECOVERY')`
-    ).bind(now(), task.id).run();
+    const update = await env.DB.prepare(`
+      UPDATE department_tasks
+      SET status='QUEUED', blocked_reason=NULL, updated_at=?
+      WHERE id=? AND status='BLOCKED'
+    `).bind(now(), task.id).run();
     if (Number(update.meta?.changes || 0) > 0) {
       recovered += 1;
       await env.DEPARTMENT_QUEUE.send({
@@ -62,18 +74,23 @@ async function recoverLegacyBlockedTasks(env) {
   return recovered;
 }
 
-async function recoverStaleRunningTasks(env) {
-  const stale = await env.DB.prepare(`SELECT id, project_id, employee_id, department FROM department_tasks
+async function recoverStaleDepartmentTasks(env) {
+  const stale = await env.DB.prepare(`
+    SELECT id, project_id, employee_id, department
+    FROM department_tasks
     WHERE status = 'RUNNING'
-      AND heartbeat_at IS NOT NULL
-      AND datetime(heartbeat_at) < datetime('now', '-45 minutes')
-    ORDER BY priority DESC, updated_at LIMIT 100`).all();
+      AND datetime(COALESCE(heartbeat_at, updated_at)) < datetime('now', '-20 minutes')
+    ORDER BY priority DESC, updated_at
+    LIMIT 100
+  `).all();
+
   let recovered = 0;
   for (const task of stale.results || []) {
     const update = await env.DB.prepare(`
       UPDATE department_tasks
       SET status='QUEUED', blocked_reason='STALE HEARTBEAT RECOVERY', progress_percent=0, updated_at=?
-      WHERE id=? AND status='RUNNING' AND datetime(heartbeat_at) < datetime('now', '-45 minutes')
+      WHERE id=? AND status='RUNNING'
+        AND datetime(COALESCE(heartbeat_at, updated_at)) < datetime('now', '-20 minutes')
     `).bind(now(), task.id).run();
     if (Number(update.meta?.changes || 0) > 0) {
       recovered += 1;
@@ -90,68 +107,151 @@ async function recoverStaleRunningTasks(env) {
 }
 
 async function queuePendingDocumentExtractions(env) {
-  const files = await env.DB.prepare(`SELECT id, project_id FROM project_files
+  const files = await env.DB.prepare(`
+    SELECT id, project_id, review_status, updated_at
+    FROM project_files
     WHERE extracted_text_key IS NULL
       AND review_status NOT LIKE 'EXTRACTION FAILED:%'
-      AND review_status NOT IN ('EXTRACTION QUEUED','EXTRACTION RETRYING')
+      AND (
+        review_status NOT IN ('EXTRACTION QUEUED','EXTRACTION RETRYING','EXTRACTING')
+        OR (
+          review_status IN ('EXTRACTION QUEUED','EXTRACTION RETRYING','EXTRACTING')
+          AND datetime(updated_at) < datetime('now', '-20 minutes')
+        )
+      )
       AND lower(file_name) GLOB '*.*'
-    ORDER BY project_id, uploaded_at, id LIMIT 25`).all();
+    ORDER BY project_id, uploaded_at, id
+    LIMIT 25
+  `).all();
+
   let queued = 0;
   for (const file of files.results || []) {
     const update = await env.DB.prepare(`
-      UPDATE project_files SET review_status='EXTRACTION QUEUED', updated_at=?
-      WHERE id=? AND extracted_text_key IS NULL
-        AND review_status NOT LIKE 'EXTRACTION FAILED:%'
-        AND review_status NOT IN ('EXTRACTION QUEUED','EXTRACTION RETRYING')
-    `).bind(now(), file.id).run();
+      UPDATE project_files
+      SET review_status='EXTRACTION QUEUED', updated_at=?
+      WHERE id=?
+        AND extracted_text_key IS NULL
+        AND review_status=?
+        AND updated_at=?
+    `).bind(now(), file.id, file.review_status, file.updated_at).run();
     if (Number(update.meta?.changes || 0) > 0) {
       queued += 1;
-      await env.DEPARTMENT_QUEUE.send({ kind: "EXTRACT_PROJECT_FILE", fileId: file.id, projectId: file.project_id });
+      await env.DEPARTMENT_QUEUE.send({
+        kind: "EXTRACT_PROJECT_FILE",
+        fileId: file.id,
+        projectId: file.project_id,
+      });
     }
   }
   return queued;
 }
 
+async function routeReadyProjects(env) {
+  const projects = await env.DB.prepare(`
+    SELECT DISTINCT f.project_id
+    FROM project_files f
+    LEFT JOIN evidence_batch_files routed ON routed.file_id = f.id
+    WHERE f.extracted_text_key IS NOT NULL
+      AND routed.file_id IS NULL
+    ORDER BY f.project_id
+    LIMIT 10
+  `).all();
+
+  let batchesCreated = 0;
+  let tasksQueued = 0;
+  for (const row of projects.results || []) {
+    const result = await routeReadyEvidenceBatches(Number(row.project_id), env);
+    batchesCreated += Number(result.batchesCreated || 0);
+    tasksQueued += Number(result.tasksQueued || 0);
+  }
+  return { batchesCreated, tasksQueued };
+}
+
 async function kickOperations(env) {
-  const [recoveredBlockedTasks, recoveredStaleTasks, queuedExtractions] = await Promise.all([
+  const [legacyRecovered, staleRecovered, queuedExtractions] = await Promise.all([
     recoverLegacyBlockedTasks(env),
-    recoverStaleRunningTasks(env),
+    recoverStaleDepartmentTasks(env),
     queuePendingDocumentExtractions(env),
   ]);
-  return { recoveredBlockedTasks, recoveredStaleTasks, queuedExtractions };
+  const routedEvidence = await routeReadyProjects(env);
+  return { legacyRecovered, staleRecovered, queuedExtractions, routedEvidence };
+}
+
+async function readOperationalState(env) {
+  const [projectCount, fileRows, outputs, taskRows, staleTasks, staleFiles, latestActivity] = await Promise.all([
+    env.DB.prepare("SELECT COUNT(*) count FROM projects").first(),
+    env.DB.prepare(`
+      SELECT
+        COUNT(*) total,
+        SUM(CASE WHEN extracted_text_key IS NOT NULL THEN 1 ELSE 0 END) extracted,
+        SUM(CASE WHEN extracted_text_key IS NULL AND review_status='EXTRACTION QUEUED' THEN 1 ELSE 0 END) queued,
+        SUM(CASE WHEN extracted_text_key IS NULL AND review_status='EXTRACTING' THEN 1 ELSE 0 END) extracting,
+        SUM(CASE WHEN extracted_text_key IS NULL AND review_status='EXTRACTION RETRYING' THEN 1 ELSE 0 END) retrying,
+        SUM(CASE WHEN extracted_text_key IS NULL AND review_status LIKE 'EXTRACTION FAILED:%' THEN 1 ELSE 0 END) failed,
+        SUM(CASE WHEN extracted_text_key IS NULL
+          AND review_status NOT LIKE 'EXTRACTION FAILED:%'
+          AND review_status NOT IN ('EXTRACTION QUEUED','EXTRACTING','EXTRACTION RETRYING') THEN 1 ELSE 0 END) pending
+      FROM project_files
+    `).first(),
+    env.DB.prepare("SELECT COUNT(*) count, MAX(created_at) latest_at FROM department_outputs").first(),
+    env.DB.prepare("SELECT status, COUNT(*) count FROM department_tasks GROUP BY status ORDER BY status").all(),
+    env.DB.prepare(`
+      SELECT COUNT(*) count FROM department_tasks
+      WHERE status='RUNNING'
+        AND datetime(COALESCE(heartbeat_at, updated_at)) < datetime('now', '-20 minutes')
+    `).first(),
+    env.DB.prepare(`
+      SELECT COUNT(*) count FROM project_files
+      WHERE extracted_text_key IS NULL
+        AND review_status IN ('EXTRACTION QUEUED','EXTRACTING','EXTRACTION RETRYING')
+        AND datetime(updated_at) < datetime('now', '-20 minutes')
+    `).first(),
+    env.DB.prepare(`
+      SELECT MAX(activity_at) latest_at FROM (
+        SELECT MAX(updated_at) activity_at FROM department_tasks
+        UNION ALL SELECT MAX(updated_at) FROM project_files
+        UNION ALL SELECT MAX(created_at) FROM department_outputs
+      )
+    `).first(),
+  ]);
+
+  const taskTotals = Object.fromEntries((taskRows.results || []).map((row) => [row.status, Number(row.count || 0)]));
+  const extraction = {
+    total: Number(fileRows?.total || 0),
+    extracted: Number(fileRows?.extracted || 0),
+    queued: Number(fileRows?.queued || 0),
+    extracting: Number(fileRows?.extracting || 0),
+    retrying: Number(fileRows?.retrying || 0),
+    failed: Number(fileRows?.failed || 0),
+    pending: Number(fileRows?.pending || 0),
+  };
+  extraction.accounted = extraction.extracted + extraction.queued + extraction.extracting + extraction.retrying + extraction.failed + extraction.pending;
+
+  return {
+    system: "Mason Forge Cloud",
+    deployment: "LIVE",
+    releaseId: env.RELEASE_ID || "unknown",
+    projects: Number(projectCount?.count || 0),
+    files: extraction.total,
+    extraction,
+    taskTotals,
+    outputCount: Number(outputs?.count || 0),
+    latestOutputAt: outputs?.latest_at || null,
+    latestActivityAt: latestActivity?.latest_at || null,
+    staleRunningTasks: Number(staleTasks?.count || 0),
+    staleExtractionJobs: Number(staleFiles?.count || 0),
+    evidenceRule: "Active work requires RUNNING task evidence or completed department outputs.",
+  };
 }
 
 async function ensureSystemContinuity(env) {
-  const [existing, projectCount, fileCount, outputs, taskRows, extraction] = await Promise.all([
+  const [existing, state] = await Promise.all([
     env.DB.prepare("SELECT state_json FROM continuity_heads WHERE scope_type='system' AND scope_id='mason-forge'").first(),
-    env.DB.prepare("SELECT COUNT(*) count FROM projects").first(),
-    env.DB.prepare("SELECT COUNT(*) count FROM project_files").first(),
-    env.DB.prepare("SELECT COUNT(*) count FROM department_outputs").first(),
-    env.DB.prepare("SELECT status, COUNT(*) count FROM department_tasks GROUP BY status ORDER BY status").all(),
-    env.DB.prepare(`SELECT
-      SUM(CASE WHEN extracted_text_key IS NOT NULL THEN 1 ELSE 0 END) extracted,
-      SUM(CASE WHEN extracted_text_key IS NULL AND review_status='EXTRACTION QUEUED' THEN 1 ELSE 0 END) queued,
-      SUM(CASE WHEN extracted_text_key IS NULL AND review_status='EXTRACTION RETRYING' THEN 1 ELSE 0 END) retrying,
-      SUM(CASE WHEN extracted_text_key IS NULL AND review_status LIKE 'EXTRACTION FAILED:%' THEN 1 ELSE 0 END) failed
-      FROM project_files`).first(),
+    readOperationalState(env),
   ]);
-  const taskTotals = Object.fromEntries((taskRows.results || []).map((row) => [row.status, Number(row.count || 0)]));
-  const state = {
-    system: "Mason Forge Cloud",
-    deployment: "LIVE",
-    projects: Number(projectCount?.count || 0),
-    files: Number(fileCount?.count || 0),
-    taskTotals,
-    outputCount: Number(outputs?.count || 0),
-    extraction: {
-      extracted: Number(extraction?.extracted || 0),
-      queued: Number(extraction?.queued || 0),
-      retrying: Number(extraction?.retrying || 0),
-      failed: Number(extraction?.failed || 0),
-    },
-    evidenceRule: "Active work requires RUNNING task evidence or completed department outputs.",
-  };
   if (existing?.state_json === JSON.stringify(state)) return false;
+
+  const taskTotals = state.taskTotals;
   const request = new Request("https://mason-forge.local/api/continuity/system/mason-forge", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -163,11 +263,12 @@ async function ensureSystemContinuity(env) {
       verificationStatus: "VERIFIED",
       facts: [
         { key: "deployment", value: state.deployment, confidence: "VERIFIED" },
+        { key: "release_id", value: state.releaseId, confidence: "VERIFIED" },
         { key: "project_count", value: state.projects, confidence: "VERIFIED" },
         { key: "file_count", value: state.files, confidence: "VERIFIED" },
+        { key: "extraction", value: state.extraction, confidence: "VERIFIED" },
         { key: "task_totals", value: state.taskTotals, confidence: "VERIFIED" },
         { key: "output_count", value: state.outputCount, confidence: "VERIFIED" },
-        { key: "extraction", value: state.extraction, confidence: "VERIFIED" },
       ],
     }),
   });
@@ -188,6 +289,7 @@ export default {
 
     const url = new URL(request.url);
     if (url.pathname === "/health" && request.method === "GET") {
+      await kickOperations(env);
       await ensureSystemContinuity(env);
     }
     if (url.pathname === "/api/connector/bootstrap" && request.method === "GET" && authorized(request, env)) {
@@ -201,31 +303,39 @@ export default {
     if (continuity) return continuity;
     return foundation.fetch(request, env, ctx);
   },
+
   async queue(batch, env) {
     await ensureRuntimeSchema(env);
     for (const message of batch.messages) {
       const body = message.body || {};
       if (body.kind === "EXTRACT_PROJECT_FILE") {
         try {
-          await extractProjectFile(body, env);
-          message.ack();
+          const result = await extractProjectFile(body, env);
+          if (result?.busy) message.retry({ delaySeconds: 120 });
+          else message.ack();
         } catch (error) {
-          const terminal = Number(message.attempts || 1) >= 5;
+          const terminal = isPermanentExtractionError(error) || Number(message.attempts || 1) >= 5;
           await markExtractionFailure(body, env, error, terminal);
-          if (terminal) message.ack(); else message.retry({ delaySeconds: 120 });
+          if (terminal) message.ack();
+          else message.retry({ delaySeconds: 120 });
         }
         continue;
       }
+
       try {
         await processDepartmentTask(body, env);
         message.ack();
       } catch (error) {
         const result = await failDepartmentTask(body, env, error);
-        if (result.retry) message.retry({ delaySeconds: 60 }); else message.ack();
+        if (result.retry) message.retry({ delaySeconds: 90 });
+        else message.ack();
       }
     }
+
+    await kickOperations(env);
     await ensureSystemContinuity(env);
   },
+
   async scheduled(_event, env) {
     await ensureRuntimeSchema(env);
     await kickOperations(env);

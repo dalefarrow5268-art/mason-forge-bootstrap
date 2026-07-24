@@ -42,6 +42,14 @@ export default {
         return await oauthResponse(request, env);
       }
 
+      // MCP initialization and tools/list are stateless. Handle them before D1
+      // schema maintenance so ChatGPT can always discover the connector actions.
+      if (url.pathname === "/mcp") {
+        phase = "mcp";
+        const response = await mcpResponse(request, env);
+        if (response) return response;
+      }
+
       await ensureRuntimeSchema(env);
 
       phase = "oauth";
@@ -55,12 +63,6 @@ export default {
       phase = "upload";
       const upload = await uploadGrantResponse(request, env);
       if (upload) return upload;
-
-      if (url.pathname === "/mcp") {
-        phase = "mcp";
-        const response = await mcpResponse(request, env);
-        if (response) return response;
-      }
 
       if (url.pathname === "/health" && request.method === "GET") {
         phase = "read-only-health";

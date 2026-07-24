@@ -1,0 +1,97 @@
+name: Capture Mason Forge Live Now
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/capture-mason-live-now.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Wait for current Worker release
+        run: sleep 20
+
+      - name: Capture live state
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs/promises';
+          const proxy = 'https://mason-forge-live.vercel.app/api/mason';
+          const fetchJson = async (url) => {
+            const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}_live=${Date.now()}-${Math.random()}`, {
+              cache: 'no-store',
+              headers: { 'cache-control': 'no-store, no-cache, max-age=0', pragma: 'no-cache' },
+            });
+            const text = await response.text();
+            if (!response.ok) throw new Error(`${url} HTTP ${response.status}: ${text.slice(0, 1000)}`);
+            return JSON.parse(text);
+          };
+          const viaProxy = (path) => `${proxy}?path=${encodeURIComponent(path)}`;
+          const report = {
+            capturedAt: new Date().toISOString(),
+            sourceCommit: process.env.GITHUB_SHA,
+            health: await fetchJson('https://mason-forge-cloud.mason-forge-ssx.workers.dev/health'),
+            bootstrap: await fetchJson(proxy),
+            projects: {},
+          };
+          for (const projectId of [4, 5]) {
+            const [files, tasks, outputs, evidence, continuity] = await Promise.all([
+              fetchJson(viaProxy(`api/projects/${projectId}/files`)),
+              fetchJson(viaProxy(`api/projects/${projectId}/tasks`)),
+              fetchJson(viaProxy(`api/projects/${projectId}/outputs`)),
+              fetchJson(viaProxy(`api/projects/${projectId}/evidence`)),
+              fetchJson(viaProxy(`api/projects/${projectId}/continuity`)),
+            ]);
+            const statusCounts = {};
+            const failureReasons = {};
+            for (const file of files.files || []) {
+              const status = String(file.review_status || 'UNKNOWN');
+              statusCounts[status] = (statusCounts[status] || 0) + 1;
+              if (status.startsWith('EXTRACTION FAILED:')) failureReasons[status] = (failureReasons[status] || 0) + 1;
+            }
+            const taskCounts = {};
+            for (const task of tasks.tasks || []) taskCounts[task.status || 'UNKNOWN'] = (taskCounts[task.status || 'UNKNOWN'] || 0) + 1;
+            report.projects[projectId] = {
+              fileCount: (files.files || []).length,
+              fileStatusCounts: statusCounts,
+              extractionFailureReasons: failureReasons,
+              taskCount: (tasks.tasks || []).length,
+              taskCounts,
+              outputCount: (outputs.outputs || []).length,
+              evidenceBatchCount: (evidence.batches || []).length,
+              routedFileCount: (evidence.files || []).filter((file) => file.batch_id).length,
+              continuity: continuity.continuity || null,
+            };
+          }
+          report.successCriteria = {
+            operationalReady: report.health.operationalReady === true,
+            continuityVerified: report.health.continuity?.verification_status === 'VERIFIED' && Boolean(report.bootstrap.continuity),
+            zeroBlockedTasks: Number(report.health.taskTotals?.BLOCKED || 0) === 0,
+            countsReconcile: report.health.countsReconcile === true,
+            extractionProgressing: Number(report.health.extraction?.extracted || 0) > 0,
+            zeroExtractionFailures: Number(report.health.extraction?.failed || 0) === 0,
+            evidenceTasksCreated: Object.values(report.projects).some((project) => project.taskCount > 5),
+            evidenceOutputsCreated: Object.values(report.projects).some((project) => project.outputCount > 5),
+          };
+          await fs.mkdir('verification', { recursive: true });
+          await fs.writeFile('verification/live-now.json', JSON.stringify(report, null, 2));
+          console.log(JSON.stringify(report, null, 2));
+          NODE
+
+      - name: Publish live state
+        run: |
+          git config user.name "Mason Forge Live Capture"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -B live-snapshot
+          git add verification/live-now.json
+          git commit -m "Capture Mason Forge live state for ${GITHUB_SHA}"
+          git push --force origin live-snapshot

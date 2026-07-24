@@ -112,6 +112,7 @@ async function queuePendingDocumentExtractions(env) {
     FROM project_files
     WHERE extracted_text_key IS NULL
       AND review_status NOT LIKE 'EXTRACTION FAILED:%'
+      AND review_status NOT LIKE '%REVIEW REQUIRED:%'
       AND (
         review_status NOT IN ('EXTRACTION QUEUED','EXTRACTION RETRYING','EXTRACTING')
         OR (

@@ -6,6 +6,7 @@ import { downloadGrantResponse, isOAuthDiscoveryPath, oauthResponse } from "./oa
 import { ensureRuntimeSchema } from "./ensure-schema.js";
 import { recoverQueuedDepartmentTasks } from "./queued-task-recovery.js";
 import { ensureAllProjectContinuity } from "./project-continuity.js";
+import { uploadGrantResponse } from "./upload-grants.js";
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data, null, 2), {
@@ -50,6 +51,10 @@ export default {
       phase = "download";
       const download = await downloadGrantResponse(request, env);
       if (download) return download;
+
+      phase = "upload";
+      const upload = await uploadGrantResponse(request, env);
+      if (upload) return upload;
 
       if (url.pathname === "/mcp") {
         phase = "mcp";

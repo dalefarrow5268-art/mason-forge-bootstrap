@@ -8,6 +8,7 @@ import {
   downloadGrantResponse,
   oauthResponse,
 } from "../src/oauth.js";
+import { uploadGrantResponse } from "../src/upload-grants.js";
 
 class D1Statement {
   constructor(database, sql, parameters = []) {
@@ -30,7 +31,13 @@ class D1Statement {
 
   async run() {
     const result = this.database.prepare(this.sql).run(...this.parameters);
-    return { success: true, meta: { changes: Number(result.changes || 0) } };
+    return {
+      success: true,
+      meta: {
+        changes: Number(result.changes || 0),
+        last_row_id: Number(result.lastInsertRowid || 0),
+      },
+    };
   }
 }
 
@@ -61,7 +68,11 @@ database.exec(`
     size_bytes INTEGER NOT NULL DEFAULT 0,
     sha256 TEXT,
     revision TEXT,
-    document_date TEXT
+    document_date TEXT,
+    review_status TEXT,
+    source_class TEXT,
+    uploaded_at TEXT,
+    updated_at TEXT
   );
   CREATE TABLE mcp_oauth_clients (
     client_id TEXT PRIMARY KEY,
@@ -99,6 +110,18 @@ database.exec(`
     revoked_at TEXT,
     created_at TEXT NOT NULL
   );
+  CREATE TABLE mcp_upload_grants (
+    token_hash TEXT PRIMARY KEY,
+    project_id INTEGER NOT NULL,
+    file_id INTEGER NOT NULL,
+    expected_size INTEGER NOT NULL,
+    expected_sha256 TEXT NOT NULL,
+    content_type TEXT NOT NULL,
+    status TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    completed_at TEXT,
+    created_at TEXT NOT NULL
+  );
   INSERT INTO projects (id, name) VALUES (4, 'Fairfield Inn Tampa');
   INSERT INTO project_files
     (id, project_id, r2_key, file_name, relative_path, file_type, size_bytes, sha256, revision, document_date)
@@ -107,21 +130,33 @@ database.exec(`
 `);
 
 const sourceText = "Mason Forge";
+const r2Objects = new Map([["projects/4/source/10/test.txt", {
+  body: sourceText,
+  contentType: "text/plain",
+}]]);
 const env = {
   DB: new D1Database(database),
   MASON_API_TOKEN: "test-secret",
   PROJECT_FILES: {
     async get(key) {
-      if (key !== "projects/4/source/10/test.txt") return null;
+      if (!r2Objects.has(key)) return null;
+      const stored = r2Objects.get(key);
       return {
-        body: sourceText,
+        body: stored.body,
         httpEtag: '"test-etag"',
         writeHttpMetadata(headers) {
-          headers.set("content-type", "text/plain");
+          headers.set("content-type", stored.contentType);
         },
       };
     },
+    async put(key, bytes, options = {}) {
+      r2Objects.set(key, {
+        body: new Uint8Array(bytes),
+        contentType: options.httpMetadata?.contentType || "application/octet-stream",
+      });
+    },
   },
+  DEPARTMENT_QUEUE: { async send() {} },
 };
 const origin = "https://mason.example";
 const resource = `${origin}/mcp`;
@@ -237,9 +272,14 @@ assert.equal((await initialize.json()).result.serverInfo.name, "Mason Forge");
 
 const listed = await rpc({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} });
 const listedTools = (await listed.json()).result.tools;
-assert.equal(listedTools.length, 13);
+assert.equal(listedTools.length, 15);
+assert.ok(listedTools.some((tool) => tool.name === "list_projects"));
 assert.ok(listedTools.some((tool) => tool.name === "get_project_file_source"));
 assert.ok(listedTools.some((tool) => tool.name === "reconcile_project_files"));
+const uploadTool = listedTools.find((tool) => tool.name === "create_project_file_upload");
+assert.ok(uploadTool);
+assert.deepEqual(uploadTool.securitySchemes[0].scopes, ["mason.read", "mason.write"]);
+assert.equal(uploadTool.annotations.readOnlyHint, false);
 assert.ok(listedTools.every((tool) => tool.securitySchemes[0].type === "oauth2"));
 
 const denied = await rpc({
@@ -261,9 +301,67 @@ assert.equal(sourceResult.isError, false);
 assert.equal(sourceResult.content[0].type, "resource_link");
 assert.equal(sourceResult.content[0].name, "test.txt");
 
+const uploadBytes = new TextEncoder().encode("photo report");
+const uploadSha = createHash("sha256").update(uploadBytes).digest("hex");
+const uploadRpc = await rpc({
+  jsonrpc: "2.0",
+  id: 5,
+  method: "tools/call",
+  params: {
+    name: "create_project_file_upload",
+    arguments: {
+      projectId: 4,
+      fileName: "photo-report.pdf",
+      relativePath: "03 - Reports/photo-report.pdf",
+      contentType: "application/pdf",
+      sizeBytes: uploadBytes.byteLength,
+      sha256: uploadSha,
+    },
+  },
+}, "test-secret");
+const uploadGrantResult = (await uploadRpc.json()).result;
+assert.equal(uploadGrantResult.isError, false);
+const uploadGrant = JSON.parse(uploadGrantResult.content[0].text);
+assert.equal(uploadGrant.duplicate, false);
+assert.match(uploadGrant.uploadUrl, /^https:\/\/mason\.example\/api\/uploads\/mful_/);
+const uploaded = await uploadGrantResponse(new Request(uploadGrant.uploadUrl, {
+  method: "PUT",
+  headers: { "content-type": "application/pdf", "content-length": String(uploadBytes.byteLength) },
+  body: uploadBytes,
+}), env);
+assert.equal(uploaded.status, 201);
+const uploadedBody = await uploaded.json();
+assert.equal(uploadedBody.uploaded, true);
+assert.equal(uploadedBody.sha256, uploadSha);
+assert.equal(r2Objects.has(uploadedBody.r2Key), true);
+assert.equal(database.prepare("SELECT review_status FROM project_files WHERE id=?").get(uploadedBody.fileId).review_status, "EXTRACTION QUEUED");
+
+const duplicateRpc = await rpc({
+  jsonrpc: "2.0",
+  id: 6,
+  method: "tools/call",
+  params: {
+    name: "create_project_file_upload",
+    arguments: {
+      projectId: 4,
+      fileName: "photo-report-copy.pdf",
+      relativePath: "03 - Reports/photo-report-copy.pdf",
+      contentType: "application/pdf",
+      sizeBytes: uploadBytes.byteLength,
+      sha256: uploadSha,
+    },
+  },
+}, "test-secret");
+const duplicateResult = JSON.parse((await duplicateRpc.json()).result.content[0].text);
+assert.equal(duplicateResult.duplicate, true);
+
 console.log(JSON.stringify({
   success: true,
   oauth: "authorization_code_pkce_and_refresh",
   toolCount: listedTools.length,
   sourceDownload: true,
+  projectDiscovery: true,
+  controlledUploadGrant: true,
+  uploadVerified: true,
+  duplicateProtection: true,
 }, null, 2));

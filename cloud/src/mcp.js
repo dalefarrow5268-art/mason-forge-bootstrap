@@ -1,36 +1,57 @@
 import { connectorResponse } from "./connector.js";
 import { authorizeMcpRequest, createDownloadGrant, mcpAuthChallenge } from "./oauth.js";
+import { createProjectUploadGrant } from "./upload-grants.js";
 
 const protocolVersion = "2025-06-18";
 
-const tools = [
-  ["get_system_state", "Retrieve the verified Mason Forge system state and project summaries.", {}],
-  ["list_project_files", "List every registered file in a project.", { projectId: { type: "integer", enum: [4, 5], description: "4 = Fairfield Inn Tampa; 5 = StudioRes Estero" } }],
-  ["reconcile_project_files", "Verify every project file database record against R2 and report conservative cleanup candidates.", { projectId: { type: "integer", enum: [4, 5], description: "4 = Fairfield Inn Tampa; 5 = StudioRes Estero" } }],
-  ["get_project_file", "Retrieve one project file's metadata and extracted text/evidence.", { projectId: { type: "integer", enum: [4, 5] }, fileId: { type: "integer" } }],
-  ["get_project_file_source", "Create a short-lived download link for one original project file.", { projectId: { type: "integer", enum: [4, 5] }, fileId: { type: "integer" } }],
-  ["get_project_status", "Retrieve a consolidated project status summary.", { projectId: { type: "integer", enum: [4, 5] } }],
-  ["get_project_tasks", "Retrieve department tasks and task events.", { projectId: { type: "integer", enum: [4, 5] } }],
-  ["get_project_outputs", "Retrieve completed department outputs and evidence registers.", { projectId: { type: "integer", enum: [4, 5] } }],
-  ["get_project_findings", "Retrieve project findings and evidence.", { projectId: { type: "integer", enum: [4, 5] } }],
-  ["get_project_evidence", "Retrieve extraction status, evidence batches, and routed files.", { projectId: { type: "integer", enum: [4, 5] } }],
-  ["get_project_rfis", "Retrieve the project RFI register.", { projectId: { type: "integer", enum: [4, 5] } }],
-  ["get_project_contacts", "Retrieve project identity, parties, and available contacts.", { projectId: { type: "integer", enum: [4, 5] } }],
-  ["get_project_continuity", "Retrieve project Continuity Ledger state and history.", { projectId: { type: "integer", enum: [4, 5] } }],
-].map(([name, description, properties]) => ({
-  name,
-  title: description,
-  description,
+const projectId = { type: "integer", minimum: 1, description: "Mason Forge project ID returned by list_projects." };
+const toolDefinitions = [
+  ["get_system_state", "Retrieve the verified Mason Forge system state and project summaries.", {}, true],
+  ["list_projects", "List every Mason Forge project and its current file/task counts.", {}, true],
+  ["list_project_files", "List every registered file in a project.", { projectId }, true],
+  ["reconcile_project_files", "Verify every project file database record against R2 and report conservative cleanup candidates.", { projectId }, true],
+  ["get_project_file", "Retrieve one project file's metadata and extracted text/evidence.", { projectId, fileId: { type: "integer", minimum: 1 } }, true],
+  ["get_project_file_source", "Create a short-lived download link for one original project file.", { projectId, fileId: { type: "integer", minimum: 1 } }, true],
+  ["get_project_status", "Retrieve a consolidated project status summary.", { projectId }, true],
+  ["get_project_tasks", "Retrieve department tasks and task events.", { projectId }, true],
+  ["get_project_outputs", "Retrieve completed department outputs and evidence registers.", { projectId }, true],
+  ["get_project_findings", "Retrieve project findings and evidence.", { projectId }, true],
+  ["get_project_evidence", "Retrieve extraction status, evidence batches, and routed files.", { projectId }, true],
+  ["get_project_rfis", "Retrieve the project RFI register.", { projectId }, true],
+  ["get_project_contacts", "Retrieve project identity, parties, and available contacts.", { projectId }, true],
+  ["get_project_continuity", "Retrieve project Continuity Ledger state and history.", { projectId }, true],
+  ["create_project_file_upload", "Create a one-time, duplicate-protected upload grant for a verified project file.", {
+    projectId,
+    fileName: { type: "string", minLength: 1, maxLength: 240 },
+    relativePath: { type: "string", minLength: 1, maxLength: 500 },
+    contentType: { type: "string", minLength: 1, maxLength: 160 },
+    sizeBytes: { type: "integer", minimum: 1, maximum: 26214400 },
+    sha256: { type: "string", pattern: "^[A-Fa-f0-9]{64}$" },
+  }, false],
+];
+
+const tools = toolDefinitions.map(([name, description, properties, readOnly]) => {
+  const scopes = readOnly ? ["mason.read"] : ["mason.read", "mason.write"];
+  return {
+    name,
+    title: description,
+    description,
   inputSchema: {
     type: "object",
     properties,
     required: Object.keys(properties),
     additionalProperties: false,
   },
-  annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
-  securitySchemes: [{ type: "oauth2", scopes: ["mason.read"] }],
-  _meta: { securitySchemes: [{ type: "oauth2", scopes: ["mason.read"] }] },
-}));
+    annotations: {
+      readOnlyHint: readOnly,
+      destructiveHint: false,
+      idempotentHint: readOnly,
+      openWorldHint: false,
+    },
+    securitySchemes: [{ type: "oauth2", scopes }],
+    _meta: { securitySchemes: [{ type: "oauth2", scopes }] },
+  };
+});
 
 function jsonRpc(id, result, status = 200) {
   return new Response(JSON.stringify({ jsonrpc: "2.0", id, result }), {
@@ -62,6 +83,7 @@ function routeForTool(name, args = {}) {
   const fileId = Number(args.fileId);
   switch (name) {
     case "get_system_state": return "/api/connector/bootstrap";
+    case "list_projects": return "/api/connector/bootstrap";
     case "list_project_files": return `/api/projects/${projectId}/files`;
     case "reconcile_project_files": return `/api/projects/${projectId}/file-reconciliation`;
     case "get_project_file": return `/api/projects/${projectId}/files/${fileId}`;
@@ -78,8 +100,12 @@ function routeForTool(name, args = {}) {
 }
 
 async function callConnectorTool(name, args, request, env) {
-  if ("projectId" in (args || {}) && ![4, 5].includes(Number(args.projectId))) {
-    throw new Error("Only Fairfield project 4 and Estero project 5 are available through this connector.");
+  if ("projectId" in (args || {}) && (!Number.isSafeInteger(Number(args.projectId)) || Number(args.projectId) < 1)) {
+    throw new Error("projectId must be a positive integer returned by list_projects.");
+  }
+  if (name === "create_project_file_upload") {
+    const grant = await createProjectUploadGrant(env, new URL(request.url).origin, args);
+    return { content: [{ type: "text", text: JSON.stringify(grant, null, 2) }] };
   }
   if (name === "get_project_file_source") {
     const projectId = Number(args.projectId);
@@ -146,7 +172,7 @@ export async function mcpResponse(request, env) {
       protocolVersion,
       capabilities: { tools: { listChanged: false } },
       serverInfo: { name: "Mason Forge", version: "1.0.0" },
-      instructions: "Read-only access to Mason Forge Fairfield project 4 and Estero project 5. Retrieve continuity and evidence before drawing conclusions.",
+      instructions: "Authenticated access to Mason Forge projects, R2-backed files, continuity, and evidence. Discover project IDs first. File writes require a one-time size/hash-verified upload grant and never overwrite an existing path or SHA-256.",
     });
   }
   if (method === "notifications/initialized") return new Response(null, { status: 202 });
@@ -154,10 +180,13 @@ export async function mcpResponse(request, env) {
   if (method === "tools/list") return jsonRpc(id, { tools });
   if (method === "tools/call") {
     const name = params?.name;
-    if (!(await authorizeMcpRequest(request, env))) {
-      const challenge = mcpAuthChallenge(url.origin);
+    const definition = toolDefinitions.find(([toolName]) => toolName === name);
+    if (!definition) return jsonRpc(id, { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true });
+    const requiredScope = definition[3] ? "mason.read" : "mason.write";
+    if (!(await authorizeMcpRequest(request, env, requiredScope))) {
+      const challenge = mcpAuthChallenge(url.origin, requiredScope);
       return jsonRpc(id, {
-        content: [{ type: "text", text: "Connect Mason Forge to authorize read-only project access." }],
+        content: [{ type: "text", text: `Connect Mason Forge to authorize ${requiredScope} access.` }],
         isError: true,
         _meta: { "mcp/www_authenticate": [challenge] },
       });

@@ -1,4 +1,6 @@
 const READ_SCOPE = "mason.read";
+const WRITE_SCOPE = "mason.write";
+const SUPPORTED_SCOPES = [READ_SCOPE, WRITE_SCOPE];
 const ACCESS_TOKEN_TTL_SECONDS = 60 * 60;
 const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
 const AUTHORIZATION_CODE_TTL_SECONDS = 5 * 60;
@@ -131,8 +133,8 @@ async function resolveClient(clientId, env) {
 
 function parseScope(value) {
   const requested = String(value || READ_SCOPE).split(/\s+/).filter(Boolean);
-  if (!requested.length || requested.some((scope) => scope !== READ_SCOPE)) return null;
-  return READ_SCOPE;
+  if (!requested.length || requested.some((scope) => !SUPPORTED_SCOPES.includes(scope))) return null;
+  return [...new Set(requested)].join(" ");
 }
 
 function validPkceChallenge(value) {
@@ -159,6 +161,11 @@ function hidden(name, value) {
 
 function authorizationPage(parameters, client, errorMessage = "") {
   const redirectHost = new URL(parameters.redirect_uri).hostname;
+  const canWrite = String(parameters.scope || "").split(/\s+/).includes(WRITE_SCOPE);
+  const accessLabel = canWrite ? "read and controlled file-upload access" : "read-only access";
+  const capabilityText = canWrite
+    ? "This connection can read all Mason Forge projects and create duplicate-protected, size/hash-verified project-file uploads. It cannot overwrite or delete project files."
+    : "This connection can read project files, extracted text, tasks, outputs, findings, evidence, RFIs, contacts, and continuity. It cannot modify Mason Forge data.";
   const fields = [
     "response_type",
     "client_id",
@@ -189,16 +196,16 @@ function authorizationPage(parameters, client, errorMessage = "") {
 <body>
   <main>
     <h1>Connect Mason Forge</h1>
-    <p>Authorize read-only access to Fairfield project 4 and Estero project 5.</p>
+    <p>Authorize ${accessLabel} to all verified Mason Forge projects.</p>
     <div class="meta"><strong>${escapeHtml(client.clientName)}</strong><br><span class="fine">Return to ${escapeHtml(redirectHost)}</span></div>
     ${error}
     <form method="post" action="/oauth/authorize">
       ${fields}
       <label for="passphrase">Mason Forge connector passphrase</label>
       <input id="passphrase" name="passphrase" type="password" autocomplete="current-password" required autofocus>
-      <button type="submit">Authorize read-only access</button>
+      <button type="submit">Authorize ${accessLabel}</button>
     </form>
-    <p class="fine">This connection can read project files, extracted text, tasks, outputs, findings, evidence, RFIs, contacts, and continuity. It cannot modify Mason Forge data.</p>
+    <p class="fine">${capabilityText}</p>
   </main>
 </body>
 </html>`, {
@@ -231,7 +238,7 @@ async function validateAuthorizationRequest(parameters, env, origin) {
     return { error: "invalid_target", description: "The protected resource is invalid." };
   }
   const scope = parseScope(parameters.scope);
-  if (!scope) return { error: "invalid_scope", description: "Only mason.read is available." };
+  if (!scope) return { error: "invalid_scope", description: "Supported scopes are mason.read and mason.write." };
   const client = await resolveClient(parameters.client_id, env);
   if (!client) return { error: "unauthorized_client", description: "The OAuth client is not registered or trusted." };
   if (!client.redirectUris.includes(parameters.redirect_uri)) {
@@ -428,7 +435,7 @@ function protectedResourceMetadata(origin) {
   return json({
     resource: canonicalResource(origin),
     authorization_servers: [issuer(origin)],
-    scopes_supported: [READ_SCOPE],
+    scopes_supported: SUPPORTED_SCOPES,
     bearer_methods_supported: ["header"],
     resource_documentation: "https://github.com/dalefarrow5268-art/mason-forge-bootstrap",
   });
@@ -445,7 +452,7 @@ function authorizationServerMetadata(origin) {
     grant_types_supported: ["authorization_code", "refresh_token"],
     token_endpoint_auth_methods_supported: ["none"],
     code_challenge_methods_supported: ["S256"],
-    scopes_supported: [READ_SCOPE],
+    scopes_supported: SUPPORTED_SCOPES,
   });
 }
 
@@ -473,11 +480,11 @@ export async function oauthResponse(request, env) {
   return null;
 }
 
-export function mcpAuthChallenge(origin) {
-  return `Bearer resource_metadata="${origin}/.well-known/oauth-protected-resource", scope="${READ_SCOPE}"`;
+export function mcpAuthChallenge(origin, scope = READ_SCOPE) {
+  return `Bearer resource_metadata="${origin}/.well-known/oauth-protected-resource", scope="${scope}"`;
 }
 
-export async function authorizeMcpRequest(request, env) {
+export async function authorizeMcpRequest(request, env, requiredScope = READ_SCOPE) {
   const header = request.headers.get("authorization") || "";
   if (!header.startsWith("Bearer ")) return false;
   const tokenValue = header.slice("Bearer ".length).trim();
@@ -492,7 +499,7 @@ export async function authorizeMcpRequest(request, env) {
   return Boolean(
     row
     && row.resource === canonicalResource(new URL(request.url).origin)
-    && String(row.scope || "").split(/\s+/).includes(READ_SCOPE),
+    && String(row.scope || "").split(/\s+/).includes(requiredScope),
   );
 }
 

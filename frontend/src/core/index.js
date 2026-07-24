@@ -49,7 +49,6 @@ export { eventBus, stateManager, workflowCoordinator, knowledgeService };
 export { default as MasonCore } from "./MasonCore";
 export { default as AIEngine } from "./AIEngine";
 export { default as CoreHealth } from "./CoreHealth";
-export { default as DashboardData } from "./DashboardData";
 export { default as DashboardService } from "./DashboardService";
 export { default as EventBus } from "./EventBus";
 export { default as Logger } from "./Logger";

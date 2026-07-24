@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/capture-mason-live-now.yml"
+      - "verification/live-snapshot-trigger.txt"
 
 permissions:
   contents: write

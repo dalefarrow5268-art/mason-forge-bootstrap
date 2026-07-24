@@ -1,8 +1,41 @@
 import foundation from "./index.js";
 import { failDepartmentTask, processDepartmentTask } from "./department-processor.js";
 import { extractProjectFile, markExtractionFailure } from "./document-extractor.js";
+import { listContinuityScopes, readContinuity, writeContinuity } from "./continuity-ledger.js";
 
 const now = () => new Date().toISOString();
+
+function authorized(request, env) {
+  if (!env.MASON_API_TOKEN) return false;
+  return (request.headers.get("authorization") || "") === `Bearer ${env.MASON_API_TOKEN}`;
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data, null, 2), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+  });
+}
+
+async function continuityRoute(request, env) {
+  const url = new URL(request.url);
+  if (!url.pathname.startsWith("/api/continuity")) return null;
+  if (!authorized(request, env)) return json({ error: "Unauthorized." }, 401);
+
+  if (url.pathname === "/api/continuity" && request.method === "GET") {
+    return listContinuityScopes(env);
+  }
+
+  const match = url.pathname.match(/^\/api\/continuity\/([^/]+)\/([^/]+)$/);
+  if (!match) return json({ error: "Not found." }, 404);
+  const scopeType = decodeURIComponent(match[1]);
+  const scopeId = decodeURIComponent(match[2]);
+  if (request.method === "GET") return readContinuity(scopeType, scopeId, env);
+  if (request.method === "POST" || request.method === "PUT") {
+    return writeContinuity(request, scopeType, scopeId, env);
+  }
+  return json({ error: "Method not allowed." }, 405);
+}
 
 async function recoverLegacyBlockedTasks(env) {
   const blocked = await env.DB.prepare(`
@@ -60,7 +93,11 @@ async function queuePendingDocumentExtractions(env) {
 }
 
 export default {
-  fetch: foundation.fetch,
+  async fetch(request, env, ctx) {
+    const continuityResponse = await continuityRoute(request, env);
+    if (continuityResponse) return continuityResponse;
+    return foundation.fetch(request, env, ctx);
+  },
 
   async queue(batch, env) {
     for (const message of batch.messages) {

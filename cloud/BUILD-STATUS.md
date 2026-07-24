@@ -29,3 +29,7 @@
 ## Deployment rule
 
 This file intentionally changes under `cloud/**` to trigger a brand-new production GitHub Actions workflow from the latest `main`. The release must not be described as deployed until the Worker health endpoint and live task/output records provide evidence of success.
+
+## Current trigger
+
+Fresh deployment triggered after rotating the Cloudflare API token in GitHub Actions on 2026-07-24.

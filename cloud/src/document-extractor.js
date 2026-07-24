@@ -102,7 +102,7 @@ async function fileInputContent(env, file, bytes) {
   }
   const uploadedFileId = await uploadOpenAIFile(env, file, bytes);
   return {
-    content: [{ type: "input_file", file_id: uploadedFileId, filename: file.file_name }],
+    content: [{ type: "input_file", file_id: uploadedFileId }],
     uploadedFileId,
   };
 }

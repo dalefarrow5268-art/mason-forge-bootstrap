@@ -1,0 +1,3 @@
+Deploy Mason Forge Cloud release 2026-07-24-oauth-compatibility-12.
+Source commit: b0aa5dc875b3612d8f29977b5f22ae0a47f06cbc
+Reason: Refresh the production MCP action list for the existing ChatGPT Business app.

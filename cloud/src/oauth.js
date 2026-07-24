@@ -354,7 +354,7 @@ async function exchangeAuthorizationCode(parameters, env, origin) {
   if (!parameters.client_id || !parameters.code || !parameters.redirect_uri || !validCodeVerifier(parameters.code_verifier)) {
     return oauthError("invalid_request", "client_id, code, redirect_uri, and a PKCE code_verifier are required.");
   }
-  if (parameters.resource !== canonicalResource(origin)) {
+  if (parameters.resource && parameters.resource !== canonicalResource(origin)) {
     return oauthError("invalid_target", "The protected resource is invalid.");
   }
 
@@ -364,10 +364,12 @@ async function exchangeAuthorizationCode(parameters, env, origin) {
     FROM mcp_oauth_codes
     WHERE code_hash = ? AND used_at IS NULL AND expires_at > ?
   `).bind(codeHash, new Date().toISOString()).first();
+  const requestedResource = parameters.resource || row?.resource;
   if (!row
     || row.client_id !== parameters.client_id
     || row.redirect_uri !== parameters.redirect_uri
-    || row.resource !== parameters.resource
+    || row.resource !== requestedResource
+    || requestedResource !== canonicalResource(origin)
     || (await sha256(parameters.code_verifier)) !== row.code_challenge) {
     return oauthError("invalid_grant", "The authorization code is invalid or expired.");
   }
@@ -390,7 +392,7 @@ async function exchangeRefreshToken(parameters, env, origin) {
   if (!parameters.client_id || !parameters.refresh_token) {
     return oauthError("invalid_request", "client_id and refresh_token are required.");
   }
-  if (parameters.resource !== canonicalResource(origin)) {
+  if (parameters.resource && parameters.resource !== canonicalResource(origin)) {
     return oauthError("invalid_target", "The protected resource is invalid.");
   }
 
@@ -400,7 +402,11 @@ async function exchangeRefreshToken(parameters, env, origin) {
     FROM mcp_oauth_tokens
     WHERE token_hash = ? AND token_kind = 'refresh' AND revoked_at IS NULL AND expires_at > ?
   `).bind(refreshHash, new Date().toISOString()).first();
-  if (!row || row.client_id !== parameters.client_id || row.resource !== parameters.resource) {
+  const requestedResource = parameters.resource || row?.resource;
+  if (!row
+    || row.client_id !== parameters.client_id
+    || row.resource !== requestedResource
+    || requestedResource !== canonicalResource(origin)) {
     return oauthError("invalid_grant", "The refresh token is invalid or expired.");
   }
 

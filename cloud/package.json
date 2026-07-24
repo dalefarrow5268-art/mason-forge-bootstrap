@@ -1,0 +1,16 @@
+{
+  "name": "mason-forge-cloudflare-foundation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/index.js",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:local": "wrangler d1 execute mason-forge-cloud --local --file schema/0001_initial.sql",
+    "db:remote": "wrangler d1 execute mason-forge-cloud --remote --file schema/0001_initial.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.27.0"
+  }
+}

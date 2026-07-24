@@ -188,8 +188,10 @@ async function readOperationalState(env) {
         SUM(CASE WHEN extracted_text_key IS NULL AND review_status='EXTRACTING' THEN 1 ELSE 0 END) extracting,
         SUM(CASE WHEN extracted_text_key IS NULL AND review_status='EXTRACTION RETRYING' THEN 1 ELSE 0 END) retrying,
         SUM(CASE WHEN extracted_text_key IS NULL AND review_status LIKE 'EXTRACTION FAILED:%' THEN 1 ELSE 0 END) failed,
+        SUM(CASE WHEN extracted_text_key IS NULL AND review_status LIKE '%REVIEW REQUIRED:%' THEN 1 ELSE 0 END) routed_review,
         SUM(CASE WHEN extracted_text_key IS NULL
           AND review_status NOT LIKE 'EXTRACTION FAILED:%'
+          AND review_status NOT LIKE '%REVIEW REQUIRED:%'
           AND review_status NOT IN ('EXTRACTION QUEUED','EXTRACTING','EXTRACTION RETRYING') THEN 1 ELSE 0 END) pending
       FROM project_files
     `).first(),
@@ -223,9 +225,11 @@ async function readOperationalState(env) {
     extracting: Number(fileRows?.extracting || 0),
     retrying: Number(fileRows?.retrying || 0),
     failed: Number(fileRows?.failed || 0),
+    routedReview: Number(fileRows?.routed_review || 0),
     pending: Number(fileRows?.pending || 0),
   };
-  extraction.accounted = extraction.extracted + extraction.queued + extraction.extracting + extraction.retrying + extraction.failed + extraction.pending;
+  extraction.accounted = extraction.extracted + extraction.queued + extraction.extracting + extraction.retrying
+    + extraction.failed + extraction.routedReview + extraction.pending;
 
   return {
     system: "Mason Forge Cloud",

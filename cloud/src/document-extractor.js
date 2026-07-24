@@ -27,6 +27,49 @@ function extension(name = "") {
   return index >= 0 ? clean.slice(index + 1) : "";
 }
 
+const imageExtensions = new Set(["jpeg", "jpg", "png", "webp", "gif"]);
+const directlyReadableExtensions = new Set(["json", "csv", "md", "txt", "html", "xml"]);
+const supportedDocumentExtensions = new Set(["pdf", "docx", "xlsx", "pptx"]);
+
+export function sourceKind(file, extraction = null) {
+  const ext = extension(file.file_name);
+  if (imageExtensions.has(ext)) return "IMAGE";
+  const evidence = [
+    extraction?.documentType,
+    extraction?.title,
+    ...(extraction?.extractionLimitations || []),
+  ].join(" ").toUpperCase();
+  if (/\b(DRAWING|PLAN SET|SHEET|BLUEPRINT)\b/.test(evidence)) return "DRAWING";
+  if (/\b(SCAN|SCANNED|OCR|IMAGE[- ]ONLY)\b/.test(evidence)) return "SCAN";
+  return "DOCUMENT";
+}
+
+export function failureClassification(file, error) {
+  const ext = extension(file.file_name);
+  const message = String(error?.message || error);
+  if (!directlyReadableExtensions.has(ext) && !imageExtensions.has(ext) && !supportedDocumentExtensions.has(ext)) {
+    return { sourceKind: "UNSUPPORTED FORMAT", reviewType: "MANUAL", reason: `Unsupported .${ext || "[no extension]"} format. ${message}` };
+  }
+  if (/corrupt|malformed|invalid (pdf|file)|cannot (read|parse)|damaged/i.test(message)) {
+    return { sourceKind: "CORRUPTED FILE", reviewType: "MANUAL", reason: message };
+  }
+  if (/exceeds extraction limit|too large|413/i.test(message)) {
+    return { sourceKind: sourceKind(file), reviewType: "MANUAL", reason: `File exceeds automated extraction capacity. ${message}` };
+  }
+  return { sourceKind: sourceKind(file), reviewType: "MANUAL", reason: message };
+}
+
+async function routeForReview(env, file, reviewType, kind, reason) {
+  const timestamp = now();
+  await env.DB.prepare(`INSERT INTO extraction_review_queue
+    (file_id, project_id, review_type, source_kind, reason, status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, 'PENDING', ?, ?)
+    ON CONFLICT(file_id) DO UPDATE SET
+      review_type=excluded.review_type, source_kind=excluded.source_kind,
+      reason=excluded.reason, status='PENDING', updated_at=excluded.updated_at`)
+    .bind(file.id, file.project_id, reviewType, kind, String(reason).slice(0, 1000), timestamp, timestamp).run();
+}
+
 function mimeType(file) {
   if (file.file_type && String(file.file_type).includes("/")) return String(file.file_type).split(";")[0].trim();
   const types = {
@@ -83,7 +126,7 @@ async function deleteOpenAIFile(env, fileId) {
 
 async function fileInputContent(env, file, bytes) {
   const ext = extension(file.file_name);
-  if (["json", "csv", "md", "txt", "html", "xml"].includes(ext)) {
+  if (directlyReadableExtensions.has(ext)) {
     const maxTextBytes = 2 * 1024 * 1024;
     const text = new TextDecoder("utf-8", { fatal: false }).decode(bytes.subarray(0, maxTextBytes));
     return {
@@ -94,7 +137,7 @@ async function fileInputContent(env, file, bytes) {
       uploadedFileId: null,
     };
   }
-  if (["jpeg", "jpg", "png", "webp", "gif"].includes(ext)) {
+  if (imageExtensions.has(ext)) {
     return {
       content: [{ type: "input_image", image_url: `data:${mimeType(file)};base64,${bytesToBase64(bytes)}`, detail: "auto" }],
       uploadedFileId: null,
@@ -214,11 +257,26 @@ export async function extractProjectFile(message, env) {
   if (Number(file.size_bytes || 0) > maxBytes) {
     throw permanentError(`File exceeds extraction limit of ${maxBytes} bytes.`);
   }
+  const ext = extension(file.file_name);
+  if (!directlyReadableExtensions.has(ext) && !imageExtensions.has(ext) && !supportedDocumentExtensions.has(ext)) {
+    throw permanentError(`Unsupported extraction format: .${ext || "[no extension]"}.`);
+  }
 
   const object = await env.PROJECT_FILES.get(file.r2_key);
   if (!object) throw permanentError(`R2 object not found: ${file.r2_key}`);
   const bytes = new Uint8Array(await object.arrayBuffer());
   const { payload, content } = await callOpenAI(env, file, bytes);
+  const kind = sourceKind(file, content);
+  const requiresVisualReview = ["IMAGE", "DRAWING", "SCAN"].includes(kind);
+  const limitations = Array.isArray(content.extractionLimitations) ? content.extractionLimitations.filter(Boolean) : [];
+  const lowConfidence = String(content.confidence || "").toUpperCase() === "LOW";
+  const requiresManualReview = lowConfidence || limitations.length > 0;
+  const reviewType = requiresVisualReview ? "VISUAL" : requiresManualReview ? "MANUAL" : null;
+  const reviewReason = requiresVisualReview
+    ? `${kind} evidence requires visual verification.`
+    : requiresManualReview
+      ? `Extraction requires review: ${[...limitations, lowConfidence ? "Low extraction confidence." : ""].filter(Boolean).join(" ")}`
+      : null;
 
   const extractionKey = `projects/${file.project_id}/extracted/${file.id}.json`;
   const extractionRecord = {
@@ -231,6 +289,12 @@ export async function extractProjectFile(message, env) {
       sizeBytes: file.size_bytes,
     },
     extraction: content,
+    classification: {
+      sourceKind: kind,
+      readable: true,
+      reviewType,
+      reviewReason,
+    },
     openai: {
       responseId: payload.id || null,
       model: payload.model || env.OPENAI_DOCUMENT_MODEL || env.OPENAI_MODEL || "gpt-5-mini",
@@ -244,27 +308,43 @@ export async function extractProjectFile(message, env) {
   });
   await env.DB.prepare(`
     UPDATE project_files
-    SET extracted_text_key = ?, review_status = 'EXTRACTED - NEEDS HUMAN REVIEW', updated_at = ?
+    SET extracted_text_key = ?, review_status = ?, updated_at = ?
     WHERE id = ? AND extracted_text_key IS NULL
-  `).bind(extractionKey, now(), file.id).run();
+  `).bind(
+    extractionKey,
+    reviewType ? `EXTRACTED - ${reviewType} REVIEW REQUIRED: ${kind}` : "EXTRACTED - READY",
+    now(),
+    file.id,
+  ).run();
+  if (reviewType) await routeForReview(env, file, reviewType, kind, reviewReason);
 
   const routed = await routeExtractedEvidence(file, extractionKey, env);
   return { fileId: file.id, extractionKey, responseId: payload.id || null, ...routed };
 }
 
 export async function markExtractionFailure(message, env, error, terminal = false) {
-  const file = await env.DB.prepare("SELECT project_id FROM project_files WHERE id = ?").bind(message.fileId).first();
+  const file = await env.DB.prepare("SELECT * FROM project_files WHERE id = ?").bind(message.fileId).first();
+  const classification = file ? failureClassification(file, error) : null;
   await env.DB.prepare(`
     UPDATE project_files
     SET review_status = ?, updated_at = ?
     WHERE id = ? AND extracted_text_key IS NULL
   `).bind(
-    terminal ? `EXTRACTION FAILED: ${String(error?.message || error).slice(0, 500)}` : "EXTRACTION RETRYING",
+    terminal
+      ? `${classification?.reviewType || "MANUAL"} REVIEW REQUIRED: ${classification?.sourceKind || "UNREADABLE"}`
+      : "EXTRACTION RETRYING",
     now(),
     message.fileId,
   ).run();
 
   if (terminal && file?.project_id) {
+    await routeForReview(
+      env,
+      file,
+      classification.reviewType,
+      classification.sourceKind,
+      classification.reason,
+    );
     await routeReadyEvidenceBatches(Number(file.project_id), env);
   }
 }

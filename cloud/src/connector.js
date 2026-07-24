@@ -264,13 +264,33 @@ async function listFindings(projectId, env) {
 async function listEvidence(projectId, env) {
   const project = await requireProject(projectId, env);
   if (!project) return json({ error: "Project not found." }, 404);
-  const [batches, files] = await Promise.all([
+  const [batches, files, reviews, totals] = await Promise.all([
     env.DB.prepare("SELECT * FROM evidence_batches WHERE project_id = ? ORDER BY created_at").bind(projectId).all(),
     env.DB.prepare(`SELECT f.id, f.file_name, f.relative_path, f.file_type, f.review_status, f.extracted_text_key,
       ebf.batch_id FROM project_files f LEFT JOIN evidence_batch_files ebf ON ebf.file_id=f.id
       WHERE f.project_id=? ORDER BY f.relative_path`).bind(projectId).all(),
+    env.DB.prepare(`SELECT q.*, f.file_name, f.relative_path, f.file_type
+      FROM extraction_review_queue q JOIN project_files f ON f.id=q.file_id
+      WHERE q.project_id=? ORDER BY q.status, q.review_type, f.relative_path`).bind(projectId).all(),
+    env.DB.prepare(`SELECT COUNT(*) total,
+      SUM(CASE WHEN extracted_text_key IS NOT NULL THEN 1 ELSE 0 END) extracted,
+      SUM(CASE WHEN extracted_text_key IS NULL AND review_status IN ('EXTRACTION QUEUED','EXTRACTING','EXTRACTION RETRYING') THEN 1 ELSE 0 END) processing,
+      SUM(CASE WHEN extracted_text_key IS NULL AND review_status LIKE '%REVIEW REQUIRED:%' THEN 1 ELSE 0 END) routed_unreadable
+      FROM project_files WHERE project_id=?`).bind(projectId).first(),
   ]);
-  return json({ project, batches: batches.results || [], files: files.results || [] });
+  return json({
+    project,
+    extraction: {
+      total: Number(totals?.total || 0),
+      extracted: Number(totals?.extracted || 0),
+      processing: Number(totals?.processing || 0),
+      routedUnreadable: Number(totals?.routed_unreadable || 0),
+      accounted: Number(totals?.extracted || 0) + Number(totals?.processing || 0) + Number(totals?.routed_unreadable || 0),
+    },
+    batches: batches.results || [],
+    files: files.results || [],
+    reviewQueue: reviews.results || [],
+  });
 }
 
 async function listRfis(projectId, env) {

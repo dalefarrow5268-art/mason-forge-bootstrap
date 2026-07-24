@@ -237,8 +237,9 @@ assert.equal((await initialize.json()).result.serverInfo.name, "Mason Forge");
 
 const listed = await rpc({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} });
 const listedTools = (await listed.json()).result.tools;
-assert.equal(listedTools.length, 12);
+assert.equal(listedTools.length, 13);
 assert.ok(listedTools.some((tool) => tool.name === "get_project_file_source"));
+assert.ok(listedTools.some((tool) => tool.name === "reconcile_project_files"));
 assert.ok(listedTools.every((tool) => tool.securitySchemes[0].type === "oauth2"));
 
 const denied = await rpc({

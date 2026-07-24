@@ -1,1 +1,1 @@
-Run bounded concurrent live verification after evidence-task queue recovery.
+Capture requested after additional evidence-task processing time to verify queued work completes and outputs increase.

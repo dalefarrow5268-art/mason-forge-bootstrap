@@ -4,6 +4,7 @@ import { connectorResponse } from "./connector.js";
 import { mcpResponse } from "./mcp.js";
 import { ensureRuntimeSchema } from "./ensure-schema.js";
 import { recoverQueuedDepartmentTasks } from "./queued-task-recovery.js";
+import { ensureAllProjectContinuity } from "./project-continuity.js";
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data, null, 2), {
@@ -25,6 +26,7 @@ function background(ctx, promise, label) {
 async function selfHeal(env, ctx, trigger) {
   await recoverQueuedDepartmentTasks(env);
   await runtime.scheduled({ cron: trigger }, env, ctx);
+  await ensureAllProjectContinuity(env);
 }
 
 export default {
@@ -75,11 +77,15 @@ export default {
   },
 
   async queue(batch, env, ctx) {
-    return runtime.queue(batch, env, ctx);
+    const result = await runtime.queue(batch, env, ctx);
+    await ensureAllProjectContinuity(env);
+    return result;
   },
 
   async scheduled(event, env, ctx) {
     await recoverQueuedDepartmentTasks(env);
-    return runtime.scheduled(event, env, ctx);
+    const result = await runtime.scheduled(event, env, ctx);
+    await ensureAllProjectContinuity(env);
+    return result;
   },
 };

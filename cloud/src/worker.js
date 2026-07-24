@@ -74,6 +74,12 @@ export default {
     await ensureRuntimeSchema(env);
     const operations = await operationsRoute(request, env, () => kickOperations(env));
     if (operations) return operations;
+
+    const url = new URL(request.url);
+    if (url.pathname === "/api/connector/bootstrap" && request.method === "GET" && authorized(request, env)) {
+      await kickOperations(env);
+    }
+
     const connector = await connectorResponse(request, env);
     if (connector) return connector;
     const continuity = await continuityRoute(request, env);

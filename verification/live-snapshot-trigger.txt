@@ -1,1 +1,1 @@
-Capture requested after Fairfield evidence tasks had additional time to complete and create evidence-backed outputs.
+Run bounded concurrent live verification after evidence-task queue recovery.

@@ -1,10 +1,11 @@
 name = "mason-forge-cloud"
-main = "src/index.js"
+main = "src/worker.js"
 compatibility_date = "2026-07-23"
 
 [vars]
 ENVIRONMENT = "production"
 SYSTEM_NAME = "Mason Forge Cloud"
+OPENAI_MODEL = "gpt-5-mini"
 
 [[d1_databases]]
 binding = "DB"
@@ -35,4 +36,3 @@ enabled = true
 
 # Secrets are already configured in Cloudflare. Never put their plaintext
 # values in this file, a ZIP, a chat, or source control.
-

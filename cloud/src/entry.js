@@ -3,6 +3,7 @@ import runtime from "./worker.js";
 import { connectorResponse } from "./connector.js";
 import { mcpResponse } from "./mcp.js";
 import { ensureRuntimeSchema } from "./ensure-schema.js";
+import { recoverQueuedDepartmentTasks } from "./queued-task-recovery.js";
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data, null, 2), {
@@ -19,6 +20,11 @@ function background(ctx, promise, label) {
   ctx.waitUntil(Promise.resolve(promise).catch((error) => {
     console.error(`Mason Forge background ${label} failed`, error);
   }));
+}
+
+async function selfHeal(env, ctx, trigger) {
+  await recoverQueuedDepartmentTasks(env);
+  await runtime.scheduled({ cron: trigger }, env, ctx);
 }
 
 export default {
@@ -38,7 +44,7 @@ export default {
       if (url.pathname === "/health" && request.method === "GET") {
         phase = "read-only-health";
         const response = await foundation.fetch(request, env, ctx);
-        background(ctx, runtime.scheduled({ cron: "health-self-heal" }, env, ctx), "health self-heal");
+        background(ctx, selfHeal(env, ctx, "health-self-heal"), "health self-heal");
         return response;
       }
 
@@ -46,7 +52,7 @@ export default {
         phase = "read-only-bootstrap";
         const response = await connectorResponse(request, env);
         if (response) {
-          background(ctx, runtime.scheduled({ cron: "bootstrap-self-heal" }, env, ctx), "bootstrap self-heal");
+          background(ctx, selfHeal(env, ctx, "bootstrap-self-heal"), "bootstrap self-heal");
           return response;
         }
       }
@@ -73,6 +79,7 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
+    await recoverQueuedDepartmentTasks(env);
     return runtime.scheduled(event, env, ctx);
   },
 };

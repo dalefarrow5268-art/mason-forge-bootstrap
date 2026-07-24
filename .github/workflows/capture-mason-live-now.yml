@@ -97,4 +97,4 @@ jobs:
           git commit -m "Capture Mason Forge live state for ${GITHUB_SHA}"
           git push --force origin live-snapshot
 
-# Triggered for a fresh post-repair capture on 2026-07-24.
+# Retried after deterministic schema recovery was deployed on 2026-07-24.

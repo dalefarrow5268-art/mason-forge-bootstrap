@@ -36,15 +36,26 @@ async function continuityRoute(request, env) {
 
 async function recoverLegacyBlockedTasks(env) {
   const blocked = await env.DB.prepare(`SELECT id, project_id, employee_id, department FROM department_tasks
-    WHERE status = 'BLOCKED' AND blocked_reason = 'SPECIALIZED PROCESSOR NOT YET DEPLOYED'
+    WHERE status = 'BLOCKED'
     ORDER BY priority DESC, created_at LIMIT 100`).all();
+
   for (const task of blocked.results || []) {
     const timestamp = now();
-    await env.DB.prepare("UPDATE department_tasks SET status='QUEUED', blocked_reason=NULL, updated_at=? WHERE id=?")
-      .bind(timestamp, task.id).run();
-    await env.DEPARTMENT_QUEUE.send({ kind: "DEPARTMENT_TASK", taskId: task.id, projectId: task.project_id,
-      employeeId: task.employee_id, department: task.department });
+    const update = await env.DB.prepare(
+      "UPDATE department_tasks SET status='QUEUED', blocked_reason=NULL, updated_at=? WHERE id=? AND status='BLOCKED'"
+    ).bind(timestamp, task.id).run();
+
+    if (Number(update.meta?.changes || 0) > 0) {
+      await env.DEPARTMENT_QUEUE.send({
+        kind: "DEPARTMENT_TASK",
+        taskId: task.id,
+        projectId: task.project_id,
+        employeeId: task.employee_id,
+        department: task.department,
+      });
+    }
   }
+
   return blocked.results?.length || 0;
 }
 
@@ -54,9 +65,12 @@ async function queuePendingDocumentExtractions(env) {
       AND review_status NOT IN ('EXTRACTION QUEUED','EXTRACTION RETRYING')
       AND lower(file_name) GLOB '*.*' ORDER BY project_id, uploaded_at, id LIMIT 10`).all();
   for (const file of files.results || []) {
-    await env.DB.prepare("UPDATE project_files SET review_status='EXTRACTION QUEUED', updated_at=? WHERE id=? AND extracted_text_key IS NULL")
-      .bind(now(), file.id).run();
-    await env.DEPARTMENT_QUEUE.send({ kind: "EXTRACT_PROJECT_FILE", fileId: file.id, projectId: file.project_id });
+    const update = await env.DB.prepare(
+      "UPDATE project_files SET review_status='EXTRACTION QUEUED', updated_at=? WHERE id=? AND extracted_text_key IS NULL"
+    ).bind(now(), file.id).run();
+    if (Number(update.meta?.changes || 0) > 0) {
+      await env.DEPARTMENT_QUEUE.send({ kind: "EXTRACT_PROJECT_FILE", fileId: file.id, projectId: file.project_id });
+    }
   }
   return files.results?.length || 0;
 }

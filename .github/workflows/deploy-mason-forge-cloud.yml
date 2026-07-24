@@ -52,6 +52,23 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Verify deployment
+      - name: Verify full operational readiness
         run: |
-          node -e "fetch('https://mason-forge-cloud.mason-forge-ssx.workers.dev/health').then(r => { if (!r.ok) throw new Error('Health check failed: ' + r.status); return r.json(); }).then(x => { if (x.status !== 'online') throw new Error('Worker not online'); console.log(x); })"
+          node <<'NODE'
+          const url = 'https://mason-forge-cloud.mason-forge-ssx.workers.dev/health';
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          let last;
+          for (let attempt = 1; attempt <= 12; attempt += 1) {
+            const response = await fetch(`${url}?attempt=${attempt}&t=${Date.now()}`, { cache: 'no-store' });
+            const text = await response.text();
+            try { last = JSON.parse(text); } catch { throw new Error(`Health returned non-JSON: ${text}`); }
+            console.log(`Attempt ${attempt}:`, last);
+            if (response.ok && last.status === 'online' && last.operationalReady === true &&
+                last.continuity?.verification_status === 'VERIFIED' &&
+                Number(last.totalTasks || 0) > 0 && Number(last.outputCount || 0) > 0) {
+              process.exit(0);
+            }
+            await sleep(10000);
+          }
+          throw new Error(`Mason Forge failed operational readiness: ${JSON.stringify(last)}`);
+          NODE

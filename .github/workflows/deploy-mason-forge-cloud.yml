@@ -63,6 +63,9 @@ jobs:
           node --input-type=module <<'NODE'
           import fs from 'node:fs/promises';
 
+          const wranglerConfig = await fs.readFile('wrangler.toml', 'utf8');
+          const expectedRelease = wranglerConfig.match(/^RELEASE_ID\s*=\s*"([^"]+)"/m)?.[1];
+          if (!expectedRelease) throw new Error('RELEASE_ID was not found in wrangler.toml');
           const workerHealthUrl = 'https://mason-forge-cloud.mason-forge-ssx.workers.dev/health';
           const dashboardUrl = 'https://mason-forge-live.vercel.app/api/mason';
           const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -85,7 +88,7 @@ jobs:
             const result = await requestJson(workerHealthUrl);
             health = result.data;
             console.log(`Health attempt ${attempt}:`, JSON.stringify(health));
-            if (result.response.ok && health.operationalReady === true && health.releaseId === '2026-07-24-operational-2') break;
+            if (result.response.ok && health.operationalReady === true && health.releaseId === expectedRelease) break;
             if (attempt === 24) throw new Error(`Worker failed readiness: ${JSON.stringify(health)}`);
             await sleep(10000);
           }
@@ -124,7 +127,7 @@ jobs:
 
           const assertions = {
             workerOperationalReady: health.operationalReady === true && health.status === 'online',
-            correctRelease: health.releaseId === '2026-07-24-operational-2',
+            correctRelease: health.releaseId === expectedRelease,
             continuityVerified: latest.continuity?.verification_status === 'VERIFIED' && health.continuity?.verification_status === 'VERIFIED',
             freshDashboardResponses: first.retrievedAt !== second.retrievedAt,
             noBlockedTasks: Number(latest.taskTotals?.BLOCKED || 0) === 0,
@@ -138,7 +141,8 @@ jobs:
             projectFileTotalsReconcile: projectFileTotal === Number(health.files || 0),
             extractionTotalsReconcile: extractionTotal === Number(health.files || 0),
             extractionOperating: Number(health.files || 0) === 0 || Number(health.extraction?.extracted || 0) > 0 ||
-              Number(health.extraction?.queued || 0) > 0 || Number(health.extraction?.retrying || 0) > 0,
+              Number(health.extraction?.queued || 0) > 0 || Number(health.extraction?.retrying || 0) > 0 ||
+              Number(health.extraction?.extracting || 0) > 0,
             r2Verified: health.projectFileStorage === 'R2 VERIFIED' && (health.r2Samples || []).every((sample) => sample.present),
             progressionObserved,
           };
@@ -146,6 +150,7 @@ jobs:
           const verification = {
             verifiedAt: new Date().toISOString(),
             sourceCommit: process.env.GITHUB_SHA,
+            expectedRelease,
             assertions,
             passed: failed.length === 0,
             failedAssertions: failed,

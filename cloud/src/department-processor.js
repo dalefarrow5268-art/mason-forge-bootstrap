@@ -31,7 +31,6 @@ function departmentInstructions(task, employee, hasExtractedEvidence) {
     "Return valid JSON with keys: summary, verifiedFacts, limitations, findings, recommendedNextActions, evidenceRegister, confidence.",
     "Every finding must include its evidence source. All consequential actions require human review.",
   ];
-
   const specialized = {
     "Project File Department": "Classify documents, identify likely revisions and duplicates, reconcile the document register, and flag unreadable or missing source material.",
     "Project Investigation Department": "Identify evidence-backed risks, conflicts, missing information, project-party verification needs, permit or legal research needs, and candidate RFIs.",
@@ -39,7 +38,6 @@ function departmentInstructions(task, employee, hasExtractedEvidence) {
     "Project Contact Department": "Identify and reconcile owners, developers, architects, engineers, contractors, municipalities, vendors, and other contacts. Separate verified contact facts from inferences.",
     "Project Communications Department": "Prepare draft RFIs, clarification requests, bidder communications, and internal summaries from approved evidence. Never send communications.",
   };
-
   return [...common, specialized[task.department] || "Create an honest evidence-backed department work product.", `Employee job description: ${employee?.job_description_json || task.instructions}`].join("\n");
 }
 
@@ -129,12 +127,13 @@ export async function processDepartmentTask(message, env) {
   if (!env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not configured.");
 
   const startedAt = now();
-  await env.DB.prepare(`
+  const claim = await env.DB.prepare(`
     UPDATE department_tasks
     SET status = 'RUNNING', attempt_count = attempt_count + 1, progress_percent = 10,
         blocked_reason = NULL, started_at = COALESCE(started_at, ?), heartbeat_at = ?, updated_at = ?
-    WHERE id = ?
+    WHERE id = ? AND status = 'QUEUED'
   `).bind(startedAt, startedAt, startedAt, task.id).run();
+  if (Number(claim.meta?.changes || 0) === 0) return { skipped: true, reason: "Task was already claimed." };
   await event(env, task, task.status, "RUNNING", "Cloud worker claimed assignment.");
 
   let sourceFileIds = [];
@@ -155,13 +154,13 @@ export async function processDepartmentTask(message, env) {
   ]);
   if (!project) throw new Error(`Project ${task.project_id} was not found.`);
 
-  await env.DB.prepare("UPDATE department_tasks SET progress_percent = 35, heartbeat_at = ?, updated_at = ? WHERE id = ?")
+  await env.DB.prepare("UPDATE department_tasks SET progress_percent = 35, heartbeat_at = ?, updated_at = ? WHERE id = ? AND status = 'RUNNING'")
     .bind(now(), now(), task.id).run();
 
   const files = filesResult.results || [];
   const evidenceRecords = await readExtractionRecords(env, files);
 
-  await env.DB.prepare("UPDATE department_tasks SET progress_percent = 60, heartbeat_at = ?, updated_at = ? WHERE id = ?")
+  await env.DB.prepare("UPDATE department_tasks SET progress_percent = 60, heartbeat_at = ?, updated_at = ? WHERE id = ? AND status = 'RUNNING'")
     .bind(now(), now(), task.id).run();
 
   const { payload, content } = await callOpenAI(env, task, project, employee, files, evidenceRecords);
@@ -174,7 +173,8 @@ export async function processDepartmentTask(message, env) {
       INSERT INTO department_outputs
         (id, task_id, project_id, employee_id, output_type, title, content_json,
          evidence_register_json, confidence, human_review_status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'REQUIRED', ?, ?)
+      SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, 'REQUIRED', ?, ?
+      WHERE NOT EXISTS (SELECT 1 FROM department_outputs WHERE task_id = ?)
     `).bind(
       outputId,
       task.id,
@@ -187,12 +187,13 @@ export async function processDepartmentTask(message, env) {
       content.confidence || (evidenceRecords.length ? "EVIDENCE REVIEW REQUIRED" : "PRELIMINARY"),
       completedAt,
       completedAt,
+      task.id,
     ),
     env.DB.prepare(`
       UPDATE department_tasks
       SET status = 'COMPLETED', progress_percent = 100, heartbeat_at = ?, completed_at = ?,
           blocked_reason = NULL, updated_at = ?
-      WHERE id = ?
+      WHERE id = ? AND status = 'RUNNING'
     `).bind(completedAt, completedAt, completedAt, task.id),
   ]);
 
@@ -217,7 +218,7 @@ export async function failDepartmentTask(message, env, error) {
   await env.DB.prepare(`
     UPDATE department_tasks
     SET status = ?, blocked_reason = ?, heartbeat_at = ?, updated_at = ?
-    WHERE id = ?
+    WHERE id = ? AND status = 'RUNNING'
   `).bind(status, String(error?.message || error).slice(0, 2000), timestamp, timestamp, task.id).run();
   await event(env, task, task.status, status, retry ? "Task failed and will retry." : "Task exhausted retries and failed.", {
     error: String(error?.stack || error).slice(0, 4000),

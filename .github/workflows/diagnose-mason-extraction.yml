@@ -31,20 +31,45 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs/promises';
-          const base = 'https://mason-forge-live.vercel.app/api/mason';
-          const fetchJson = async (path) => {
-            const url = `${base}?path=${encodeURIComponent(path)}&_diagnostic=${Date.now()}-${Math.random()}`;
-            const response = await fetch(url, { cache: 'no-store', headers: { 'cache-control': 'no-store' } });
+          const proxy = 'https://mason-forge-live.vercel.app/api/mason';
+          const fetchJson = async (url) => {
+            const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}_diagnostic=${Date.now()}-${Math.random()}`, {
+              cache: 'no-store',
+              headers: { 'cache-control': 'no-store, no-cache, max-age=0', pragma: 'no-cache' },
+            });
             const text = await response.text();
-            if (!response.ok) throw new Error(`${path} HTTP ${response.status}: ${text.slice(0, 2000)}`);
+            if (!response.ok) throw new Error(`${url} HTTP ${response.status}: ${text.slice(0, 2000)}`);
             return JSON.parse(text);
+          };
+          const viaProxy = (path) => `${proxy}?path=${encodeURIComponent(path)}`;
+          const extension = (name = '') => name.includes('.') ? name.toLowerCase().split('.').pop() : '(none)';
+          const report = {
+            capturedAt: new Date().toISOString(),
+            sourceCommit: process.env.GITHUB_SHA,
+            health: await fetchJson('https://mason-forge-cloud.mason-forge-ssx.workers.dev/health'),
+            bootstrap: await fetchJson(proxy),
+            projects: {},
           };
           const files = [];
           for (const projectId of [4, 5]) {
-            const data = await fetchJson(`api/projects/${projectId}/files`);
-            for (const file of data.files || []) files.push({ projectId, ...file });
+            const [fileData, taskData, outputData, evidenceData] = await Promise.all([
+              fetchJson(viaProxy(`api/projects/${projectId}/files`)),
+              fetchJson(viaProxy(`api/projects/${projectId}/tasks`)),
+              fetchJson(viaProxy(`api/projects/${projectId}/outputs`)),
+              fetchJson(viaProxy(`api/projects/${projectId}/evidence`)),
+            ]);
+            for (const file of fileData.files || []) files.push({ projectId, ...file });
+            const taskCounts = {};
+            for (const task of taskData.tasks || []) taskCounts[task.status || 'UNKNOWN'] = (taskCounts[task.status || 'UNKNOWN'] || 0) + 1;
+            report.projects[projectId] = {
+              fileCount: (fileData.files || []).length,
+              taskCount: (taskData.tasks || []).length,
+              taskCounts,
+              outputCount: (outputData.outputs || []).length,
+              evidenceBatchCount: (evidenceData.batches || []).length,
+              routedFileCount: (evidenceData.files || []).filter((file) => file.batch_id).length,
+            };
           }
-          const extension = (name = '') => name.includes('.') ? name.toLowerCase().split('.').pop() : '(none)';
           const byStatus = {};
           const failedReasons = {};
           const failedExtensions = {};
@@ -57,25 +82,15 @@ jobs:
               failedReasons[reason] = (failedReasons[reason] || 0) + 1;
               const ext = extension(file.file_name);
               failedExtensions[ext] = (failedExtensions[ext] || 0) + 1;
-              if (failedSamples.length < 30) failedSamples.push({
-                projectId: file.project_id,
-                fileId: file.id,
-                extension: ext,
-                sizeBytes: Number(file.size_bytes || 0),
-                reason,
-              });
+              if (failedSamples.length < 30) failedSamples.push({ projectId: file.project_id, fileId: file.id, extension: ext, sizeBytes: Number(file.size_bytes || 0), reason });
             }
           }
-          const report = {
-            capturedAt: new Date().toISOString(),
-            sourceCommit: process.env.GITHUB_SHA,
-            totalFiles: files.length,
-            byStatus,
-            failedCount: Object.values(failedReasons).reduce((a, b) => a + b, 0),
-            failedReasons,
-            failedExtensions,
-            failedSamples,
-          };
+          report.totalFiles = files.length;
+          report.byStatus = byStatus;
+          report.failedCount = Object.values(failedReasons).reduce((a, b) => a + b, 0);
+          report.failedReasons = failedReasons;
+          report.failedExtensions = failedExtensions;
+          report.failedSamples = failedSamples;
           await fs.mkdir('verification', { recursive: true });
           await fs.writeFile('verification/extraction-diagnostics.json', JSON.stringify(report, null, 2));
           console.log(JSON.stringify(report, null, 2));

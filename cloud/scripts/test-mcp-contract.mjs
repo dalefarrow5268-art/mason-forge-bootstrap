@@ -200,6 +200,31 @@ const authorizationParameters = {
   resource,
 };
 
+const originalFetch = globalThis.fetch;
+let cimdRedirectMode = null;
+globalThis.fetch = async (_url, options = {}) => {
+  cimdRedirectMode = options.redirect;
+  return new Response(JSON.stringify({
+    client_id: "https://chatgpt.com/.well-known/oauth-client/mason-forge-test",
+    client_name: "ChatGPT Mason Forge CIMD test",
+    redirect_uris: [redirectUri],
+    token_endpoint_auth_method: "none",
+  }), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  });
+};
+const cimdAuthorizationPage = await oauthResponse(
+  new Request(`${origin}/oauth/authorize?${new URLSearchParams({
+    ...authorizationParameters,
+    client_id: "https://chatgpt.com/.well-known/oauth-client/mason-forge-test",
+  })}`),
+  env,
+);
+globalThis.fetch = originalFetch;
+assert.equal(cimdAuthorizationPage.status, 200);
+assert.equal(cimdRedirectMode, "manual");
+
 const authorizationPage = await oauthResponse(
   new Request(`${origin}/oauth/authorize?${new URLSearchParams(authorizationParameters)}`),
   env,

@@ -2,7 +2,11 @@ import { connectorResponse } from "./connector.js";
 import { authorizeMcpRequest, createDownloadGrant, mcpAuthChallenge } from "./oauth.js";
 import { createProjectUploadGrant } from "./upload-grants.js";
 
-const protocolVersion = "2025-06-18";
+const supportedProtocolVersions = ["2025-06-18", "2025-03-26"];
+
+function negotiateProtocolVersion(requested) {
+  return supportedProtocolVersions.includes(requested) ? requested : supportedProtocolVersions[0];
+}
 
 const projectId = { type: "integer", minimum: 1, description: "Mason Forge project ID returned by list_projects." };
 const toolDefinitions = [
@@ -169,7 +173,7 @@ export async function mcpResponse(request, env) {
   const { id = null, method, params = {} } = message || {};
   if (method === "initialize") {
     return jsonRpc(id, {
-      protocolVersion,
+      protocolVersion: negotiateProtocolVersion(params?.protocolVersion),
       capabilities: { tools: { listChanged: false } },
       serverInfo: { name: "Mason Forge", version: "1.0.0" },
       instructions: "Authenticated access to Mason Forge projects, R2-backed files, continuity, and evidence. Discover project IDs first. File writes require a one-time size/hash-verified upload grant and never overwrite an existing path or SHA-256.",

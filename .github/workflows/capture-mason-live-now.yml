@@ -18,93 +18,83 @@ concurrency:
 jobs:
   capture:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Wait for current Worker release
-        run: sleep 45
+      - name: Wait for current release
+        run: sleep 20
 
       - name: Capture live state
-        id: capture
         continue-on-error: true
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs/promises';
           const proxy = 'https://mason-forge-live.vercel.app/api/mason';
-          const request = async (url, attempts = 5) => {
-            let last = null;
-            for (let attempt = 1; attempt <= attempts; attempt += 1) {
-              try {
-                const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}_live=${Date.now()}-${Math.random()}`, {
-                  cache: 'no-store',
-                  signal: AbortSignal.timeout(45000),
-                  headers: { 'cache-control': 'no-store, no-cache, max-age=0', pragma: 'no-cache' },
-                });
-                const text = await response.text();
-                let body;
-                try { body = JSON.parse(text); } catch { body = { raw: text }; }
-                last = { ok: response.ok, status: response.status, body, attempt };
-                if (response.ok) return last;
-              } catch (error) {
-                last = { ok: false, status: 0, error: String(error?.stack || error), attempt };
-              }
-              if (attempt < attempts) await new Promise((resolve) => setTimeout(resolve, 15000));
+          const call = async (url) => {
+            try {
+              const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}_live=${Date.now()}-${Math.random()}`, {
+                cache: 'no-store',
+                signal: AbortSignal.timeout(25000),
+                headers: { 'cache-control': 'no-store, no-cache, max-age=0', pragma: 'no-cache' },
+              });
+              const text = await response.text();
+              let body;
+              try { body = JSON.parse(text); } catch { body = { raw: text }; }
+              return { ok: response.ok, status: response.status, body };
+            } catch (error) {
+              return { ok: false, status: 0, error: String(error?.stack || error) };
             }
-            return last;
           };
           const viaProxy = (path) => `${proxy}?path=${encodeURIComponent(path)}`;
+          const endpointEntries = [
+            ['health', 'https://mason-forge-cloud.mason-forge-ssx.workers.dev/health'],
+            ['bootstrap', proxy],
+          ];
+          for (const projectId of [4, 5]) {
+            for (const endpoint of ['files', 'tasks', 'outputs', 'evidence', 'continuity']) {
+              endpointEntries.push([`${projectId}:${endpoint}`, viaProxy(`api/projects/${projectId}/${endpoint}`)]);
+            }
+          }
+          const results = Object.fromEntries(await Promise.all(endpointEntries.map(async ([key, url]) => [key, await call(url)])));
           const report = {
             capturedAt: new Date().toISOString(),
             sourceCommit: process.env.GITHUB_SHA,
-            healthResponse: await request('https://mason-forge-cloud.mason-forge-ssx.workers.dev/health'),
-            bootstrapResponse: await request(proxy),
+            healthResponse: results.health,
+            bootstrapResponse: results.bootstrap,
+            health: results.health?.body || null,
+            bootstrap: results.bootstrap?.body || null,
             projects: {},
             requestErrors: [],
           };
-          report.health = report.healthResponse?.body || null;
-          report.bootstrap = report.bootstrapResponse?.body || null;
-          if (!report.healthResponse?.ok) report.requestErrors.push({ endpoint: 'health', response: report.healthResponse });
-          if (!report.bootstrapResponse?.ok) report.requestErrors.push({ endpoint: 'bootstrap', response: report.bootstrapResponse });
-
+          for (const [key, result] of Object.entries(results)) if (!result?.ok) report.requestErrors.push({ endpoint: key, response: result });
           for (const projectId of [4, 5]) {
-            const responses = {
-              files: await request(viaProxy(`api/projects/${projectId}/files`)),
-              tasks: await request(viaProxy(`api/projects/${projectId}/tasks`)),
-              outputs: await request(viaProxy(`api/projects/${projectId}/outputs`)),
-              evidence: await request(viaProxy(`api/projects/${projectId}/evidence`)),
-              continuity: await request(viaProxy(`api/projects/${projectId}/continuity`)),
-            };
-            for (const [name, response] of Object.entries(responses)) {
-              if (!response?.ok) report.requestErrors.push({ projectId, endpoint: name, response });
-            }
-            const files = responses.files?.body || {};
-            const tasks = responses.tasks?.body || {};
-            const outputs = responses.outputs?.body || {};
-            const evidence = responses.evidence?.body || {};
-            const continuity = responses.continuity?.body || {};
-            const statusCounts = {};
-            const failureReasons = {};
+            const files = results[`${projectId}:files`]?.body || {};
+            const tasks = results[`${projectId}:tasks`]?.body || {};
+            const outputs = results[`${projectId}:outputs`]?.body || {};
+            const evidence = results[`${projectId}:evidence`]?.body || {};
+            const continuity = results[`${projectId}:continuity`]?.body || {};
+            const fileStatusCounts = {};
+            const extractionFailureReasons = {};
             for (const file of files.files || []) {
               const status = String(file.review_status || 'UNKNOWN');
-              statusCounts[status] = (statusCounts[status] || 0) + 1;
-              if (status.startsWith('EXTRACTION FAILED:')) failureReasons[status] = (failureReasons[status] || 0) + 1;
+              fileStatusCounts[status] = (fileStatusCounts[status] || 0) + 1;
+              if (status.startsWith('EXTRACTION FAILED:')) extractionFailureReasons[status] = (extractionFailureReasons[status] || 0) + 1;
             }
             const taskCounts = {};
             for (const task of tasks.tasks || []) taskCounts[task.status || 'UNKNOWN'] = (taskCounts[task.status || 'UNKNOWN'] || 0) + 1;
             report.projects[projectId] = {
               fileCount: (files.files || []).length,
-              fileStatusCounts: statusCounts,
-              extractionFailureReasons: failureReasons,
+              fileStatusCounts,
+              extractionFailureReasons,
               taskCount: (tasks.tasks || []).length,
               taskCounts,
               outputCount: (outputs.outputs || []).length,
               evidenceBatchCount: (evidence.batches || []).length,
               routedFileCount: (evidence.files || []).filter((file) => file.batch_id).length,
               continuity: continuity.continuity || null,
-              responses: Object.fromEntries(Object.entries(responses).map(([name, response]) => [name, { ok: response?.ok || false, status: response?.status || 0, attempt: response?.attempt || null }])),
             };
           }
           report.successCriteria = {

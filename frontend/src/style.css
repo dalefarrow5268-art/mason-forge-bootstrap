@@ -1334,7 +1334,7 @@ h2 {
 
 .control-center-logo {
   position: absolute;
-  top: 8px;
+  top: -40px;
   left: -20px;
   z-index: 3;
   display: block;
@@ -1345,7 +1345,7 @@ h2 {
 
 .control-center-energy {
   position: absolute;
-  top: clamp(85px, 9vh, 105px);
+  top: clamp(45px, 5vh, 65px);
   right: 0;
   left: 0;
   z-index: 4;

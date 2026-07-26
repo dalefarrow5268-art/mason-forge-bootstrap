@@ -1,3 +1,4 @@
+import digitalForgeLogo from "../assets/brand/mason-forge/Mason-Forge-main-logo-wordmark-dark-bg.svg";
 import { ForgeInfo } from "../core";
 
 export default function Header() {
@@ -5,11 +6,19 @@ export default function Header() {
     <header className="header">
       <div className="header-brand">
         <img
-          src="/brand/mason-forge-new-logo.jpg"
+          src={digitalForgeLogo}
           alt="Mason Forge™"
           className="forge-logo"
           draggable="false"
         />
+        <div className="forge-electric" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+          <b />
+          <b />
+          <b />
+        </div>
 
         <div className="header-brand-copy">
           <h1>{ForgeInfo.name}</h1>

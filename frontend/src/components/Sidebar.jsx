@@ -1,4 +1,5 @@
 import { ForgeInfo } from "../core";
+import digitalForgeLogo from "../assets/brand/mason-forge/Mason-Forge-main-logo-wordmark-dark-bg.svg";
 
 const engineeringItems = [
   {
@@ -102,7 +103,7 @@ export default function Sidebar({ page, setPage }) {
       <div className="sidebar-header">
         <img
           className="sidebar-brand-logo"
-          src="/brand/mason-forge-new-logo.jpg"
+          src={digitalForgeLogo}
           alt="Mason Forge"
         />
 

@@ -16,510 +16,6 @@
   --mf-transition: 180ms ease;
 }
 
-/* 2026 digital control-center presentation layer */
-:root {
-  --mf-navy: #071726;
-  --mf-navy-deep: #020910;
-  --mf-navy-soft: #10293c;
-  --mf-gold: #e5a932;
-  --mf-background: #030b12;
-  --mf-surface: #081724;
-  --mf-surface-soft: #0b1c2a;
-  --mf-border: rgba(175, 204, 222, 0.14);
-  --mf-text: #eef6fa;
-  --mf-muted: #8fa6b5;
-  --mf-shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
-}
-
-html,
-body {
-  background:
-    radial-gradient(circle at 74% 5%, rgba(229, 169, 50, 0.08), transparent 25rem),
-    #030b12;
-  color: var(--mf-text);
-}
-
-body::before {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-image:
-    linear-gradient(rgba(122, 167, 194, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(122, 167, 194, 0.035) 1px, transparent 1px);
-  background-size: 48px 48px;
-  content: "";
-  pointer-events: none;
-}
-
-.dashboard-layout {
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 18px;
-  padding: 16px;
-}
-
-aside {
-  top: 16px;
-  width: 220px;
-  max-height: calc(100vh - 32px);
-  padding: 20px 14px;
-  border-color: rgba(229, 169, 50, 0.18);
-  border-radius: 14px;
-  background:
-    radial-gradient(circle at 35% 0, rgba(229, 169, 50, 0.13), transparent 15rem),
-    linear-gradient(180deg, #091b2b, #030b12);
-}
-
-.sidebar-header {
-  display: block;
-}
-
-.sidebar-brand-logo {
-  display: block;
-  width: 100%;
-  height: 70px;
-  border: 1px solid rgba(229, 169, 50, 0.18);
-  border-radius: 8px;
-  object-fit: contain;
-  background: #fff;
-}
-
-.sidebar-brand-content {
-  margin-top: 14px;
-}
-
-.sidebar-brand-content h2 {
-  font-size: 15px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.sidebar-subtitle {
-  margin-bottom: 12px;
-  color: var(--mf-gold);
-  font-size: 9px;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-}
-
-.nav-item {
-  min-height: 39px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  font-size: 11px;
-  letter-spacing: 0.025em;
-}
-
-.nav-item:hover {
-  border-color: rgba(229, 169, 50, 0.22);
-  background: rgba(229, 169, 50, 0.07);
-}
-
-.nav-item.active {
-  border-color: rgba(229, 169, 50, 0.42);
-  background: linear-gradient(90deg, rgba(229, 169, 50, 0.18), rgba(229, 169, 50, 0.04));
-  color: #fff;
-  box-shadow: inset 2px 0 var(--mf-gold), 0 8px 24px rgba(0, 0, 0, 0.22);
-}
-
-.header {
-  grid-template-columns: minmax(290px, 0.9fr) minmax(390px, 1.3fr) minmax(210px, 0.65fr);
-  min-height: 116px;
-  padding: 14px 18px;
-  border-color: var(--mf-border);
-  border-top: 1px solid rgba(229, 169, 50, 0.34);
-  border-radius: 12px;
-  background: rgba(6, 18, 29, 0.88);
-  backdrop-filter: blur(18px);
-}
-
-.forge-logo {
-  width: 250px;
-  max-width: 68%;
-  height: 72px;
-  padding: 5px;
-  border-radius: 7px;
-  background: #fff;
-  object-fit: contain;
-}
-
-.header-brand-copy {
-  display: none;
-}
-
-.header-overview-item {
-  min-height: 43px;
-  padding: 7px 9px;
-  border-color: var(--mf-border);
-  border-radius: 7px;
-  background: rgba(11, 30, 44, 0.76);
-}
-
-.header-overview-item strong,
-.header-system-status strong {
-  color: #eef6fa;
-}
-
-.header-system-status {
-  color: #7791a3;
-}
-
-.dashboard-main,
-.dashboard-content {
-  gap: 18px;
-}
-
-.dashboard-content {
-  min-width: 0;
-}
-
-.dashboard-row {
-  gap: 18px;
-}
-
-.command-center {
-  overflow: hidden;
-  border: 1px solid rgba(229, 169, 50, 0.2);
-  border-radius: 14px;
-  background: rgba(5, 16, 25, 0.92);
-  box-shadow: var(--mf-shadow);
-}
-
-.command-hero {
-  display: grid;
-  grid-template-columns: minmax(310px, 0.72fr) minmax(500px, 1.28fr);
-  min-height: clamp(440px, 58vh, 680px);
-}
-
-.command-hero-copy {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: clamp(34px, 4.5vw, 84px);
-  background:
-    radial-gradient(circle at 15% 85%, rgba(229, 169, 50, 0.13), transparent 16rem),
-    linear-gradient(90deg, #061624 0%, #071724 88%, rgba(7, 23, 36, 0.88) 100%);
-}
-
-.command-hero-copy::after {
-  position: absolute;
-  right: -110px;
-  z-index: -1;
-  width: 220px;
-  height: 220px;
-  border: 1px solid rgba(229, 169, 50, 0.18);
-  border-radius: 50%;
-  box-shadow:
-    0 0 0 48px rgba(229, 169, 50, 0.035),
-    0 0 0 96px rgba(229, 169, 50, 0.02);
-  content: "";
-}
-
-.command-hero .section-label {
-  color: var(--mf-gold);
-  letter-spacing: 0.18em;
-}
-
-.command-hero h2 {
-  max-width: 720px;
-  margin: 18px 0 20px;
-  color: #f3f7f9;
-  font-size: clamp(43px, 4.5vw, 78px);
-  font-weight: 300;
-  line-height: 0.98;
-  letter-spacing: -0.045em;
-}
-
-.command-hero h2 span {
-  color: var(--mf-gold);
-}
-
-.command-hero .mission-subtitle {
-  max-width: 520px;
-  margin: 0;
-  color: #a6bac6;
-  font-size: clamp(14px, 1.15vw, 18px);
-}
-
-.command-pulse {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 28px;
-  color: #c7d5dc;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.command-hero-visual {
-  position: relative;
-  min-width: 0;
-  overflow: hidden;
-  background: #02070b;
-}
-
-.command-hero-visual::after {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, #071724 0, transparent 18%),
-    linear-gradient(0deg, rgba(2, 9, 15, 0.48), transparent 38%);
-  content: "";
-  pointer-events: none;
-}
-
-.command-hero-visual > img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: saturate(0.92) contrast(1.08);
-}
-
-.scan-line {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -20%;
-  z-index: 2;
-  width: 12%;
-  background: linear-gradient(90deg, transparent, rgba(229, 169, 50, 0.16), transparent);
-  animation: commandScan 6.5s linear infinite;
-}
-
-@keyframes commandScan {
-  to { left: 120%; }
-}
-
-.visual-readout {
-  position: absolute;
-  right: 22px;
-  bottom: 22px;
-  z-index: 3;
-  display: grid;
-  min-width: 150px;
-  padding: 14px 17px;
-  border: 1px solid rgba(229, 169, 50, 0.46);
-  background: rgba(3, 11, 18, 0.82);
-  backdrop-filter: blur(10px);
-}
-
-.visual-readout span,
-.visual-readout small {
-  color: #97adba;
-  font-size: 8px;
-  letter-spacing: 0.14em;
-}
-
-.visual-readout strong {
-  color: var(--mf-gold);
-  font-size: 35px;
-  font-weight: 300;
-}
-
-.command-metrics {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-top: 1px solid var(--mf-border);
-  border-bottom: 1px solid var(--mf-border);
-}
-
-.command-metric {
-  position: relative;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 3px 12px;
-  min-height: 122px;
-  padding: 22px;
-  border-right: 1px solid var(--mf-border);
-}
-
-.command-metric:last-child {
-  border-right: 0;
-}
-
-.command-metric > span {
-  grid-row: 1 / 4;
-  color: var(--mf-gold);
-  font-size: 9px;
-}
-
-.command-metric small {
-  color: #7992a2;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.command-metric strong {
-  color: #f4f8fa;
-  font-size: clamp(24px, 2.5vw, 38px);
-  font-weight: 300;
-  line-height: 1;
-}
-
-.command-metric em {
-  color: #88a0ad;
-  font-size: 10px;
-  font-style: normal;
-}
-
-.command-deck {
-  display: grid;
-  grid-template-columns: 1.35fr 0.65fr;
-  gap: 1px;
-  background: var(--mf-border);
-}
-
-.command-feature {
-  position: relative;
-  min-height: 310px;
-  overflow: hidden;
-  background: #04101a;
-}
-
-.command-feature img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 800ms cubic-bezier(.2,.7,.2,1), filter 500ms ease;
-}
-
-.command-feature:hover img {
-  transform: scale(1.035);
-  filter: brightness(1.08);
-}
-
-.command-feature::after {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(0deg, rgba(2, 9, 15, 0.96), transparent 62%);
-  content: "";
-}
-
-.command-feature-copy {
-  position: absolute;
-  right: 26px;
-  bottom: 24px;
-  left: 26px;
-  z-index: 2;
-}
-
-.command-feature-copy span {
-  color: var(--mf-gold);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-}
-
-.command-feature-copy h3 {
-  max-width: 680px;
-  margin: 8px 0 0;
-  color: #fff;
-  font-size: clamp(20px, 2.2vw, 34px);
-  font-weight: 400;
-  line-height: 1.12;
-}
-
-@media (max-width: 1180px) {
-  .dashboard-layout {
-    grid-template-columns: 76px minmax(0, 1fr);
-  }
-
-  aside {
-    width: 76px;
-    padding: 14px 10px;
-  }
-
-  .sidebar-brand-logo {
-    height: 50px;
-    object-position: left;
-  }
-
-  .sidebar-brand-content,
-  .sidebar-section-label,
-  .nav-item-label,
-  .sidebar-footer {
-    display: none;
-  }
-
-  .nav-item {
-    grid-template-columns: 1fr;
-    justify-items: center;
-  }
-
-  .header {
-    grid-template-columns: minmax(220px, .7fr) 1.3fr;
-  }
-
-  .header-system-status {
-    display: none;
-  }
-
-  .command-hero {
-    grid-template-columns: 1fr;
-  }
-
-  .command-hero-visual {
-    min-height: 460px;
-  }
-}
-
-@media (max-width: 760px) {
-  .dashboard-layout {
-    display: block;
-    padding: 8px;
-  }
-
-  aside {
-    position: relative;
-    top: 0;
-    display: none;
-  }
-
-  .header {
-    grid-template-columns: 1fr;
-    min-height: auto;
-  }
-
-  .forge-logo {
-    max-width: 100%;
-  }
-
-  .header-overview {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .command-hero-copy {
-    padding: 36px 24px;
-  }
-
-  .command-hero-visual {
-    min-height: 310px;
-  }
-
-  .command-metrics {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .command-metric:nth-child(2) {
-    border-right: 0;
-  }
-
-  .command-deck {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .scan-line {
-    display: none;
-  }
-}
-
 * {
   box-sizing: border-box;
 }
@@ -1569,92 +1065,124 @@ h2 {
   }
 }
 
-/* Keep the control-center shell above the legacy component skin. */
-html,
-body {
-  background: #030b12;
-  color: var(--mf-text);
-}
-
-body {
-  background:
-    radial-gradient(circle at 74% 5%, rgba(229, 169, 50, 0.08), transparent 25rem),
-    #030b12;
-}
-
-.dashboard-layout {
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 18px;
-  padding: 16px;
-}
-
-.dashboard-main,
-.dashboard-content,
-.dashboard-row {
-  gap: 18px;
-}
-
-aside.sidebar {
-  top: 16px;
-  width: 220px;
-  max-height: calc(100vh - 32px);
-  padding: 20px 14px;
-  border-color: rgba(229, 169, 50, 0.18);
-  border-radius: 14px;
-  background:
-    radial-gradient(circle at 35% 0, rgba(229, 169, 50, 0.13), transparent 15rem),
-    linear-gradient(180deg, #091b2b, #030b12);
-}
-
-.header {
-  grid-template-columns: minmax(290px, 0.9fr) minmax(390px, 1.3fr) minmax(210px, 0.65fr);
-  min-height: 116px;
-  padding: 14px 18px;
-  border-color: var(--mf-border);
-  border-top: 1px solid rgba(229, 169, 50, 0.34);
-  border-radius: 12px;
-  background: rgba(6, 18, 29, 0.88);
-}
-
-.header-overview-item {
-  min-height: 43px;
-  padding: 7px 9px;
-  border-color: var(--mf-border);
-  border-radius: 7px;
-  background: rgba(11, 30, 44, 0.76);
-}
-
-.header-overview-item strong,
-.header-system-status strong {
-  color: #eef6fa;
-}
-
-.mission-panel.command-center {
-  padding: 0;
+/* New digital MF identity and forged-energy signature. */
+.header-brand {
+  position: relative;
+  align-self: stretch;
+  min-height: 104px;
   overflow: hidden;
-  border: 1px solid rgba(229, 169, 50, 0.2);
-  border-radius: 14px;
-  background: rgba(5, 16, 25, 0.92);
+  border: 1px solid rgba(229, 169, 50, 0.24);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 48% 115%, rgba(255, 184, 53, 0.2), transparent 44%),
+    #03070b;
 }
 
-@media (max-width: 1180px) {
-  .dashboard-layout {
-    grid-template-columns: 76px minmax(0, 1fr);
-  }
-
-  aside.sidebar {
-    width: 76px;
-    padding: 14px 10px;
-  }
+.forge-logo {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 360px);
+  max-width: 100%;
+  height: 100%;
+  min-height: 96px;
+  padding: 8px 12px 22px;
+  border-radius: 0;
+  background: transparent;
+  object-fit: contain;
 }
 
-@media (max-width: 760px) {
-  .dashboard-layout {
-    display: block;
-    padding: 8px;
-  }
+.header-brand-copy {
+  display: none;
+}
 
-  aside.sidebar {
-    display: none;
+.forge-electric {
+  position: absolute;
+  right: 4%;
+  bottom: 5px;
+  left: 4%;
+  z-index: 3;
+  height: 26px;
+  overflow: hidden;
+  filter: drop-shadow(0 0 5px rgba(255, 179, 39, 0.9));
+  pointer-events: none;
+}
+
+.forge-electric i {
+  position: absolute;
+  bottom: 3px;
+  left: -8%;
+  width: 116%;
+  height: 17px;
+  border-top: 1px solid rgba(255, 184, 52, 0.94);
+  border-radius: 50%;
+  animation: forgeCurrent 4.8s ease-in-out infinite alternate;
+}
+
+.forge-electric i:nth-child(2) {
+  bottom: -2px;
+  border-color: rgba(255, 212, 111, 0.74);
+  animation-delay: -1.6s;
+}
+
+.forge-electric i:nth-child(3) {
+  bottom: 8px;
+  border-color: rgba(190, 119, 20, 0.82);
+  animation-delay: -3.1s;
+}
+
+.forge-electric b {
+  position: absolute;
+  bottom: 4px;
+  left: 28%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffd66f;
+  box-shadow: 0 0 10px 4px rgba(237, 166, 40, 0.68);
+  animation: forgeSpark 3.8s linear infinite;
+}
+
+.forge-electric b:nth-of-type(2) {
+  left: 56%;
+  animation-delay: -1.25s;
+}
+
+.forge-electric b:nth-of-type(3) {
+  left: 78%;
+  animation-delay: -2.5s;
+}
+
+.sidebar-brand-logo {
+  display: block;
+  width: 100%;
+  height: 86px;
+  padding: 6px;
+  border: 1px solid rgba(201, 150, 63, 0.28);
+  border-radius: 9px;
+  background: #03070b;
+  object-fit: contain;
+}
+
+.sidebar-brand-mark {
+  display: none;
+}
+
+@keyframes forgeCurrent {
+  0% { transform: translateX(-2%) rotate(-1deg) scaleY(.72); opacity: .48; }
+  48% { transform: translateX(1%) rotate(1.5deg) scaleY(1.15); opacity: 1; }
+  100% { transform: translateX(3%) rotate(-.4deg) scaleY(.85); opacity: .66; }
+}
+
+@keyframes forgeSpark {
+  0%, 100% { transform: translate(-24px, 3px) scale(.35); opacity: 0; }
+  22% { opacity: 1; }
+  68% { transform: translate(26px, -9px) scale(1); opacity: .8; }
+  82% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forge-electric i,
+  .forge-electric b {
+    animation: none;
   }
 }

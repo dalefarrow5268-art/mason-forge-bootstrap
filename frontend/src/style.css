@@ -1319,3 +1319,57 @@ h2 {
     animation: none;
   }
 }
+
+
+/* CONTROL CENTER — CLEAN BUILD */
+
+.control-center-canvas {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  min-height: 720px;
+  overflow: hidden;
+  background: #000;
+}
+
+.control-center-logo {
+  position: absolute;
+  top: 28px;
+  left: 34px;
+  z-index: 3;
+  display: block;
+  width: clamp(300px, 24vw, 500px);
+  height: auto;
+  object-fit: contain;
+}
+
+.control-center-energy {
+  position: absolute;
+  top: clamp(145px, 16vh, 190px);
+  right: 0;
+  left: 0;
+  height: clamp(120px, 18vh, 210px);
+  overflow: hidden;
+  background: #000;
+}
+
+.control-center-energy .energy-layer {
+  object-fit: fill;
+}
+
+@media (max-width: 900px) {
+  .control-center-canvas {
+    min-height: 560px;
+  }
+
+  .control-center-logo {
+    top: 18px;
+    left: 18px;
+    width: min(76vw, 390px);
+  }
+
+  .control-center-energy {
+    top: 125px;
+    height: 130px;
+  }
+}

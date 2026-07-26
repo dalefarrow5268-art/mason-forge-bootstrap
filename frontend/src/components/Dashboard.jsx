@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+import ControlCenterCanvas from "./ControlCenterCanvas";
 
 import MissionPanel from "./MissionPanel";
 import CloudOperationsPanel from "./CloudOperationsPanel";
@@ -66,8 +67,10 @@ export default function Dashboard() {
       case "forge-status": return renderStandardPage(<ForgeStatusPanel />);
       case "projects": return renderStandardPage(<SSXProjects />);
       case "settings": return renderStandardPage(<PlatformSettings />);
-      default: return <div className="dashboard-row"><div className="dashboard-left"><MissionPanel /><CloudOperationsPanel /><BuildQueue /></div>{renderRightPanel()}</div>;
+      default: return <ControlCenterCanvas />;
     }
   };
+  if (page === "mission") return <ControlCenterCanvas />;
+
   return <div className="dashboard-layout"><Sidebar page={page} setPage={setPage} /><main className="dashboard-main"><Header /><div className="dashboard-content">{renderPage()}</div></main></div>;
 }

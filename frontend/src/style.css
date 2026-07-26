@@ -1207,15 +1207,115 @@ h2 {
 
 
 .energy-preview {
+  position: relative;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
   background: #000000;
 }
 
-.energy-preview img {
+.energy-stage,
+.energy-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.energy-layer {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.energy-base {
+  opacity: 0.72;
+  animation: energyBreathe 5.6s ease-in-out infinite;
+}
+
+.energy-current {
+  mix-blend-mode: screen;
+  transform: scale(1.035);
+  will-change: transform, opacity, filter;
+}
+
+.energy-current-a {
+  opacity: 0.58;
+  filter: brightness(1.22) saturate(1.18);
+  animation: energyFlowA 4.8s ease-in-out infinite;
+}
+
+.energy-current-b {
+  opacity: 0.25;
+  filter: blur(5px) brightness(1.46) saturate(1.35);
+  animation: energyFlowB 6.4s ease-in-out infinite;
+}
+
+.energy-spark {
+  position: absolute;
+  top: 50%;
+  left: -2vw;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff4c2;
+  box-shadow:
+    0 0 8px 3px rgba(255, 201, 83, 0.95),
+    0 0 22px 8px rgba(222, 126, 11, 0.46);
+  opacity: 0;
+  animation: energySparkRun 5.8s linear infinite;
+}
+
+.energy-spark-2 {
+  top: 47%;
+  animation-delay: -1.2s;
+  animation-duration: 7.2s;
+}
+
+.energy-spark-3 {
+  top: 53%;
+  animation-delay: -2.7s;
+  animation-duration: 6.6s;
+}
+
+.energy-spark-4 {
+  top: 49%;
+  animation-delay: -4s;
+  animation-duration: 8.1s;
+}
+
+.energy-spark-5 {
+  top: 51%;
+  animation-delay: -5.1s;
+  animation-duration: 6.1s;
+}
+
+@keyframes energyBreathe {
+  0%, 100% { opacity: 0.62; filter: brightness(0.88); }
+  50% { opacity: 0.9; filter: brightness(1.18); }
+}
+
+@keyframes energyFlowA {
+  0%, 100% { transform: translate3d(-1.7%, 0, 0) scale(1.035, 0.97); opacity: 0.42; }
+  48% { transform: translate3d(1.7%, -0.4%, 0) scale(1.06, 1.04); opacity: 0.78; }
+}
+
+@keyframes energyFlowB {
+  0%, 100% { transform: translate3d(1.4%, 0.5%, 0) scale(1.05, 1.08); opacity: 0.18; }
+  52% { transform: translate3d(-1.4%, -0.5%, 0) scale(1.025, 0.94); opacity: 0.38; }
+}
+
+@keyframes energySparkRun {
+  0% { transform: translate3d(0, 12px, 0) scale(0.35); opacity: 0; }
+  9% { opacity: 1; }
+  48% { transform: translate3d(52vw, -10px, 0) scale(1.2); opacity: 0.88; }
+  88% { opacity: 1; }
+  100% { transform: translate3d(104vw, 8px, 0) scale(0.4); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .energy-base,
+  .energy-current,
+  .energy-spark {
+    animation: none;
+  }
 }

@@ -3,7 +3,16 @@ const energyRibbon = "data:image/webp;base64,UklGRhRqAABXRUJQVlA4IAhqAADwmwKdASq
 export default function EnergyPreview() {
   return (
     <main className="energy-preview">
-      <img src={energyRibbon} alt="" />
+      <div className="energy-stage" aria-hidden="true">
+        <img className="energy-layer energy-base" src={energyRibbon} alt="" />
+        <img className="energy-layer energy-current energy-current-a" src={energyRibbon} alt="" />
+        <img className="energy-layer energy-current energy-current-b" src={energyRibbon} alt="" />
+        <i className="energy-spark energy-spark-1" />
+        <i className="energy-spark energy-spark-2" />
+        <i className="energy-spark energy-spark-3" />
+        <i className="energy-spark energy-spark-4" />
+        <i className="energy-spark energy-spark-5" />
+      </div>
     </main>
   );
 }

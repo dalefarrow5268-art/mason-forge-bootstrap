@@ -1,8 +1,11 @@
 import { useEffect } from "react";
 import Dashboard from "./components/Dashboard";
+import LogoPreview from "./components/LogoPreview";
 import { masonCore } from "./core";
 
 export default function App() {
+  const isLogoPreview = window.location.pathname === "/logo-preview";
+
   useEffect(() => {
     console.clear();
 
@@ -38,5 +41,5 @@ export default function App() {
     console.log(status);
   }, []);
 
-  return <Dashboard />;
+  return isLogoPreview ? <LogoPreview /> : <Dashboard />;
 }

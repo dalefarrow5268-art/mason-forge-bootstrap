@@ -1072,9 +1072,7 @@ h2 {
   place-items: center;
   padding: clamp(24px, 6vw, 96px);
   overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 62%, rgba(211, 146, 39, 0.08), transparent 28%),
-    #03070b;
+  background: #000000;
 }
 
 .logo-preview img {

@@ -3,6 +3,7 @@ import { useState } from "react";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import ControlCenterCanvas from "./ControlCenterCanvas";
+import SystemTelemetry from "./SystemTelemetry";
 
 import MissionPanel from "./MissionPanel";
 import CloudOperationsPanel from "./CloudOperationsPanel";
@@ -70,7 +71,25 @@ export default function Dashboard() {
       default: return <ControlCenterCanvas />;
     }
   };
-  if (page === "mission") return <ControlCenterCanvas />;
+  if (page === "mission") {
+    return (
+      <>
+        <SystemTelemetry />
+        <ControlCenterCanvas />
+      </>
+    );
+  }
 
-  return <div className="dashboard-layout"><Sidebar page={page} setPage={setPage} /><main className="dashboard-main"><Header /><div className="dashboard-content">{renderPage()}</div></main></div>;
+  return (
+    <>
+      <SystemTelemetry />
+      <div className="dashboard-layout">
+        <Sidebar page={page} setPage={setPage} />
+        <main className="dashboard-main">
+          <Header />
+          <div className="dashboard-content">{renderPage()}</div>
+        </main>
+      </div>
+    </>
+  );
 }

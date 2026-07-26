@@ -1335,7 +1335,7 @@ h2 {
 .control-center-logo {
   position: absolute;
   top: 28px;
-  left: 34px;
+  left: -20px;
   z-index: 3;
   display: block;
   width: clamp(300px, 24vw, 500px);
@@ -1345,12 +1345,15 @@ h2 {
 
 .control-center-energy {
   position: absolute;
-  top: clamp(145px, 16vh, 190px);
+  top: clamp(105px, 11vh, 125px);
   right: 0;
   left: 0;
+  z-index: 4;
   height: clamp(120px, 18vh, 210px);
   overflow: hidden;
   background: #000;
+  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
 .control-center-energy .energy-layer {
@@ -1364,12 +1367,12 @@ h2 {
 
   .control-center-logo {
     top: 18px;
-    left: 18px;
+    left: -16px;
     width: min(76vw, 390px);
   }
 
   .control-center-energy {
-    top: 125px;
+    top: 98px;
     height: 130px;
   }
 }

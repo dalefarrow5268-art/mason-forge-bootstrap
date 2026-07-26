@@ -1,4 +1,4 @@
-import energyRibbon from "../assets/brand/mason-forge/mason-forge-energy-fullwidth.webp";
+import { energyRibbon } from "./EnergyPreview";
 import { digitalForgeLogo } from "./LogoPreview";
 
 export default function ControlCenterCanvas() {

@@ -25,62 +25,58 @@ export default function MissionPanel() {
   ];
 
   return (
-    <section className="mission-panel">
-      <div className="mission-header">
-        <div>
-          <p className="section-label">Mission Control</p>
-
-          <h2>Engineering Operating System</h2>
-
+    <section className="mission-panel command-center">
+      <div className="command-hero">
+        <div className="command-hero-copy">
+          <p className="section-label">Mason Forge Control Center</p>
+          <h2>Every project.<br /><span>One intelligent command.</span></h2>
           <p className="mission-subtitle">
-            Mason Forge™ coordinates every engineering department responsible
-            for planning, building, validating, deploying, and continuously
-            improving SubSource Exchange™.
+            Live engineering intelligence coordinates projects, people,
+            evidence, schedules, risk, and decisions across SSX.
           </p>
+          <div className="command-pulse">
+            <span className="status-dot" />
+            Mason Core online · verified system state
+          </div>
         </div>
 
-        <div className="mission-status">
-          <span className="status-dot" />
-          {ForgeInfo.milestone} Active
+        <div className="command-hero-visual">
+          <img src="/control-center/project-cockpit.jpg" alt="Mason Forge live project cockpit" />
+          <div className="scan-line" aria-hidden="true" />
+          <div className="visual-readout">
+            <span>LIVE PROJECT SIGNAL</span>
+            <strong>91%</strong>
+            <small>System health</small>
+          </div>
         </div>
       </div>
 
-      <div className="mission-objective">
-        <h3>Current Objective</h3>
-
-        <p>
-          Transform Mason Forge from a dashboard into an autonomous engineering
-          operating system where specialized AI teams collaborate, every
-          significant action is verified, and every production release requires
-          human approval.
-        </p>
-      </div>
-
-      <div className="metrics-grid">
-        {stats.map((stat) => (
-          <div className="metric-card" key={stat.title}>
+      <div className="command-metrics" aria-label="Mason Forge status">
+        {stats.map((stat, index) => (
+          <div className="command-metric" key={stat.title}>
+            <span>0{index + 1}</span>
             <small>{stat.title}</small>
-            <h2>{stat.value}</h2>
-            <span>{stat.subtitle}</span>
+            <strong>{stat.value}</strong>
+            <em>{stat.subtitle}</em>
           </div>
         ))}
       </div>
 
-      <div className="mission-footer">
-        <div>
-          <strong>Current Milestone</strong>
-          <p>{ForgeInfo.milestone} — Shared Systems Integration</p>
-        </div>
-
-        <div>
-          <strong>Primary Mission</strong>
-          <p>Build the SSX Engineering Operating System</p>
-        </div>
-
-        <div>
-          <strong>Operating Mode</strong>
-          <p>{ForgeInfo.slogan}</p>
-        </div>
+      <div className="command-deck">
+        <article className="command-feature command-feature-wide">
+          <img src="/control-center/project-health.jpg" alt="Live Mason Forge project health instrumentation" />
+          <div className="command-feature-copy">
+            <span>PROJECT INTELLIGENCE</span>
+            <h3>See the first broken link before it becomes the next delay.</h3>
+          </div>
+        </article>
+        <article className="command-feature">
+          <img src="/control-center/project-schedule.jpg" alt="Mason Forge project schedule intelligence" />
+          <div className="command-feature-copy">
+            <span>SCHEDULE SIGNAL</span>
+            <h3>Every dependency visible.</h3>
+          </div>
+        </article>
       </div>
     </section>
   );

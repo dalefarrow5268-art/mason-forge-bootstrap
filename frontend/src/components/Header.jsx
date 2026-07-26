@@ -1,4 +1,3 @@
-import forgeLogo from "../assets/brand/mason-forge/Mason-Forge-logo-and-word-mark-white-clear-bg.svg";
 import { ForgeInfo } from "../core";
 
 export default function Header() {
@@ -6,7 +5,7 @@ export default function Header() {
     <header className="header">
       <div className="header-brand">
         <img
-          src={forgeLogo}
+          src="/brand/mason-forge-new-logo.jpg"
           alt="Mason Forge™"
           className="forge-logo"
           draggable="false"

@@ -100,9 +100,11 @@ export default function Sidebar({ page, setPage }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <div className="sidebar-brand-mark" aria-hidden="true">
-          MF
-        </div>
+        <img
+          className="sidebar-brand-logo"
+          src="/brand/mason-forge-new-logo.jpg"
+          alt="Mason Forge"
+        />
 
         <div className="sidebar-brand-content">
           <h2>Mason Forge™</h2>

@@ -1524,7 +1524,7 @@ h2 {
 }
 
 .weather-control-center {
-  width: min(1760px, 96vw);
+  width: min(1940px, 96vw);
   height: min(940px, calc(100vh - 56px));
   overflow: hidden;
   border: 1px solid #31414d;
@@ -1545,7 +1545,7 @@ h2 {
   grid-template-columns: minmax(0, 1fr) auto 52px;
   align-items: center;
   gap: 28px;
-  height: 126px;
+  height: 104px;
   padding: 0 30px 0 38px;
   border-bottom: 1px solid #25343e;
   background: rgba(4, 11, 16, 0.92);
@@ -1602,11 +1602,11 @@ h2 {
 
 .weather-control-grid {
   display: grid;
-  height: calc(100% - 126px);
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  height: calc(100% - 104px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: minmax(0, 1fr);
-  gap: 14px;
-  padding: 18px;
+  gap: 10px;
+  padding: 12px;
 }
 
 .weather-project-card {
@@ -1619,6 +1619,10 @@ h2 {
     radial-gradient(circle at 82% 15%, rgba(40, 74, 91, 0.28), transparent 32%),
     linear-gradient(145deg, rgba(12, 26, 35, 0.96), rgba(2, 8, 12, 0.98));
   box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.45);
+}
+
+.weather-project-card:first-child {
+  grid-column: 1 / -1;
 }
 
 .weather-project-card::before {
@@ -1649,11 +1653,11 @@ h2 {
 
 .weather-project-heading {
   display: flex;
-  min-height: 74px;
+  min-height: 58px;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 17px 18px 12px;
+  padding: 12px 13px 9px;
   border-bottom: 1px solid #22313a;
 }
 
@@ -1674,9 +1678,9 @@ h2 {
 
 .weather-project-heading strong {
   display: block;
-  margin-top: 6px;
+  margin-top: 4px;
   color: #e8edef;
-  font-size: 17px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -1690,10 +1694,10 @@ h2 {
 
 .weather-project-current {
   display: flex;
-  height: 112px;
+  height: 82px;
   align-items: center;
-  gap: 16px;
-  padding: 8px 20px;
+  gap: 12px;
+  padding: 6px 14px;
   background:
     linear-gradient(90deg, rgba(4, 11, 16, 0.74), transparent),
     radial-gradient(circle at 85% 0%, rgba(65, 96, 111, 0.2), transparent 55%);
@@ -1702,7 +1706,7 @@ h2 {
 .weather-project-current > strong {
   color: #f4f6f6;
   font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 52px;
+  font-size: 40px;
   font-weight: 400;
   letter-spacing: -0.06em;
 }
@@ -1715,12 +1719,12 @@ h2 {
 
 .weather-project-current span {
   color: #dce4e7;
-  font-size: 12px;
+  font-size: 10px;
   letter-spacing: 0.06em;
 }
 
 .weather-project-current b {
-  margin-top: 8px;
+  margin-top: 5px;
   color: #85949b;
   font-size: 9px;
   font-weight: 500;
@@ -1728,8 +1732,8 @@ h2 {
 
 .weather-project-metrics {
   display: grid;
-  height: calc(100% - 186px);
-  min-height: 74px;
+  height: calc(100% - 140px);
+  min-height: 58px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   background: rgba(1, 6, 9, 0.74);
 }
@@ -1739,7 +1743,7 @@ h2 {
   min-width: 0;
   flex-direction: column;
   justify-content: center;
-  padding: 10px 12px;
+  padding: 7px 8px;
   border-right: 1px solid #22313a;
 }
 
@@ -1754,14 +1758,14 @@ h2 {
 }
 
 .weather-project-metrics strong {
-  margin-top: 5px;
+  margin-top: 4px;
   color: #d8e1e4;
   font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 12px;
+  font-size: 10px;
 }
 
 .weather-project-metrics b {
-  margin-top: 5px;
+  margin-top: 4px;
   overflow: hidden;
   color: #819098;
   font-size: 7px;
@@ -1769,6 +1773,43 @@ h2 {
   letter-spacing: 0.05em;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.weather-project-loading {
+  display: grid;
+  grid-column: 1 / -1;
+  place-content: center;
+  place-items: center;
+  gap: 12px;
+  color: #82939c;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
+.weather-project-loading span {
+  font-size: 9px;
+}
+
+.weather-project-loading strong {
+  color: #d79a32;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.weather-project-loading-pulse {
+  width: 76px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #dc9e34, transparent);
+  box-shadow: 0 0 16px rgba(220, 158, 52, 0.72);
+  animation: weather-feed-pulse 1.25s ease-in-out infinite;
+}
+
+@keyframes weather-feed-pulse {
+  50% {
+    width: 150px;
+    opacity: 0.48;
+  }
 }
 
 .weather-project-safe .weather-project-metrics div:last-child strong,
@@ -1846,5 +1887,9 @@ h2 {
     grid-template-columns: 1fr;
     grid-auto-rows: 260px;
     overflow-y: auto;
+  }
+
+  .weather-project-card:first-child {
+    grid-column: auto;
   }
 }

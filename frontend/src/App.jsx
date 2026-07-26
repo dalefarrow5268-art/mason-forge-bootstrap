@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import Dashboard from "./components/Dashboard";
+import EnergyPreview from "./components/EnergyPreview";
 import LogoPreview from "./components/LogoPreview";
 import { masonCore } from "./core";
 
 export default function App() {
   const isLogoPreview = window.location.pathname === "/logo-preview";
+  const isEnergyPreview = window.location.pathname === "/energy-preview";
 
   useEffect(() => {
     console.clear();
@@ -41,5 +43,8 @@ export default function App() {
     console.log(status);
   }, []);
 
-  return isLogoPreview ? <LogoPreview /> : <Dashboard />;
+  if (isLogoPreview) return <LogoPreview />;
+  if (isEnergyPreview) return <EnergyPreview />;
+
+  return <Dashboard />;
 }

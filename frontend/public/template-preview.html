@@ -52,11 +52,11 @@ if(rail){
     const y=(x,phase,amp=7)=>mid+Math.sin(x*.031-t*3.1+phase)*amp+Math.sin(x*.068-t*4.6+phase)*2.5;
     const strand=(phase,color,width,amp)=>{ctx.beginPath();for(let x=-6;x<w+8;x+=4){const py=y(x,phase,amp);x<0?ctx.moveTo(x,py):ctx.lineTo(x,py)}ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke()};
     ctx.lineCap="round";ctx.lineJoin="round";
-    ctx.shadowColor="#ff3d00";ctx.shadowBlur=22;strand(0,"rgba(255,55,0,.32)",9,7);strand(Math.PI,"rgba(255,65,0,.28)",8,7);
-    ctx.shadowBlur=10;strand(0,"rgba(255,122,9,.95)",2.2,7);strand(Math.PI,"rgba(255,80,0,.88)",2,7);strand(Math.PI*.5,"rgba(255,184,35,.72)",1.2,3.5);
+    ctx.shadowColor="#ff4b00";ctx.shadowBlur=14;strand(0,"rgba(255,55,0,.38)",4,7);strand(Math.PI,"rgba(230,35,16,.36)",4,7);
+    ctx.shadowBlur=7;strand(0,"rgba(255,151,22,.98)",1.15,7);strand(Math.PI,"rgba(255,47,18,.96)",1.05,7);strand(Math.PI*.5,"rgba(0,183,255,.88)",.7,3.5);
     ctx.shadowBlur=0;
-    for(let i=0;i<18;i++){const x=(i*93+t*(130+(i%4)*18))%(w+100)-50;const phase=i%2?Math.PI:0;const py=y(x,phase,7);const radius=(i%3===0?2.2:1.15);const g=ctx.createRadialGradient(x,py,0,x,py,radius*7);g.addColorStop(0,"#fff8c7");g.addColorStop(.2,"#ffd24c");g.addColorStop(.55,"rgba(255,91,0,.78)");g.addColorStop(1,"rgba(255,50,0,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,py,radius*7,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff6bd";ctx.beginPath();ctx.arc(x,py,radius,0,Math.PI*2);ctx.fill()}
-    for(let i=0;i<35;i++){const x=(i*57+t*(52+(i%5)*9))%(w+40)-20;const py=mid+Math.sin(i*2.4+t*4)*11;ctx.fillStyle="rgba(255,148,26,"+(.22+(i%4)*.1)+")";ctx.fillRect(x,py,1,1)}
+    for(let i=0;i<18;i++){const x=(i*93+t*(130+(i%4)*18))%(w+100)-50;const phase=i%2?Math.PI:0;const py=y(x,phase,7);const radius=(i%3===0?1.45:.72);const glow=i%4===0?"0,188,255":i%4===1?"255,38,20":"255,128,10";const core=i%4===0?"#a9f4ff":i%4===1?"#ffb1a0":"#fff0ae";const g=ctx.createRadialGradient(x,py,0,x,py,radius*7);g.addColorStop(0,core);g.addColorStop(.25,"rgba("+glow+",.92)");g.addColorStop(.58,"rgba("+glow+",.42)");g.addColorStop(1,"rgba("+glow+",0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,py,radius*7,0,Math.PI*2);ctx.fill();ctx.fillStyle=core;ctx.beginPath();ctx.arc(x,py,radius,0,Math.PI*2);ctx.fill()}
+    for(let i=0;i<35;i++){const x=(i*57+t*(52+(i%5)*9))%(w+40)-20;const py=mid+Math.sin(i*2.4+t*4)*11;ctx.fillStyle=i%6===0?"rgba(0,180,255,.48)":i%6===1?"rgba(255,42,18,.46)":"rgba(255,148,26,"+(.16+(i%4)*.08)+")";ctx.fillRect(x,py,1,1)}
     requestAnimationFrame(draw);
   };fit();addEventListener("resize",fit);requestAnimationFrame(draw);
 }

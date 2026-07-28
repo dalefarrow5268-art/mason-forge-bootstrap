@@ -46,17 +46,19 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#000;color:
 <script>const time=document.getElementById('time'),ampm=document.getElementById('ampm'),date=document.getElementById('date');function update(){const d=new Date();let h=d.getHours();const ap=h>=12?'PM':'AM';h=h%12||12;time.textContent=String(h).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');ampm.textContent=ap;date.textContent=new Intl.DateTimeFormat('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'}).format(d).toUpperCase().replace(/,/g,'')}update();setInterval(update,1000);;const scoutPanel=document.querySelector(".scout-panel");window.ScoutVoice={start(){scoutPanel?.classList.add("is-speaking")},stop(){scoutPanel?.classList.remove("is-speaking")},speak(message){if(!("speechSynthesis" in window)||!message)return;const voice=new SpeechSynthesisUtterance(message);voice.onstart=()=>this.start();voice.onend=voice.onerror=()=>this.stop();window.speechSynthesis.cancel();window.speechSynthesis.speak(voice)}};
 const rail=document.getElementById("forgeEnergyRail");
 if(rail){
-  const ctx=rail.getContext("2d"); let railW=0,railH=0;
-  const sizeRail=()=>{const d=Math.min(window.devicePixelRatio||1,2),r=rail.getBoundingClientRect();railW=r.width;railH=r.height;rail.width=Math.round(railW*d);rail.height=Math.round(railH*d);ctx.setTransform(d,0,0,d,0,0)};
-  const drawRail=(now)=>{const t=now/1000;ctx.clearRect(0,0,railW,railH);const y=railH*.54;
-    const path=(offset=0)=>{ctx.beginPath();for(let x=-4;x<=railW+4;x+=8){const yy=y+Math.sin((x+offset)/150)*1.2+Math.sin((x+offset)/49)*.42;x===-4?ctx.moveTo(x,yy):ctx.lineTo(x,yy)}};
-    path(t*72);ctx.strokeStyle="rgba(255,55,0,.12)";ctx.lineWidth=22;ctx.shadowColor="#ff4a00";ctx.shadowBlur=24;ctx.stroke();
-    path(t*72);ctx.strokeStyle="rgba(215,47,0,.82)";ctx.lineWidth=8;ctx.shadowBlur=11;ctx.stroke();
-    path(t*72);ctx.strokeStyle="#ff7810";ctx.lineWidth=3.4;ctx.shadowColor="#ff6b00";ctx.shadowBlur=8;ctx.stroke();
-    path(t*72);ctx.strokeStyle="rgba(255,210,69,.92)";ctx.lineWidth=1;ctx.shadowBlur=4;ctx.stroke();ctx.shadowBlur=0;
-    const sparks=[.04,.22,.39,.57,.73,.91];sparks.forEach((p,i)=>{const x=((t*(86+i*11)+p*railW)%(railW+40))-20;const yy=y+Math.sin((x+t*72)/150)*1.2+Math.sin((x+t*72)/49)*.42;const g=ctx.createRadialGradient(x,yy,0,x,yy,14);g.addColorStop(0,"#fff8c0");g.addColorStop(.16,"#ffd044");g.addColorStop(.42,"rgba(255,107,0,.72)");g.addColorStop(1,"rgba(255,50,0,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,yy,14,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff2a2";ctx.beginPath();ctx.arc(x,yy,1.5+(i%2),0,Math.PI*2);ctx.fill()});
-    requestAnimationFrame(drawRail);
-  };sizeRail();addEventListener("resize",sizeRail);requestAnimationFrame(drawRail);
+  const ctx=rail.getContext("2d");let w=0,h=0;
+  const fit=()=>{const d=Math.min(devicePixelRatio||1,2),r=rail.getBoundingClientRect();w=r.width;h=r.height;rail.width=Math.round(w*d);rail.height=Math.round(h*d);ctx.setTransform(d,0,0,d,0,0)};
+  const draw=(ms)=>{const t=ms*.001,mid=h*.55;ctx.clearRect(0,0,w,h);
+    const y=(x,phase,amp=7)=>mid+Math.sin(x*.031-t*3.1+phase)*amp+Math.sin(x*.068-t*4.6+phase)*2.5;
+    const strand=(phase,color,width,amp)=>{ctx.beginPath();for(let x=-6;x<w+8;x+=4){const py=y(x,phase,amp);x<0?ctx.moveTo(x,py):ctx.lineTo(x,py)}ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke()};
+    ctx.lineCap="round";ctx.lineJoin="round";
+    ctx.shadowColor="#ff3d00";ctx.shadowBlur=22;strand(0,"rgba(255,55,0,.32)",9,7);strand(Math.PI,"rgba(255,65,0,.28)",8,7);
+    ctx.shadowBlur=10;strand(0,"rgba(255,122,9,.95)",2.2,7);strand(Math.PI,"rgba(255,80,0,.88)",2,7);strand(Math.PI*.5,"rgba(255,184,35,.72)",1.2,3.5);
+    ctx.shadowBlur=0;
+    for(let i=0;i<18;i++){const x=(i*93+t*(130+(i%4)*18))%(w+100)-50;const phase=i%2?Math.PI:0;const py=y(x,phase,7);const radius=(i%3===0?2.2:1.15);const g=ctx.createRadialGradient(x,py,0,x,py,radius*7);g.addColorStop(0,"#fff8c7");g.addColorStop(.2,"#ffd24c");g.addColorStop(.55,"rgba(255,91,0,.78)");g.addColorStop(1,"rgba(255,50,0,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,py,radius*7,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff6bd";ctx.beginPath();ctx.arc(x,py,radius,0,Math.PI*2);ctx.fill()}
+    for(let i=0;i<35;i++){const x=(i*57+t*(52+(i%5)*9))%(w+40)-20;const py=mid+Math.sin(i*2.4+t*4)*11;ctx.fillStyle="rgba(255,148,26,"+(.22+(i%4)*.1)+")";ctx.fillRect(x,py,1,1)}
+    requestAnimationFrame(draw);
+  };fit();addEventListener("resize",fit);requestAnimationFrame(draw);
 }
 </script>
 </body>

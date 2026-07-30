@@ -8,6 +8,7 @@ export interface Env {
 
 type ContactInput = { displayName: string; firstName?: string; lastName?: string; email?: string; phone?: string; title?: string; companyId?: string };
 type CompanyInput = { name?: string; website?: string | null; phone?: string | null; emrRating?: number | null; emrEffectiveDate?: string | null; sourceContactId?: string; sourceEmailId?: string; sourceLocation?: string };
+type ProjectLinkInput = { projectName: string; projectId?: number | null; projectRole?: string | null; isCurrent?: boolean; sourceEmailId: string; sourceLocation: string };
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 const id = () => crypto.randomUUID();
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -90,6 +91,24 @@ async function saveCompany(env: Env, companyId: string | null, input: CompanyInp
   await env.DB.prepare("UPDATE ssx_companies SET name=?,normalized_name=?,website=?,phone=?,emr_rating=?,emr_effective_date=?,updated_at=? WHERE id=?").bind(next.name,normalize(next.name),next.website,next.phone,next.emrRating,next.emrEffectiveDate,now,record.id).run();
   if (hasSourcedFact) for (const [field, value] of Object.entries({ company_name: input.name, company_website: input.website, company_phone: input.phone, emr_rating: input.emrRating, emr_effective_date: input.emrEffectiveDate })) if (value !== undefined) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),input.sourceContactId,input.sourceEmailId,field,value === null ? null : String(value),input.sourceLocation!.trim()).run();
   return await env.DB.prepare("SELECT * FROM ssx_companies WHERE id=?").bind(record.id).first();
+}
+
+async function linkProject(env: Env, contactId: string, input: ProjectLinkInput) {
+  if (!input.projectName?.trim()) throw new Error("projectName is required");
+  if (!input.sourceEmailId || !input.sourceLocation?.trim()) throw new Error("sourceEmailId and sourceLocation from an imported Outlook email are required");
+  const contact = await env.DB.prepare("SELECT id FROM ssx_contacts WHERE id=?").bind(contactId).first();
+  if (!contact) throw new Error("Contact not found");
+  const email = await env.DB.prepare("SELECT id FROM ssx_contact_emails WHERE id=? AND contact_id=?").bind(input.sourceEmailId, contactId).first();
+  if (!email) throw new Error("sourceEmailId must belong to this contact");
+  const now = new Date().toISOString();
+  const projectId = input.projectId ?? null;
+  const existing = await env.DB.prepare("SELECT id FROM ssx_contact_projects WHERE contact_id=? AND project_name=? AND COALESCE(project_id,-1)=COALESCE(?,-1)").bind(contactId,input.projectName.trim(),projectId).first<{id:string}>();
+  if (input.isCurrent) await env.DB.prepare("UPDATE ssx_contact_projects SET is_current=0 WHERE contact_id=?").bind(contactId).run();
+  const linkId = existing?.id || id();
+  if (existing) await env.DB.prepare("UPDATE ssx_contact_projects SET project_role=?,is_current=?,linked_at=? WHERE id=?").bind(input.projectRole?.trim() || null,input.isCurrent === false ? 0 : 1,now,linkId).run();
+  else await env.DB.prepare("INSERT INTO ssx_contact_projects (id,contact_id,project_id,project_name,project_role,is_current,linked_at) VALUES (?,?,?,?,?,?,?)").bind(linkId,contactId,projectId,input.projectName.trim(),input.projectRole?.trim() || null,input.isCurrent === false ? 0 : 1,now).run();
+  await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,input.sourceEmailId,"project_link",input.projectName.trim(),input.sourceLocation.trim()).run();
+  return await env.DB.prepare("SELECT * FROM ssx_contact_projects WHERE id=?").bind(linkId).first();
 }
 
 function requestedAction(subject?: string, body?: string) {
@@ -178,6 +197,10 @@ export default {
       const next = { displayName: updates.displayName ?? current.display_name, firstName: updates.firstName ?? current.first_name, lastName: updates.lastName ?? current.last_name, email: updates.email ?? current.primary_email, phone: updates.phone ?? current.primary_phone, title: updates.title ?? current.title, companyId: updates.companyId ?? current.company_id };
       await env.DB.prepare("UPDATE ssx_contacts SET company_id=?,first_name=?,last_name=?,display_name=?,normalized_name=?,primary_email=?,primary_phone=?,title=?,updated_at=? WHERE id=?").bind(next.companyId,next.firstName,next.lastName,next.displayName,normalize(next.displayName),next.email?.toLowerCase() || null,next.phone,next.title,new Date().toISOString(),contactMatch[1]).run();
       return json(await getContact(env,contactMatch[1]));
+    }
+    const contactProjectsMatch = path.match(/^\/contact-system\/contacts\/([^/]+)\/projects$/);
+    if (contactProjectsMatch && request.method === "POST") {
+      try { return json(await linkProject(env, contactProjectsMatch[1], await request.json<ProjectLinkInput>()), 201); } catch (error) { return json({ error: error instanceof Error ? error.message : "Invalid project link" }, 400); }
     }
     const photoMatch = path.match(/^\/contact-system\/contacts\/([^/]+)\/photo$/);
     if (photoMatch && request.method === "POST") {

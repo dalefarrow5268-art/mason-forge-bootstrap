@@ -154,6 +154,20 @@ export default {
     if (path === "/contact-system/email-imports" && request.method === "POST") return importEmail(request,env);
     const importMatch = path.match(/^\/contact-system\/email-imports\/([^/]+)$/);
     if (importMatch && request.method === "GET") { const record = await env.DB.prepare("SELECT * FROM ssx_contact_import_jobs WHERE id=?").bind(importMatch[1]).first(); return record ? json(record) : json({error:"Not found"},404); }
+    const fileMatch = path.match(/^\/contact-system\/files\/([^/]+)$/);
+    if (fileMatch && request.method === "GET") {
+      const attachment = await env.DB.prepare("SELECT file_name,content_type,r2_key FROM ssx_contact_attachments WHERE id=?").bind(fileMatch[1]).first<{file_name:string;content_type:string|null;r2_key:string}>();
+      const email = attachment ? null : await env.DB.prepare("SELECT original_file_name AS file_name,original_msg_r2_key AS r2_key FROM ssx_contact_emails WHERE id=?").bind(fileMatch[1]).first<{file_name:string;r2_key:string}>();
+      const file = attachment || email;
+      if (!file) return json({ error: "Not found" }, 404);
+      const object = await env.CONTACT_FILES.get(file.r2_key);
+      if (!object) return json({ error: "Stored file is unavailable" }, 404);
+      return new Response(object.body, { headers: {
+        "Content-Type": attachment?.content_type || "application/vnd.ms-outlook",
+        "Content-Disposition": `attachment; filename="${safeName(file.file_name)}"`,
+        "Cache-Control": "private, no-store"
+      }});
+    }
     return json({ error: "Not found" }, 404);
   }
 } satisfies ExportedHandler<Env>;

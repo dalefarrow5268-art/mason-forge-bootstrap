@@ -883,6 +883,43 @@ text-transform:uppercase!important
 }
 }
 </style>
+
+<style id="todo-coi-structure-final-v3">
+@media(min-width:931px){
+/* Correct the actual two-panel height balance. */
+.stage > .contact-command .mid{
+  grid-template-rows:205px 220px minmax(0,1fr)!important;
+}
+/* Dale To-Do uses its full panel without crowding. */
+.stage > .contact-command .mid>.cc:first-child .pane{
+  height:163px!important;
+  padding:10px 17px 43px!important;
+}
+.stage > .contact-command .mid>.cc:first-child .pane-head{
+  height:54px!important;align-items:center!important;
+}
+.stage > .contact-command .mid>.cc:first-child .todo{
+  margin:5px 0 0!important;
+  line-height:1.6!important;
+}
+.stage > .contact-command .mid>.cc:first-child .pane>.button{
+  bottom:9px!important;height:28px!important;
+}
+/* COI is compact, balanced, and uses the available height. */
+.stage > .contact-command .coi .pane{
+  height:178px!important;
+  padding:9px 17px 42px!important;
+}
+.stage > .contact-command .coi-status-row{height:56px!important}
+.stage > .contact-command .coi .missing{
+  margin:6px 0 0!important;
+  line-height:1.55!important;
+}
+.stage > .contact-command .coi .pane>.button{
+  bottom:9px!important;height:28px!important;
+}
+}
+</style>
 </head>
 <body>
 <main class="stage">

@@ -7,6 +7,7 @@ export interface Env {
 }
 
 type ContactInput = { displayName: string; firstName?: string; lastName?: string; email?: string; phone?: string; title?: string; companyId?: string };
+type ContactUpdateInput = Partial<ContactInput> & { sourceEmailId?: string; sourceLocation?: string };
 type CompanyInput = { name?: string; website?: string | null; phone?: string | null; emrRating?: number | null; emrEffectiveDate?: string | null; sourceContactId?: string; sourceEmailId?: string; sourceLocation?: string };
 type ProjectLinkInput = { projectName: string; projectId?: number | null; projectRole?: string | null; isCurrent?: boolean; sourceEmailId: string; sourceLocation: string };
 type TaskUpdateInput = { status: "open" | "completed" | "dismissed" };
@@ -194,16 +195,21 @@ export default {
       const stmt = q ? env.DB.prepare("SELECT id,display_name,primary_email,primary_phone,title,status FROM ssx_contacts WHERE display_name LIKE ? OR primary_email LIKE ? ORDER BY display_name LIMIT 100").bind(`%${q}%`,`%${q}%`) : env.DB.prepare("SELECT id,display_name,primary_email,primary_phone,title,status FROM ssx_contacts ORDER BY display_name LIMIT 100");
       return json({ contacts:(await stmt.all()).results });
     }
-    if (path === "/contact-system/contacts" && request.method === "POST") {
-      try { return json(await createContact(env, await request.json<ContactInput>()), 201); } catch (error) { return json({ error: error instanceof Error ? error.message : "Invalid contact" },400); }
-    }
+    if (path === "/contact-system/contacts" && request.method === "POST") return json({ error: "Contacts are created only from imported Outlook emails" }, 405);
     const contactMatch = path.match(/^\/contact-system\/contacts\/([^/]+)$/);
     if (contactMatch && request.method === "GET") { const result = await getContact(env,contactMatch[1]); return result ? json(result) : json({error:"Not found"},404); }
     if (contactMatch && request.method === "PATCH") {
-      const updates = await request.json<Partial<ContactInput>>(); const current = await env.DB.prepare("SELECT * FROM ssx_contacts WHERE id=?").bind(contactMatch[1]).first<any>();
+      const updates = await request.json<ContactUpdateInput>(); const current = await env.DB.prepare("SELECT * FROM ssx_contacts WHERE id=?").bind(contactMatch[1]).first<any>();
       if (!current) return json({error:"Not found"},404);
+      const changed = ["displayName","firstName","lastName","email","phone","title","companyId"].some(key => updates[key as keyof ContactInput] !== undefined);
+      if (changed && (!updates.sourceEmailId || !updates.sourceLocation?.trim())) return json({ error: "Contact facts require sourceEmailId and sourceLocation from an imported Outlook email" }, 400);
+      if (changed) {
+        const sourceEmail = await env.DB.prepare("SELECT id FROM ssx_contact_emails WHERE id=? AND contact_id=?").bind(updates.sourceEmailId,contactMatch[1]).first();
+        if (!sourceEmail) return json({ error: "sourceEmailId must belong to this contact" }, 400);
+      }
       const next = { displayName: updates.displayName ?? current.display_name, firstName: updates.firstName ?? current.first_name, lastName: updates.lastName ?? current.last_name, email: updates.email ?? current.primary_email, phone: updates.phone ?? current.primary_phone, title: updates.title ?? current.title, companyId: updates.companyId ?? current.company_id };
       await env.DB.prepare("UPDATE ssx_contacts SET company_id=?,first_name=?,last_name=?,display_name=?,normalized_name=?,primary_email=?,primary_phone=?,title=?,updated_at=? WHERE id=?").bind(next.companyId,next.firstName,next.lastName,next.displayName,normalize(next.displayName),next.email?.toLowerCase() || null,next.phone,next.title,new Date().toISOString(),contactMatch[1]).run();
+      if (changed) for (const [field,value] of Object.entries({ display_name: updates.displayName, first_name: updates.firstName, last_name: updates.lastName, primary_email: updates.email, primary_phone: updates.phone, title: updates.title, company_id: updates.companyId })) if (value !== undefined) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactMatch[1],updates.sourceEmailId,field,value === null ? null : String(value),updates.sourceLocation!.trim()).run();
       return json(await getContact(env,contactMatch[1]));
     }
     const contactProjectsMatch = path.match(/^\/contact-system\/contacts\/([^/]+)\/projects$/);

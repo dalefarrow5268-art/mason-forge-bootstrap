@@ -381,6 +381,13 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#000;color:
 .stage > .contact-command .mid,.stage > .contact-command .right-stack{min-width:0!important;width:100%!important}
 }
 </style>
+<style id="right-columns-narrow-v2">
+/* Narrow equal operation columns, anchored as a pair to the far-right edge. */
+@media(min-width:931px){
+.stage > .contact-command>.cc-grid{grid-template-columns:minmax(500px,1fr) 330px 330px!important;justify-content:stretch!important}
+.stage > .contact-command .mid,.stage > .contact-command .right-stack{width:330px!important;min-width:330px!important;max-width:330px!important}
+}
+</style>
 </head>
 <body>
 <main class="stage">

@@ -1,9 +1,9 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "mason-forge-cloud",
+  "name": "ssx-contact-system",
   "main": "src/index.ts",
   "compatibility_date": "2026-07-30",
   "compatibility_flags": ["nodejs_compat"],
-  "d1_databases": [{ "binding": "DB", "database_name": "replace-existing-mason-forge-d1", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }],
-  "r2_buckets": [{ "binding": "CONTACT_FILES", "bucket_name": "replace-existing-mason-forge-r2" }]
+  "d1_databases": [{ "binding": "DB", "database_name": "mason-forge-cloud", "database_id": "736f655b-889d-4fb2-8948-0a396d39436f", "migrations_dir": "migrations" }],
+  "r2_buckets": [{ "binding": "CONTACT_FILES", "bucket_name": "mason-forge-project-files" }]
 }

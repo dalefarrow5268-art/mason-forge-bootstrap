@@ -133,6 +133,24 @@ export default {
       await env.DB.prepare("UPDATE ssx_contacts SET company_id=?,first_name=?,last_name=?,display_name=?,normalized_name=?,primary_email=?,primary_phone=?,title=?,updated_at=? WHERE id=?").bind(next.companyId,next.firstName,next.lastName,next.displayName,normalize(next.displayName),next.email?.toLowerCase() || null,next.phone,next.title,new Date().toISOString(),contactMatch[1]).run();
       return json(await getContact(env,contactMatch[1]));
     }
+    const photoMatch = path.match(/^\/contact-system\/contacts\/([^/]+)\/photo$/);
+    if (photoMatch && request.method === "POST") {
+      const contact = await env.DB.prepare("SELECT id FROM ssx_contacts WHERE id=?").bind(photoMatch[1]).first();
+      if (!contact) return json({ error: "Not found" }, 404);
+      const contentType = request.headers.get("Content-Type")?.split(";")[0] || "";
+      const extension = ({ "image/jpeg":"jpg", "image/png":"png", "image/webp":"webp" } as Record<string,string>)[contentType];
+      if (!extension) return json({ error: "Only JPEG, PNG, or WebP photos are accepted" }, 415);
+      const bytes = await request.arrayBuffer();
+      if (!bytes.byteLength || bytes.byteLength > 5 * 1024 * 1024) return json({ error: "Photo must be between 1 byte and 5 MB" }, 413);
+      const photoSha = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))).map(v => v.toString(16).padStart(2,"0")).join("");
+      const photoKey = `contacts/${photoMatch[1]}/photos/${photoSha}.${extension}`;
+      await env.CONTACT_FILES.put(photoKey, bytes, { httpMetadata: { contentType }, customMetadata: { sha256: photoSha, contactId: photoMatch[1] } });
+      await env.DB.batch([
+        env.DB.prepare("UPDATE ssx_contacts SET photo_r2_key=?,updated_at=? WHERE id=?").bind(photoKey,new Date().toISOString(),photoMatch[1]),
+        env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,field_name,field_value,source_location) VALUES (?,?,?,?,?)").bind(id(),photoMatch[1],"photo_r2_key",photoKey,"Manual contact-photo upload")
+      ]);
+      return json({ contactId: photoMatch[1], photoKey }, 201);
+    }
     if (path === "/contact-system/email-imports" && request.method === "POST") return importEmail(request,env);
     const importMatch = path.match(/^\/contact-system\/email-imports\/([^/]+)$/);
     if (importMatch && request.method === "GET") { const record = await env.DB.prepare("SELECT * FROM ssx_contact_import_jobs WHERE id=?").bind(importMatch[1]).first(); return record ? json(record) : json({error:"Not found"},404); }

@@ -11,6 +11,7 @@ type ContactUpdateInput = Partial<ContactInput> & { sourceEmailId?: string; sour
 type CompanyInput = { name?: string; website?: string | null; phone?: string | null; emrRating?: number | null; emrEffectiveDate?: string | null; sourceContactId?: string; sourceEmailId?: string; sourceLocation?: string };
 type ProjectLinkInput = { projectName: string; projectId?: number | null; projectRole?: string | null; isCurrent?: boolean; sourceEmailId: string; sourceLocation: string };
 type TaskUpdateInput = { status: "open" | "completed" | "dismissed" };
+type CoiInput = { attachmentId: string; insurerName?: string | null; policyNumber?: string | null; effectiveDate?: string | null; expirationDate?: string | null; status?: "current" | "expiring" | "expired" | "review"; notes?: string | null; sourceLocation: string };
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 const id = () => crypto.randomUUID();
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -34,11 +35,12 @@ function completeness(record: Record<string, unknown>) {
 async function getContact(env: Env, contactId: string) {
   const contact = await env.DB.prepare(`SELECT c.*, co.name AS company_name, co.website AS company_website, co.emr_rating AS company_emr_rating, co.emr_effective_date AS company_emr_effective_date FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?`).bind(contactId).first();
   if (!contact) return null;
-  const [emails, attachments, tasks, projects, evidence] = await env.DB.batch([
+  const [emails, attachments, tasks, projects, cois, evidence] = await env.DB.batch([
     env.DB.prepare("SELECT id, subject, sender_name, sender_email, received_at, extraction_status, original_file_name, original_size_bytes FROM ssx_contact_emails WHERE contact_id=? ORDER BY received_at DESC").bind(contactId),
     env.DB.prepare("SELECT a.id,a.email_id,a.file_name,a.content_type,a.size_bytes,a.sha256 FROM ssx_contact_attachments a JOIN ssx_contact_emails e ON e.id=a.email_id WHERE e.contact_id=? ORDER BY a.created_at DESC").bind(contactId),
     env.DB.prepare("SELECT * FROM ssx_contact_tasks WHERE contact_id=? ORDER BY created_at DESC").bind(contactId),
     env.DB.prepare("SELECT * FROM ssx_contact_projects WHERE contact_id=? ORDER BY is_current DESC, linked_at DESC").bind(contactId),
+    env.DB.prepare("SELECT c.*,a.file_name,a.content_type,a.size_bytes FROM ssx_contact_cois c JOIN ssx_contact_attachments a ON a.id=c.attachment_id WHERE c.contact_id=? ORDER BY c.expiration_date ASC").bind(contactId),
     env.DB.prepare("SELECT field_name, field_value, source_location FROM ssx_contact_evidence WHERE contact_id=? ORDER BY created_at DESC").bind(contactId)
   ]);
   const attachmentsByEmail = new Map<string, unknown[]>();
@@ -47,7 +49,8 @@ async function getContact(env: Env, contactId: string) {
     attachmentsByEmail.set(emailId, [...(attachmentsByEmail.get(emailId) || []), { ...attachment, downloadPath: `/contact-system/files/${attachment.id}` }]);
   }
   const emailRecords = (emails.results as Array<Record<string, unknown>>).map(email => ({ ...email, originalDownloadPath: `/contact-system/files/${email.id}`, attachments: attachmentsByEmail.get(String(email.id)) || [] }));
-  return { contact, completeness: completeness(contact as Record<string, unknown>), emails: emailRecords, tasks: tasks.results, projects: projects.results, evidence: evidence.results };
+  const coiRecords = (cois.results as Array<Record<string, unknown>>).map(coi => ({ ...coi, downloadPath: `/contact-system/files/${coi.attachment_id}` }));
+  return { contact, completeness: completeness(contact as Record<string, unknown>), emails: emailRecords, tasks: tasks.results, projects: projects.results, cois: coiRecords, evidence: evidence.results };
 }
 
 async function createContact(env: Env, input: ContactInput, source = "manual") {
@@ -118,6 +121,21 @@ async function linkProject(env: Env, contactId: string, input: ProjectLinkInput)
   else await env.DB.prepare("INSERT INTO ssx_contact_projects (id,contact_id,project_id,project_name,project_role,is_current,linked_at) VALUES (?,?,?,?,?,?,?)").bind(linkId,contactId,projectId,input.projectName.trim(),input.projectRole?.trim() || null,input.isCurrent === false ? 0 : 1,now).run();
   await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,input.sourceEmailId,"project_link",input.projectName.trim(),input.sourceLocation.trim()).run();
   return await env.DB.prepare("SELECT * FROM ssx_contact_projects WHERE id=?").bind(linkId).first();
+}
+
+async function registerCoi(env: Env, contactId: string, input: CoiInput) {
+  if (!input.attachmentId || !input.sourceLocation?.trim()) throw new Error("attachmentId and sourceLocation are required");
+  const attachment = await env.DB.prepare("SELECT a.id,a.email_id FROM ssx_contact_attachments a JOIN ssx_contact_emails e ON e.id=a.email_id WHERE a.id=? AND e.contact_id=?").bind(input.attachmentId,contactId).first<{id:string;email_id:string}>();
+  if (!attachment) throw new Error("attachmentId must belong to an imported email for this contact");
+  const status = input.status || "review";
+  if (!["current","expiring","expired","review"].includes(status)) throw new Error("Invalid COI status");
+  const now = new Date().toISOString();
+  const existing = await env.DB.prepare("SELECT id FROM ssx_contact_cois WHERE attachment_id=?").bind(input.attachmentId).first<{id:string}>();
+  const coiId = existing?.id || id();
+  if (existing) await env.DB.prepare("UPDATE ssx_contact_cois SET insurer_name=?,policy_number=?,effective_date=?,expiration_date=?,status=?,notes=?,updated_at=? WHERE id=?").bind(input.insurerName || null,input.policyNumber || null,input.effectiveDate || null,input.expirationDate || null,status,input.notes || null,now,coiId).run();
+  else await env.DB.prepare("INSERT INTO ssx_contact_cois (id,contact_id,email_id,attachment_id,insurer_name,policy_number,effective_date,expiration_date,status,notes,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)").bind(coiId,contactId,attachment.email_id,input.attachmentId,input.insurerName || null,input.policyNumber || null,input.effectiveDate || null,input.expirationDate || null,status,input.notes || null,now,now).run();
+  await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,attachment.email_id,"certificate_of_insurance",input.attachmentId,input.sourceLocation.trim()).run();
+  return await env.DB.prepare("SELECT * FROM ssx_contact_cois WHERE id=?").bind(coiId).first();
 }
 
 function requestedAction(subject?: string, body?: string) {
@@ -215,6 +233,10 @@ export default {
     const contactProjectsMatch = path.match(/^\/contact-system\/contacts\/([^/]+)\/projects$/);
     if (contactProjectsMatch && request.method === "POST") {
       try { return json(await linkProject(env, contactProjectsMatch[1], await request.json<ProjectLinkInput>()), 201); } catch (error) { return json({ error: error instanceof Error ? error.message : "Invalid project link" }, 400); }
+    }
+    const contactCoisMatch = path.match(/^\/contact-system\/contacts\/([^/]+)\/cois$/);
+    if (contactCoisMatch && request.method === "POST") {
+      try { return json(await registerCoi(env, contactCoisMatch[1], await request.json<CoiInput>()), 201); } catch (error) { return json({ error: error instanceof Error ? error.message : "Invalid COI" }, 400); }
     }
     const taskMatch = path.match(/^\/contact-system\/tasks\/([^/]+)$/);
     if (taskMatch && request.method === "PATCH") {

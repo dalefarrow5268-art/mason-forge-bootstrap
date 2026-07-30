@@ -1,3 +1,5 @@
+import { extractOutlookMsg } from "./msg-extractor";
+
 export interface Env {
   DB: D1Database;
   CONTACT_FILES: R2Bucket;
@@ -55,12 +57,23 @@ async function importEmail(request: Request, env: Env) {
   if (!bytes.byteLength || bytes.byteLength > 50 * 1024 * 1024) return json({ error: "Email must be between 1 byte and 50 MB" }, 413);
   const computed = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))).map(v => v.toString(16).padStart(2,"0")).join("");
   if (computed !== sha) return json({ error: "SHA-256 does not match uploaded bytes" }, 400);
-  const importId = id(); const objectKey = `contacts/unassigned/emails/${sha}/${fileName}`; const now = new Date().toISOString();
+  const importId = id(); const now = new Date().toISOString();
+  const extracted = extractOutlookMsg(bytes);
+  let contactId: string | null = null;
+  if (!extracted.parseError && extracted.senderEmail) {
+    const exact = await env.DB.prepare("SELECT id FROM ssx_contacts WHERE primary_email=?").bind(extracted.senderEmail).first<{id:string}>();
+    if (exact) contactId = exact.id;
+    else if (extracted.senderName) contactId = (await createContact(env, { displayName: extracted.senderName, email: extracted.senderEmail }, "Outlook .msg sender header")).id;
+  }
+  const objectKey = `contacts/${contactId || "unassigned"}/emails/${sha}/${fileName}`;
   await env.CONTACT_FILES.put(objectKey, bytes, { httpMetadata: { contentType: "application/vnd.ms-outlook" }, customMetadata: { sha256: sha, importId } });
-  await env.DB.prepare("INSERT INTO ssx_contact_import_jobs (id,original_file_name,original_sha256,status,created_at,updated_at) VALUES (?,?,?,'stored',?,?)").bind(importId,fileName,sha,now,now).run();
-  // A .msg parser is deliberately not embedded here. The original is safely preserved;
-  // parsing runs only in the server-side extraction step so unproven values cannot enter a contact record.
-  return json({ id: importId, status: "stored", duplicate: false, message: "Original .msg stored privately and ready for source-only extraction." }, 201);
+  const emailId = id(); const status = extracted.parseError ? "review" : (contactId ? "completed" : "review");
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO ssx_contact_import_jobs (id,original_file_name,original_sha256,status,contact_id,email_id,error_message,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)").bind(importId,fileName,sha,status,contactId,emailId,extracted.parseError || null,now,now),
+    env.DB.prepare("INSERT INTO ssx_contact_emails (id,contact_id,direction,sender_name,sender_email,recipients_json,subject,received_at,body_text,original_msg_r2_key,original_file_name,original_sha256,original_size_bytes,extraction_status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(emailId,contactId,"received",extracted.senderName || null,extracted.senderEmail || null,JSON.stringify(extracted.recipients),extracted.subject || null,now,extracted.bodyText || null,objectKey,fileName,sha,bytes.byteLength,extracted.parseError ? "review" : "extracted",now)
+  ]);
+  if (contactId) for (const [field,value] of Object.entries({ sender_name: extracted.senderName, sender_email: extracted.senderEmail, subject: extracted.subject })) if (value) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,field,value,"Outlook .msg header").run();
+  return json({ id: importId, contactId, emailId, status, duplicate: false, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, 201);
 }
 
 export default {

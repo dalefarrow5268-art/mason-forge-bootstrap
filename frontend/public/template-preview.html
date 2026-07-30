@@ -224,6 +224,30 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#000;color:
 .stage > .contact-command{top:132px!important}
 }
 </style>
+<style id="contact-detail-grid-fill-scout-v2">
+/* Extend the four lower instruments to the visual bottom edge of Scout. */
+@media(min-width:931px){
+.stage > .contact-command .primary{height:calc(100vh - 182px)!important;grid-template-rows:46px 176px 236px minmax(246px,1fr)!important}
+.stage > .contact-command .primary>.source.contact-detail-grid{height:auto!important;min-height:0!important;grid-template-rows:1fr 1fr!important}
+.stage > .contact-command .contact-detail-grid>.detail-card{height:auto!important;padding:13px 15px!important}
+.stage > .contact-command .contact-detail-grid h3{font-size:15px!important;line-height:16px!important}
+.stage > .contact-command .source-email-body{grid-template-columns:56px minmax(0,1fr)!important;gap:14px!important;margin-top:12px!important}
+.stage > .contact-command .detail-icon{width:52px!important;height:52px!important;font-size:25px!important}
+.stage > .contact-command .source-copy strong,.stage > .contact-command .project-copy strong{font-size:14px!important;line-height:1.22!important}
+.stage > .contact-command .source-copy span,.stage > .contact-command .project-copy span{margin-top:5px!important;font-size:10px!important}
+.stage > .contact-command .project-link-body{grid-template-columns:88px minmax(0,1fr)!important;gap:14px!important;margin-top:9px!important}
+.stage > .contact-command .building-mark{width:84px!important;height:58px!important}
+.stage > .contact-command .project-copy strong{font-size:14px!important}
+.stage > .contact-command .detail-button{left:14px!important;right:14px!important;bottom:10px!important;height:24px!important;font-size:10px!important}
+.stage > .contact-command .communication-list{margin-top:9px!important}
+.stage > .contact-command .communication-list span{height:23px!important;grid-template-columns:21px minmax(0,1fr) 88px!important;font-size:10px!important}
+.stage > .contact-command .communication-list i{font-size:13px!important}
+.stage > .contact-command .attachment-list{gap:16px!important;margin-top:13px!important}
+.stage > .contact-command .file-tile{width:46px!important;height:57px!important}
+.stage > .contact-command .file-tile b{font-size:23px!important}
+.stage > .contact-command .file-tile span{font-size:9px!important}
+}
+</style>
 </head>
 <body>
 <main class="stage">

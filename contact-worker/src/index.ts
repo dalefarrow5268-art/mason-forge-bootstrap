@@ -12,6 +12,7 @@ type CompanyInput = { name?: string; website?: string | null; phone?: string | n
 type ProjectLinkInput = { projectName: string; projectId?: number | null; projectRole?: string | null; isCurrent?: boolean; sourceEmailId: string; sourceLocation: string };
 type TaskUpdateInput = { status: "open" | "completed" | "dismissed" };
 type CoiInput = { attachmentId: string; insurerName?: string | null; policyNumber?: string | null; effectiveDate?: string | null; expirationDate?: string | null; notes?: string | null; sourceLocation: string };
+type DuplicateReviewUpdateInput = { status: "not_duplicate" };
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 const id = () => crypto.randomUUID();
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -215,6 +216,15 @@ export default {
       const incompleteContacts = (incomplete.results as Array<Record<string, unknown>>).map(contact => ({ ...contact, completeness: completeness(contact) })).filter(contact => !(contact.completeness as {complete:boolean}).complete);
       const attentionCois = (cois.results as Array<Record<string, unknown>>).map(coi => ({ ...coi, calculated_status: coiStatus(typeof coi.expiration_date === "string" ? coi.expiration_date : null) })).filter(coi => coi.calculated_status === "expiring" || coi.calculated_status === "expired" || coi.calculated_status === "review");
       return json({ counts: { emailImports: imports.results.length, duplicateReviews: duplicates.results.length, incompleteContacts: incompleteContacts.length, cois: attentionCois.length }, emailImports: imports.results, duplicateReviews: duplicates.results, incompleteContacts, cois: attentionCois });
+    }
+    const duplicateReviewMatch = path.match(/^\/contact-system\/duplicate-reviews\/([^/]+)$/);
+    if (duplicateReviewMatch && request.method === "PATCH") {
+      const input = await request.json<Partial<DuplicateReviewUpdateInput>>();
+      if (input.status !== "not_duplicate") return json({ error: "Only not_duplicate can be resolved here; contact merges require a separate reviewed workflow" }, 400);
+      const review = await env.DB.prepare("SELECT id FROM ssx_contact_duplicate_reviews WHERE id=?").bind(duplicateReviewMatch[1]).first();
+      if (!review) return json({ error: "Not found" }, 404);
+      await env.DB.prepare("UPDATE ssx_contact_duplicate_reviews SET status='not_duplicate',resolved_at=? WHERE id=?").bind(new Date().toISOString(),duplicateReviewMatch[1]).run();
+      return json(await env.DB.prepare("SELECT * FROM ssx_contact_duplicate_reviews WHERE id=?").bind(duplicateReviewMatch[1]).first());
     }
     if (path === "/contact-system/companies" && request.method === "GET") {
       return json({ companies: (await env.DB.prepare("SELECT id,name,website,phone,emr_rating,emr_effective_date,updated_at FROM ssx_companies ORDER BY name LIMIT 200").all()).results });

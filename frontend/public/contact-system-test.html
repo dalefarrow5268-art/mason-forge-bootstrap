@@ -8,10 +8,13 @@
     html,body,iframe{width:100%;height:100%;margin:0;border:0;background:#000}
     .test-mode{position:fixed;right:22px;bottom:18px;z-index:10;padding:7px 11px;border:1px solid #00cfff;border-radius:5px;background:rgba(0,7,13,.92);color:#dffaff;font:700 10px/1 Arial,sans-serif;letter-spacing:.14em}
     .test-mode b{color:#f5d20a}
+    .api-status{position:fixed;right:22px;bottom:48px;z-index:10;max-width:330px;padding:6px 10px;border:1px solid #38505a;border-radius:5px;background:rgba(0,7,13,.92);color:#b7cbd2;font:700 9px/1.3 Arial,sans-serif;letter-spacing:.1em;text-align:right}
+    .api-status.online{border-color:#20cd76;color:#a9f5c8}.api-status.offline{border-color:#ff6a62;color:#ffb1aa}
   </style>
 </head>
 <body>
   <iframe id="card" title="SSX contact-card test" src="/final-templates/master-contact-card-template.html"></iframe>
+  <div class="api-status" id="apiStatus">CLOUDFLARE API · AWAITING ENDPOINT</div>
   <div class="test-mode"><b>TEST MODE</b> · FICTIONAL CONTACT</div>
   <script>
     const testContact = {
@@ -34,6 +37,15 @@
       }
       const active = doc.querySelector(".active"); if (active) active.textContent = testContact.completeness;
     });
+    const api = new URLSearchParams(location.search).get("api")?.replace(/\/$/, "");
+    const status = document.getElementById("apiStatus");
+    if (api) {
+      status.textContent = "CLOUDFLARE API · CHECKING";
+      fetch(`${api}/contact-system/health`, { cache: "no-store" })
+        .then(response => response.ok ? response.json() : Promise.reject(new Error(`HTTP ${response.status}`)))
+        .then(data => { status.textContent = `CLOUDFLARE API · ONLINE · ${data.storage}`; status.className = "api-status online"; })
+        .catch(() => { status.textContent = "CLOUDFLARE API · UNAVAILABLE"; status.className = "api-status offline"; });
+    }
   </script>
 </body>
 </html>

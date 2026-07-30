@@ -425,6 +425,35 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#000;color:
 .stage > .contact-command .primary{width:calc(100% + 12px)!important}
 }
 </style>
+<style id="contact-card-expanded-content-v2">
+/* Scale the approved identity/profile/completeness content into the widened Contact Card. */
+@media(min-width:931px){
+.stage > .contact-command .identity{padding:16px 27px!important;gap:0!important}
+.stage > .contact-command .avatar{width:128px!important;height:128px!important;flex:0 0 128px!important}
+.stage > .contact-command .avatar-initials{font-size:48px!important}
+.stage > .contact-command .identity-copy{margin-left:28px!important;max-width:calc(100% - 275px)!important}
+.stage > .contact-command .identity h1{font-size:46px!important}
+.stage > .contact-command .identity .company{margin-top:9px!important;font-size:27px!important}
+.stage > .contact-command .identity .email{margin-top:13px!important;font-size:16px!important}
+.stage > .contact-command .identity .active{margin-top:10px!important;font-size:12px!important}
+.stage > .contact-command .identity:before{right:-18px!important;width:47%!important;height:132px!important}
+.stage > .contact-command .identity:after{right:-4px!important;width:51%!important;height:104px!important}
+.stage > .contact-command .photo-picker{right:19px!important;bottom:16px!important;min-width:122px!important;height:32px!important;font-size:11px!important}
+.stage > .contact-command .cc-duo>.sub h3{font-size:18px!important}
+.stage > .contact-command .company-grid{grid-template-columns:132px minmax(0,1fr)!important;gap:24px!important}
+.stage > .contact-command .info{font-size:18px!important;line-height:1.46!important}
+.stage > .contact-command .info b{font-size:18px!important;margin-bottom:9px!important}
+.stage > .contact-command .info span{margin-top:10px!important}
+.stage > .contact-command .score{grid-template-columns:156px minmax(0,1fr)!important;gap:24px!important;margin-top:11px!important}
+.stage > .contact-command .ring{width:150px!important;height:150px!important}
+.stage > .contact-command .ring:before{inset:12px!important}
+.stage > .contact-command .ring strong{font-size:39px!important}
+.stage > .contact-command .ring small{font-size:12px!important}
+.stage > .contact-command .checks{font-size:16px!important;line-height:1.48!important}
+.stage > .contact-command .checks .ok:before,.stage > .contact-command .checks .bad:before{width:17px!important;height:17px!important;margin-right:9px!important;font-size:11px!important}
+.stage > .contact-command .checks .bad b{font-size:15px!important}
+}
+</style>
 </head>
 <body>
 <main class="stage">

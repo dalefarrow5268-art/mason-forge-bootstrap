@@ -7,6 +7,7 @@ export interface Env {
 }
 
 type ContactInput = { displayName: string; firstName?: string; lastName?: string; email?: string; phone?: string; title?: string; companyId?: string };
+type CompanyInput = { name?: string; website?: string | null; phone?: string | null; emrRating?: number | null; emrEffectiveDate?: string | null; sourceContactId?: string; sourceEmailId?: string; sourceLocation?: string };
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 const id = () => crypto.randomUUID();
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -58,6 +59,37 @@ async function createContact(env: Env, input: ContactInput, source = "manual") {
     await env.DB.prepare("INSERT OR IGNORE INTO ssx_contact_duplicate_reviews (id,contact_id,possible_duplicate_contact_id,match_reason,status) VALUES (?,?,?,?, 'open')").bind(id(),contactId,candidate.id,"Same normalized display name; exact email did not match").run();
   }
   return { id: contactId, created: true };
+}
+
+function cleanWebsite(value: string | null | undefined) {
+  if (value === null || value === undefined || value.trim() === "") return null;
+  const candidate = value.trim();
+  try {
+    const url = new URL(candidate.startsWith("http") ? candidate : `https://${candidate}`);
+    if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error();
+    return url.toString();
+  } catch { throw new Error("website must be a valid http(s) address"); }
+}
+
+async function saveCompany(env: Env, companyId: string | null, input: CompanyInput) {
+  const hasSourcedFact = input.website !== undefined || input.phone !== undefined || input.emrRating !== undefined || input.emrEffectiveDate !== undefined;
+  if (hasSourcedFact && (!input.sourceContactId || !input.sourceEmailId || !input.sourceLocation?.trim())) throw new Error("Company facts require sourceContactId, sourceEmailId, and sourceLocation from an imported Outlook email");
+  if (input.emrRating !== undefined && input.emrRating !== null && (!Number.isFinite(input.emrRating) || input.emrRating < 0 || input.emrRating > 100)) throw new Error("emrRating must be between 0 and 100");
+  const now = new Date().toISOString();
+  let record = companyId ? await env.DB.prepare("SELECT * FROM ssx_companies WHERE id=?").bind(companyId).first<any>() : null;
+  if (!record) {
+    if (!input.name?.trim()) throw new Error("name is required for a new company");
+    const existing = await env.DB.prepare("SELECT * FROM ssx_companies WHERE normalized_name=?").bind(normalize(input.name)).first<any>();
+    if (existing) record = existing;
+    else {
+      record = { id: id(), name: input.name.trim(), normalized_name: normalize(input.name), website: null, phone: null, emr_rating: null, emr_effective_date: null };
+      await env.DB.prepare("INSERT INTO ssx_companies (id,name,normalized_name,created_at,updated_at) VALUES (?,?,?,?,?)").bind(record.id,record.name,record.normalized_name,now,now).run();
+    }
+  }
+  const next = { name: input.name?.trim() ?? record.name, website: input.website === undefined ? record.website : cleanWebsite(input.website), phone: input.phone === undefined ? record.phone : input.phone?.trim() || null, emrRating: input.emrRating === undefined ? record.emr_rating : input.emrRating, emrEffectiveDate: input.emrEffectiveDate === undefined ? record.emr_effective_date : input.emrEffectiveDate || null };
+  await env.DB.prepare("UPDATE ssx_companies SET name=?,normalized_name=?,website=?,phone=?,emr_rating=?,emr_effective_date=?,updated_at=? WHERE id=?").bind(next.name,normalize(next.name),next.website,next.phone,next.emrRating,next.emrEffectiveDate,now,record.id).run();
+  if (hasSourcedFact) for (const [field, value] of Object.entries({ company_name: input.name, company_website: input.website, company_phone: input.phone, emr_rating: input.emrRating, emr_effective_date: input.emrEffectiveDate })) if (value !== undefined) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),input.sourceContactId,input.sourceEmailId,field,value === null ? null : String(value),input.sourceLocation!.trim()).run();
+  return await env.DB.prepare("SELECT * FROM ssx_companies WHERE id=?").bind(record.id).first();
 }
 
 function requestedAction(subject?: string, body?: string) {
@@ -116,6 +148,20 @@ export default {
     const url = new URL(request.url); const path = url.pathname.replace(/\/+$/, "") || "/";
     if (path === "/contact-system/health" && request.method === "GET") return json({ system:"SSX Contact System", storage:"Cloudflare D1 + private R2", mode:"source-only", aiEnrichment:false, ready:true, timestamp:new Date().toISOString() });
     const authError = requireAuth(request, env); if (authError) return authError;
+    if (path === "/contact-system/companies" && request.method === "GET") {
+      return json({ companies: (await env.DB.prepare("SELECT id,name,website,phone,emr_rating,emr_effective_date,updated_at FROM ssx_companies ORDER BY name LIMIT 200").all()).results });
+    }
+    if (path === "/contact-system/companies" && request.method === "POST") {
+      try { return json(await saveCompany(env, null, await request.json<CompanyInput>()), 201); } catch (error) { return json({ error: error instanceof Error ? error.message : "Invalid company" }, 400); }
+    }
+    const companyMatch = path.match(/^\/contact-system\/companies\/([^/]+)$/);
+    if (companyMatch && request.method === "GET") {
+      const company = await env.DB.prepare("SELECT * FROM ssx_companies WHERE id=?").bind(companyMatch[1]).first();
+      return company ? json(company) : json({ error: "Not found" }, 404);
+    }
+    if (companyMatch && request.method === "PATCH") {
+      try { return json(await saveCompany(env, companyMatch[1], await request.json<CompanyInput>())); } catch (error) { return json({ error: error instanceof Error ? error.message : "Invalid company" }, 400); }
+    }
     if (path === "/contact-system/contacts" && request.method === "GET") {
       const q = url.searchParams.get("q")?.trim();
       const stmt = q ? env.DB.prepare("SELECT id,display_name,primary_email,primary_phone,title,status FROM ssx_contacts WHERE display_name LIKE ? OR primary_email LIKE ? ORDER BY display_name LIMIT 100").bind(`%${q}%`,`%${q}%`) : env.DB.prepare("SELECT id,display_name,primary_email,primary_phone,title,status FROM ssx_contacts ORDER BY display_name LIMIT 100");

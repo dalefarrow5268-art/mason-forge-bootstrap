@@ -46,6 +46,12 @@ async function createContact(env: Env, input: ContactInput, source = "manual") {
   return { id: contactId, created: true };
 }
 
+function requestedAction(subject?: string, body?: string) {
+  const source = `${subject || ""}\n${body || ""}`.trim();
+  if (!source || !/\b(please|could you|can you|need you to|let me know|reply|send|provide|review|confirm)\b/i.test(source)) return null;
+  return source.replace(/\s+/g, " ").slice(0, 800);
+}
+
 async function importEmail(request: Request, env: Env) {
   const fileName = safeName(request.headers.get("X-SSX-File-Name") || "email.msg");
   const sha = (request.headers.get("X-SSX-SHA256") || "").toLowerCase();
@@ -72,6 +78,14 @@ async function importEmail(request: Request, env: Env) {
     env.DB.prepare("INSERT INTO ssx_contact_import_jobs (id,original_file_name,original_sha256,status,contact_id,email_id,error_message,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)").bind(importId,fileName,sha,status,contactId,emailId,extracted.parseError || null,now,now),
     env.DB.prepare("INSERT INTO ssx_contact_emails (id,contact_id,direction,sender_name,sender_email,recipients_json,subject,received_at,body_text,original_msg_r2_key,original_file_name,original_sha256,original_size_bytes,extraction_status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(emailId,contactId,"received",extracted.senderName || null,extracted.senderEmail || null,JSON.stringify(extracted.recipients),extracted.subject || null,now,extracted.bodyText || null,objectKey,fileName,sha,bytes.byteLength,extracted.parseError ? "review" : "extracted",now)
   ]);
+  const action = requestedAction(extracted.subject, extracted.bodyText);
+  if (contactId && action) {
+    const taskTitle = `Review email action request${extracted.subject ? `: ${extracted.subject.slice(0, 180)}` : ""}`;
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO ssx_contact_tasks (id,contact_id,email_id,title,description,priority,status) VALUES (?,?,?,?,?,'normal','open')").bind(id(),contactId,emailId,taskTitle,action),
+      env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,"action_request",action,"Outlook .msg subject/body")
+    ]);
+  }
   for (const attachment of extracted.attachments) {
     const attachmentName = safeName(attachment.fileName || "attachment.bin");
     const attachmentSha = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", attachment.content))).map(v => v.toString(16).padStart(2,"0")).join("");

@@ -64,6 +64,18 @@ CREATE TABLE IF NOT EXISTS ssx_contact_emails (
 CREATE INDEX IF NOT EXISTS ssx_contact_emails_contact_idx ON ssx_contact_emails(contact_id, received_at DESC);
 CREATE INDEX IF NOT EXISTS ssx_contact_emails_sender_idx ON ssx_contact_emails(sender_email COLLATE NOCASE);
 
+CREATE TABLE IF NOT EXISTS ssx_contact_attachments (
+  id TEXT PRIMARY KEY,
+  email_id TEXT NOT NULL REFERENCES ssx_contact_emails(id) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  content_type TEXT,
+  r2_key TEXT NOT NULL,
+  sha256 TEXT NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(email_id, sha256)
+);
+
 CREATE TABLE IF NOT EXISTS ssx_contact_communications (
   id TEXT PRIMARY KEY,
   contact_id TEXT NOT NULL REFERENCES ssx_contacts(id) ON DELETE CASCADE,

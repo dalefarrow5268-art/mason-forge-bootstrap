@@ -172,7 +172,7 @@ async function importEmail(request: Request, env: Env) {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url); const path = url.pathname.replace(/\/+$/, "") || "/";
-    if (path === "/contact-system/health" && request.method === "GET") return json({ system:"SSX Contact System", storage:"Cloudflare D1 + private R2", mode:"source-only", aiEnrichment:false, ready:true, timestamp:new Date().toISOString() });
+    if (path === "/contact-system/health" && request.method === "GET") return Response.json({ system:"SSX Contact System", storage:"Cloudflare D1 + private R2", mode:"source-only", aiEnrichment:false, ready:true, timestamp:new Date().toISOString() }, { headers: { "Cache-Control":"no-store", "Access-Control-Allow-Origin":"*" } });
     const authError = requireAuth(request, env); if (authError) return authError;
     if (path === "/contact-system/companies" && request.method === "GET") {
       return json({ companies: (await env.DB.prepare("SELECT id,name,website,phone,emr_rating,emr_effective_date,updated_at FROM ssx_companies ORDER BY name LIMIT 200").all()).results });

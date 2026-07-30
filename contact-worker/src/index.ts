@@ -205,6 +205,17 @@ export default {
     const url = new URL(request.url); const path = url.pathname.replace(/\/+$/, "") || "/";
     if (path === "/contact-system/health" && request.method === "GET") return Response.json({ system:"SSX Contact System", storage:"Cloudflare D1 + private R2", mode:"source-only", aiEnrichment:false, ready:true, timestamp:new Date().toISOString() }, { headers: { "Cache-Control":"no-store", "Access-Control-Allow-Origin":"*" } });
     const authError = requireAuth(request, env); if (authError) return authError;
+    if (path === "/contact-system/review-queue" && request.method === "GET") {
+      const [imports, duplicates, incomplete, cois] = await env.DB.batch([
+        env.DB.prepare("SELECT id,original_file_name,error_message,created_at FROM ssx_contact_import_jobs WHERE status='review' ORDER BY created_at DESC LIMIT 100"),
+        env.DB.prepare("SELECT d.id,d.contact_id,c.display_name,d.possible_duplicate_contact_id,d.match_reason,d.created_at FROM ssx_contact_duplicate_reviews d JOIN ssx_contacts c ON c.id=d.contact_id WHERE d.status='open' ORDER BY d.created_at DESC LIMIT 100"),
+        env.DB.prepare("SELECT c.id,c.display_name,c.primary_email,c.primary_phone,c.title,co.name AS company_name,co.website AS company_website,co.emr_rating FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id ORDER BY c.updated_at DESC LIMIT 250"),
+        env.DB.prepare("SELECT c.id,c.contact_id,c.expiration_date,c.status,a.file_name FROM ssx_contact_cois c JOIN ssx_contact_attachments a ON a.id=c.attachment_id ORDER BY c.expiration_date ASC LIMIT 100")
+      ]);
+      const incompleteContacts = (incomplete.results as Array<Record<string, unknown>>).map(contact => ({ ...contact, completeness: completeness(contact) })).filter(contact => !(contact.completeness as {complete:boolean}).complete);
+      const attentionCois = (cois.results as Array<Record<string, unknown>>).map(coi => ({ ...coi, calculated_status: coiStatus(typeof coi.expiration_date === "string" ? coi.expiration_date : null) })).filter(coi => coi.calculated_status === "expiring" || coi.calculated_status === "expired" || coi.calculated_status === "review");
+      return json({ counts: { emailImports: imports.results.length, duplicateReviews: duplicates.results.length, incompleteContacts: incompleteContacts.length, cois: attentionCois.length }, emailImports: imports.results, duplicateReviews: duplicates.results, incompleteContacts, cois: attentionCois });
+    }
     if (path === "/contact-system/companies" && request.method === "GET") {
       return json({ companies: (await env.DB.prepare("SELECT id,name,website,phone,emr_rating,emr_effective_date,updated_at FROM ssx_companies ORDER BY name LIMIT 200").all()).results });
     }

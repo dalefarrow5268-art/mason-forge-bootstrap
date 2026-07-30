@@ -935,6 +935,38 @@ text-transform:uppercase!important
 }
 }
 </style>
+
+<style id="navigation-corner-position-v2">
+@media(min-width:931px){
+.stage > .system-nav{
+  top:149px!important;
+}
+.stage > .system-nav:before{
+  content:"SYSTEM NAVIGATION"!important;
+  position:absolute!important;
+  left:14px!important;top:10px!important;
+  width:auto!important;height:auto!important;
+  padding:0!important;
+  border:0!important;
+  color:#7295a4!important;
+  font-size:9px!important;
+  letter-spacing:.17em!important;
+}
+.stage > .system-nav ul:before{
+  content:""!important;
+  position:absolute!important;
+  left:5px!important;top:5px!important;
+  width:15px!important;height:15px!important;
+  border-left:1px solid #00cfff!important;
+  border-top:1px solid #00cfff!important;
+  pointer-events:none!important;
+}
+.stage > .system-nav:after{
+  width:15px!important;height:15px!important;
+  right:5px!important;bottom:5px!important;
+}
+}
+</style>
 </head>
 <body>
 <main class="stage">

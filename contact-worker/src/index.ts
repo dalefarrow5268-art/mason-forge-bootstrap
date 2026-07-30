@@ -9,6 +9,7 @@ export interface Env {
 type ContactInput = { displayName: string; firstName?: string; lastName?: string; email?: string; phone?: string; title?: string; companyId?: string };
 type CompanyInput = { name?: string; website?: string | null; phone?: string | null; emrRating?: number | null; emrEffectiveDate?: string | null; sourceContactId?: string; sourceEmailId?: string; sourceLocation?: string };
 type ProjectLinkInput = { projectName: string; projectId?: number | null; projectRole?: string | null; isCurrent?: boolean; sourceEmailId: string; sourceLocation: string };
+type TaskUpdateInput = { status: "open" | "completed" | "dismissed" };
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 const id = () => crypto.randomUUID();
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -208,6 +209,16 @@ export default {
     const contactProjectsMatch = path.match(/^\/contact-system\/contacts\/([^/]+)\/projects$/);
     if (contactProjectsMatch && request.method === "POST") {
       try { return json(await linkProject(env, contactProjectsMatch[1], await request.json<ProjectLinkInput>()), 201); } catch (error) { return json({ error: error instanceof Error ? error.message : "Invalid project link" }, 400); }
+    }
+    const taskMatch = path.match(/^\/contact-system\/tasks\/([^/]+)$/);
+    if (taskMatch && request.method === "PATCH") {
+      const input = await request.json<Partial<TaskUpdateInput>>();
+      if (!input.status || !["open", "completed", "dismissed"].includes(input.status)) return json({ error: "status must be open, completed, or dismissed" }, 400);
+      const existing = await env.DB.prepare("SELECT id FROM ssx_contact_tasks WHERE id=?").bind(taskMatch[1]).first();
+      if (!existing) return json({ error: "Not found" }, 404);
+      const completedAt = input.status === "completed" ? new Date().toISOString() : null;
+      await env.DB.prepare("UPDATE ssx_contact_tasks SET status=?,completed_at=? WHERE id=?").bind(input.status,completedAt,taskMatch[1]).run();
+      return json(await env.DB.prepare("SELECT * FROM ssx_contact_tasks WHERE id=?").bind(taskMatch[1]).first());
     }
     const photoMatch = path.match(/^\/contact-system\/contacts\/([^/]+)\/photo$/);
     if (photoMatch && request.method === "POST") {

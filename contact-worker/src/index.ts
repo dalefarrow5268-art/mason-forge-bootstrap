@@ -11,7 +11,7 @@ type ContactUpdateInput = Partial<ContactInput> & { sourceEmailId?: string; sour
 type CompanyInput = { name?: string; website?: string | null; phone?: string | null; emrRating?: number | null; emrEffectiveDate?: string | null; sourceContactId?: string; sourceEmailId?: string; sourceLocation?: string };
 type ProjectLinkInput = { projectName: string; projectId?: number | null; projectRole?: string | null; isCurrent?: boolean; sourceEmailId: string; sourceLocation: string };
 type TaskUpdateInput = { status: "open" | "completed" | "dismissed" };
-type CoiInput = { attachmentId: string; insurerName?: string | null; policyNumber?: string | null; effectiveDate?: string | null; expirationDate?: string | null; status?: "current" | "expiring" | "expired" | "review"; notes?: string | null; sourceLocation: string };
+type CoiInput = { attachmentId: string; insurerName?: string | null; policyNumber?: string | null; effectiveDate?: string | null; expirationDate?: string | null; notes?: string | null; sourceLocation: string };
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 const id = () => crypto.randomUUID();
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -49,7 +49,11 @@ async function getContact(env: Env, contactId: string) {
     attachmentsByEmail.set(emailId, [...(attachmentsByEmail.get(emailId) || []), { ...attachment, downloadPath: `/contact-system/files/${attachment.id}` }]);
   }
   const emailRecords = (emails.results as Array<Record<string, unknown>>).map(email => ({ ...email, originalDownloadPath: `/contact-system/files/${email.id}`, attachments: attachmentsByEmail.get(String(email.id)) || [] }));
-  const coiRecords = (cois.results as Array<Record<string, unknown>>).map(coi => ({ ...coi, downloadPath: `/contact-system/files/${coi.attachment_id}` }));
+  const coiRecords = (cois.results as Array<Record<string, unknown>>).map(coi => {
+    const expirationDate = typeof coi.expiration_date === "string" ? coi.expiration_date : null;
+    const expiresAt = expirationDate ? Date.parse(`${expirationDate}T23:59:59Z`) : NaN;
+    return { ...coi, calculated_status: coiStatus(expirationDate), days_until_expiration: Number.isNaN(expiresAt) ? null : Math.ceil((expiresAt - Date.now()) / 86_400_000), downloadPath: `/contact-system/files/${coi.attachment_id}` };
+  });
   return { contact, completeness: completeness(contact as Record<string, unknown>), emails: emailRecords, tasks: tasks.results, projects: projects.results, cois: coiRecords, evidence: evidence.results };
 }
 
@@ -82,6 +86,14 @@ function cleanWebsite(value: string | null | undefined) {
     if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error();
     return url.toString();
   } catch { throw new Error("website must be a valid http(s) address"); }
+}
+
+function coiStatus(expirationDate?: string | null): "current" | "expiring" | "expired" | "review" {
+  if (!expirationDate || !/^\d{4}-\d{2}-\d{2}$/.test(expirationDate)) return "review";
+  const expires = Date.parse(`${expirationDate}T23:59:59Z`);
+  if (Number.isNaN(expires)) return "review";
+  const days = Math.ceil((expires - Date.now()) / 86_400_000);
+  return days < 0 ? "expired" : days <= 30 ? "expiring" : "current";
 }
 
 async function saveCompany(env: Env, companyId: string | null, input: CompanyInput) {
@@ -127,8 +139,7 @@ async function registerCoi(env: Env, contactId: string, input: CoiInput) {
   if (!input.attachmentId || !input.sourceLocation?.trim()) throw new Error("attachmentId and sourceLocation are required");
   const attachment = await env.DB.prepare("SELECT a.id,a.email_id FROM ssx_contact_attachments a JOIN ssx_contact_emails e ON e.id=a.email_id WHERE a.id=? AND e.contact_id=?").bind(input.attachmentId,contactId).first<{id:string;email_id:string}>();
   if (!attachment) throw new Error("attachmentId must belong to an imported email for this contact");
-  const status = input.status || "review";
-  if (!["current","expiring","expired","review"].includes(status)) throw new Error("Invalid COI status");
+  const status = coiStatus(input.expirationDate);
   const now = new Date().toISOString();
   const existing = await env.DB.prepare("SELECT id FROM ssx_contact_cois WHERE attachment_id=?").bind(input.attachmentId).first<{id:string}>();
   const coiId = existing?.id || id();

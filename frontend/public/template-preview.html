@@ -347,6 +347,33 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#000;color:
 .stage > .contact-command .stack-button b{position:absolute!important;right:18px!important;font-size:14px!important;font-weight:400!important}
 }
 </style>
+<style id="contact-right-balance-v2">
+/* Rebalance all right-side containers and fill their internal space. */
+@media(min-width:931px){
+.stage > .contact-command .right-stack{grid-template-rows:1.35fr .5fr .5fr!important;gap:12px!important}
+.stage > .contact-command .right-stack .alerts{grid-template-rows:43px repeat(5,minmax(0,1fr))!important;gap:6px!important;padding:0 10px 10px!important}
+.stage > .contact-command .right-stack .alert{grid-template-columns:44px minmax(0,1fr)!important;gap:11px!important;padding:8px 12px!important}
+.stage > .contact-command .right-stack .alert i{font-size:28px!important}
+.stage > .contact-command .right-stack .alert b{font-size:16px!important;line-height:1.08!important}
+.stage > .contact-command .right-stack .alert span{font-size:12px!important;line-height:1.16!important}
+.stage > .contact-command .duplicate-check,.stage > .contact-command .master-status{padding-bottom:43px!important}
+.stage > .contact-command .duplicate-check h2,.stage > .contact-command .master-status h2{height:37px!important;margin:0 14px!important;font-size:13px!important}
+.stage > .contact-command .status-body{grid-template-columns:54px minmax(0,1fr)!important;gap:13px!important;padding:8px 16px!important}
+.stage > .contact-command .status-symbol{width:46px!important;height:46px!important;font-size:26px!important}
+.stage > .contact-command .status-body strong{font-size:16px!important}
+.stage > .contact-command .status-body small{margin-top:5px!important;font-size:11px!important}
+.stage > .contact-command .stack-button{left:14px!important;right:14px!important;bottom:10px!important;height:31px!important;font-size:11px!important}
+.stage > .contact-command .mid .pane{padding:16px 18px!important}
+.stage > .contact-command .mid .pane-head{font-size:22px!important}
+.stage > .contact-command .mid .icon{width:54px!important;height:54px!important;font-size:28px!important}
+.stage > .contact-command .mid .todo{font-size:15px!important;line-height:1.9!important}
+.stage > .contact-command .mid .button{height:34px!important;font-size:11px!important}
+.stage > .contact-command .coi .pane-head{font-size:24px!important}
+.stage > .contact-command .coi .missing{margin:18px 0!important;font-size:14px!important;line-height:2.2!important}
+.stage > .contact-command .research .verified{margin:16px 0!important;font-size:14px!important;line-height:2!important}
+.stage > .contact-command .research .meter{height:10px!important;margin:10px 0 16px!important}
+}
+</style>
 </head>
 <body>
 <main class="stage">

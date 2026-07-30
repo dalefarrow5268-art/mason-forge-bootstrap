@@ -17,6 +17,16 @@ function authorized(request: Request, env: Env) {
 }
 function requireAuth(request: Request, env: Env) { return authorized(request, env) ? null : json({ error: "Unauthorized" }, 401); }
 
+function completeness(record: Record<string, unknown>) {
+  const fields = [
+    ["Contact name", record.display_name], ["Email", record.primary_email], ["Phone", record.primary_phone],
+    ["Title", record.title], ["Company", record.company_name], ["Company website", record.company_website],
+    ["EMR rating", record.company_emr_rating], ["Contact photo", record.photo_r2_key]
+  ] as const;
+  const present = fields.filter(([, value]) => value !== null && value !== undefined && value !== "").length;
+  return { score: Math.round((present / fields.length) * 100), complete: present === fields.length, missing: fields.filter(([, value]) => value === null || value === undefined || value === "").map(([name]) => name) };
+}
+
 async function getContact(env: Env, contactId: string) {
   const contact = await env.DB.prepare(`SELECT c.*, co.name AS company_name, co.website AS company_website, co.emr_rating AS company_emr_rating, co.emr_effective_date AS company_emr_effective_date FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?`).bind(contactId).first();
   if (!contact) return null;
@@ -26,7 +36,7 @@ async function getContact(env: Env, contactId: string) {
     env.DB.prepare("SELECT * FROM ssx_contact_projects WHERE contact_id=? ORDER BY is_current DESC, linked_at DESC").bind(contactId),
     env.DB.prepare("SELECT field_name, field_value, source_location FROM ssx_contact_evidence WHERE contact_id=? ORDER BY created_at DESC").bind(contactId)
   ]);
-  return { contact, emails: emails.results, tasks: tasks.results, projects: projects.results, evidence: evidence.results };
+  return { contact, completeness: completeness(contact as Record<string, unknown>), emails: emails.results, tasks: tasks.results, projects: projects.results, evidence: evidence.results };
 }
 
 async function createContact(env: Env, input: ContactInput, source = "manual") {

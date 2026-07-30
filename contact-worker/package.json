@@ -2,6 +2,17 @@
   "name": "mason-forge-contact-worker",
   "private": true,
   "type": "module",
-  "scripts": { "check": "tsc --noEmit", "deploy": "wrangler deploy", "migrate": "wrangler d1 migrations apply REUSE_EXISTING_MASON_FORGE_D1 --remote" },
-  "devDependencies": { "@cloudflare/workers-types": "^5.20260730.1", "typescript": "^5.9.0", "wrangler": "^4.116.0" }
+  "scripts": {
+    "check": "tsc --noEmit",
+    "deploy": "wrangler deploy",
+    "migrate": "wrangler d1 migrations apply REUSE_EXISTING_MASON_FORGE_D1 --remote"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260730.1",
+    "typescript": "^5.9.0",
+    "wrangler": "^4.116.0"
+  },
+  "dependencies": {
+    "@kenjiuno/msgreader": "^1.28.0"
+  }
 }

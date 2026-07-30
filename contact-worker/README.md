@@ -14,5 +14,5 @@ This is an additive Cloudflare Worker module for the existing Mason Forge Cloud 
 - Every route except health requires `Authorization: Bearer <CONTACT_SYSTEM_TOKEN>`.
 - Email originals are stored in private R2 at `contacts/unassigned/emails/<sha256>/<filename>`.
 - The Worker recomputes SHA-256 and rejects duplicate originals before creating another import.
-- `.msg` files are preserved without mutation and remain `stored` until a source-only extractor writes verified facts to D1.
+- `.msg` files are preserved without mutation. The Worker extracts only message-header sender identity, subject, recipients, and body text, creates or matches only by exact sender email, and preserves extracted values as email evidence. Parse failures remain in review.
 - No internet research, inferred enrichment, or public file access is included.

@@ -32,13 +32,20 @@ function completeness(record: Record<string, unknown>) {
 async function getContact(env: Env, contactId: string) {
   const contact = await env.DB.prepare(`SELECT c.*, co.name AS company_name, co.website AS company_website, co.emr_rating AS company_emr_rating, co.emr_effective_date AS company_emr_effective_date FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?`).bind(contactId).first();
   if (!contact) return null;
-  const [emails, tasks, projects, evidence] = await env.DB.batch([
-    env.DB.prepare("SELECT id, subject, sender_name, sender_email, received_at, extraction_status FROM ssx_contact_emails WHERE contact_id=? ORDER BY received_at DESC").bind(contactId),
+  const [emails, attachments, tasks, projects, evidence] = await env.DB.batch([
+    env.DB.prepare("SELECT id, subject, sender_name, sender_email, received_at, extraction_status, original_file_name, original_size_bytes FROM ssx_contact_emails WHERE contact_id=? ORDER BY received_at DESC").bind(contactId),
+    env.DB.prepare("SELECT a.id,a.email_id,a.file_name,a.content_type,a.size_bytes,a.sha256 FROM ssx_contact_attachments a JOIN ssx_contact_emails e ON e.id=a.email_id WHERE e.contact_id=? ORDER BY a.created_at DESC").bind(contactId),
     env.DB.prepare("SELECT * FROM ssx_contact_tasks WHERE contact_id=? ORDER BY created_at DESC").bind(contactId),
     env.DB.prepare("SELECT * FROM ssx_contact_projects WHERE contact_id=? ORDER BY is_current DESC, linked_at DESC").bind(contactId),
     env.DB.prepare("SELECT field_name, field_value, source_location FROM ssx_contact_evidence WHERE contact_id=? ORDER BY created_at DESC").bind(contactId)
   ]);
-  return { contact, completeness: completeness(contact as Record<string, unknown>), emails: emails.results, tasks: tasks.results, projects: projects.results, evidence: evidence.results };
+  const attachmentsByEmail = new Map<string, unknown[]>();
+  for (const attachment of attachments.results as Array<Record<string, unknown>>) {
+    const emailId = String(attachment.email_id);
+    attachmentsByEmail.set(emailId, [...(attachmentsByEmail.get(emailId) || []), { ...attachment, downloadPath: `/contact-system/files/${attachment.id}` }]);
+  }
+  const emailRecords = (emails.results as Array<Record<string, unknown>>).map(email => ({ ...email, originalDownloadPath: `/contact-system/files/${email.id}`, attachments: attachmentsByEmail.get(String(email.id)) || [] }));
+  return { contact, completeness: completeness(contact as Record<string, unknown>), emails: emailRecords, tasks: tasks.results, projects: projects.results, evidence: evidence.results };
 }
 
 async function createContact(env: Env, input: ContactInput, source = "manual") {

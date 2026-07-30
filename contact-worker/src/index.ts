@@ -18,7 +18,7 @@ function authorized(request: Request, env: Env) {
 function requireAuth(request: Request, env: Env) { return authorized(request, env) ? null : json({ error: "Unauthorized" }, 401); }
 
 async function getContact(env: Env, contactId: string) {
-  const contact = await env.DB.prepare(`SELECT c.*, co.name AS company_name FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?`).bind(contactId).first();
+  const contact = await env.DB.prepare(`SELECT c.*, co.name AS company_name, co.website AS company_website, co.emr_rating AS company_emr_rating, co.emr_effective_date AS company_emr_effective_date FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?`).bind(contactId).first();
   if (!contact) return null;
   const [emails, tasks, projects, evidence] = await env.DB.batch([
     env.DB.prepare("SELECT id, subject, sender_name, sender_email, received_at, extraction_status FROM ssx_contact_emails WHERE contact_id=? ORDER BY received_at DESC").bind(contactId),
@@ -38,10 +38,14 @@ async function createContact(env: Env, input: ContactInput, source = "manual") {
   }
   const contactId = id();
   const now = new Date().toISOString();
+  const possibleDuplicates = await env.DB.prepare("SELECT id FROM ssx_contacts WHERE normalized_name=? LIMIT 20").bind(normalize(input.displayName)).all<{id:string}>();
   await env.DB.prepare(`INSERT INTO ssx_contacts (id,company_id,first_name,last_name,display_name,normalized_name,primary_email,primary_phone,title,created_at,updated_at)
     VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(contactId,input.companyId || null,input.firstName || null,input.lastName || null,input.displayName.trim(),normalize(input.displayName),email,input.phone || null,input.title || null,now,now).run();
   for (const [field, value] of Object.entries({ display_name: input.displayName, primary_email: email, primary_phone: input.phone, title: input.title })) {
     if (value) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,field_name,field_value,source_location) VALUES (?,?,?,?,?)").bind(id(),contactId,field,String(value),source).run();
+  }
+  for (const candidate of possibleDuplicates.results) {
+    await env.DB.prepare("INSERT OR IGNORE INTO ssx_contact_duplicate_reviews (id,contact_id,possible_duplicate_contact_id,match_reason,status) VALUES (?,?,?,?, 'open')").bind(id(),contactId,candidate.id,"Same normalized display name; exact email did not match").run();
   }
   return { id: contactId, created: true };
 }

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SSX Contact System — Test Card</title>
+  <style>
+    html,body,iframe{width:100%;height:100%;margin:0;border:0;background:#000}
+    .test-mode{position:fixed;right:22px;bottom:18px;z-index:10;padding:7px 11px;border:1px solid #00cfff;border-radius:5px;background:rgba(0,7,13,.92);color:#dffaff;font:700 10px/1 Arial,sans-serif;letter-spacing:.14em}
+    .test-mode b{color:#f5d20a}
+  </style>
+</head>
+<body>
+  <iframe id="card" title="SSX contact-card test" src="/final-templates/master-contact-card-template.html"></iframe>
+  <div class="test-mode"><b>TEST MODE</b> · FICTIONAL CONTACT</div>
+  <script>
+    const testContact = {
+      name: "Avery Walsh", company: "Summit Electrical Group", email: "avery.walsh@example.test",
+      website: "Not provided", emr: "Not provided", completeness: "SOURCE-ONLY PROFILE"
+    };
+    document.getElementById("card").addEventListener("load", event => {
+      const doc = event.target.contentDocument;
+      const name = doc.querySelector(".identity h1"); if (name) name.textContent = testContact.name;
+      const company = doc.querySelector(".identity .company"); if (company) company.textContent = testContact.company;
+      const email = doc.querySelector(".identity .email"); if (email) email.textContent = testContact.email;
+      const companyInfo = doc.querySelector(".company-grid .info");
+      if (companyInfo) {
+        const fields = doc.createElement("div");
+        fields.style.marginTop = "8px";
+        fields.style.paddingTop = "8px";
+        fields.style.borderTop = "1px solid rgba(0,187,244,.25)";
+        fields.innerHTML = `<span style="display:block;color:#29aaff">WEBSITE</span><span style="display:block;color:#ff6a62">${testContact.website}</span><span style="display:block;margin-top:5px;color:#29aaff">EMR RATING</span><span style="display:block;color:#ff6a62">${testContact.emr}</span>`;
+        companyInfo.appendChild(fields);
+      }
+      const active = doc.querySelector(".active"); if (active) active.textContent = testContact.completeness;
+    });
+  </script>
+</body>
+</html>

@@ -160,8 +160,8 @@ async function linkProject(env: Env, contactId: string, input: ProjectLinkInput)
   const existing = await env.DB.prepare("SELECT id FROM ssx_contact_projects WHERE contact_id=? AND project_name=? AND COALESCE(project_id,-1)=COALESCE(?,-1)").bind(contactId,input.projectName.trim(),projectId).first<{id:string}>();
   if (input.isCurrent) await env.DB.prepare("UPDATE ssx_contact_projects SET is_current=0 WHERE contact_id=?").bind(contactId).run();
   const linkId = existing?.id || id();
-  if (existing) await env.DB.prepare("UPDATE ssx_contact_projects SET project_role=?,is_current=?,linked_at=? WHERE id=?").bind(input.projectRole?.trim() || null,input.isCurrent === false ? 0 : 1,now,linkId).run();
-  else await env.DB.prepare("INSERT INTO ssx_contact_projects (id,contact_id,project_id,project_name,project_role,is_current,linked_at) VALUES (?,?,?,?,?,?,?)").bind(linkId,contactId,projectId,input.projectName.trim(),input.projectRole?.trim() || null,input.isCurrent === false ? 0 : 1,now).run();
+  if (existing) await env.DB.prepare("UPDATE ssx_contact_projects SET project_role=?,is_current=?,linked_at=?,source_email_id=? WHERE id=?").bind(input.projectRole?.trim() || null,input.isCurrent === false ? 0 : 1,now,input.sourceEmailId,linkId).run();
+  else await env.DB.prepare("INSERT INTO ssx_contact_projects (id,contact_id,project_id,project_name,project_role,is_current,linked_at,source_email_id) VALUES (?,?,?,?,?,?,?,?)").bind(linkId,contactId,projectId,input.projectName.trim(),input.projectRole?.trim() || null,input.isCurrent === false ? 0 : 1,now,input.sourceEmailId).run();
   await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,input.sourceEmailId,"project_link",input.projectName.trim(),input.sourceLocation.trim()).run();
   return await env.DB.prepare("SELECT * FROM ssx_contact_projects WHERE id=?").bind(linkId).first();
 }
@@ -539,9 +539,9 @@ export default {
         const contact = await env.DB.prepare("SELECT c.*,co.name AS company_name,co.website AS company_website,co.emr_rating AS company_emr_rating,co.emr_effective_date AS company_emr_effective_date, co.logo_r2_key AS company_logo_r2_key FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?").bind(cardPreviewMatch[1]).first<Record<string, unknown>>();
         if (!contact) return json({ error: "Contact not found" }, 404);
         const [projects, tasks, emails, logoAttachments] = await env.DB.batch([
-          env.DB.prepare("SELECT project_name,project_role,is_current FROM ssx_contact_projects WHERE contact_id=? ORDER BY is_current DESC,linked_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
+          env.DB.prepare("SELECT project_name,project_role,is_current,source_email_id FROM ssx_contact_projects WHERE contact_id=? ORDER BY is_current DESC,linked_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
           env.DB.prepare("SELECT title,status FROM ssx_contact_tasks WHERE contact_id=? ORDER BY created_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
-          env.DB.prepare("SELECT subject,sender_name,sender_email,received_at,original_file_name FROM ssx_contact_emails WHERE contact_id=? ORDER BY received_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
+          env.DB.prepare("SELECT id,subject,sender_name,sender_email,received_at,original_file_name FROM ssx_contact_emails WHERE contact_id=? ORDER BY received_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
           env.DB.prepare("SELECT a.id FROM ssx_contact_attachments a JOIN ssx_contact_emails e ON e.id=a.email_id WHERE e.contact_id=? AND a.r2_key=? LIMIT 1").bind(cardPreviewMatch[1], String(contact.company_logo_r2_key || ""))
         ]);
         const detail = { contact, projects: projects.results, tasks: tasks.results, emails: emails.results, cois: [], completeness: completeness(contact) };
@@ -551,9 +551,12 @@ export default {
         const projectRows = projects.results as Array<Record<string, unknown>>;
         const taskRows = tasks.results as Array<Record<string, unknown>>;
         const emailRows = emails.results as Array<Record<string, unknown>>;
-        const firstProject = projectRows[0]?.project_name || "Project review needed";
-        const firstTask = taskRows[0]?.title || "No Dale action found";
         const latestEmail = emailRows[0] || {};
+        const sourceProjectRows = projectRows.filter(project => project.source_email_id === latestEmail.id);
+        const hasProject = sourceProjectRows.length > 0;
+        const firstProject = sourceProjectRows[0]?.project_name || "No project link saved from this email";
+        const projectRole = sourceProjectRows[0]?.project_role || "Source email did not identify a project";
+        const firstTask = taskRows[0]?.title || "No Dale action found";
         const latestSubject = latestEmail.subject || latestEmail.original_file_name || "Stored Outlook source email";
         const receivedValue = typeof latestEmail.received_at === "string" ? latestEmail.received_at.replace("T", " ").replace(/\.\d{3}Z$/, " UTC") : "Stored with this contact";
         const senderLabel = latestEmail.sender_name ? String(latestEmail.sender_name) + (latestEmail.sender_email ? " <" + String(latestEmail.sender_email) + ">" : "") : (latestEmail.sender_email ? String(latestEmail.sender_email) : "Sender not provided");
@@ -564,7 +567,11 @@ export default {
           ["Avery Walsh", contact.display_name], ["Northstar Climate Systems", contact.company_name],
           ["avery.walsh@example.com", contact.primary_email], ["northstar.example", contact.company_website],
           ["Demo Contact Record", contact.primary_phone], ["Mechanical Supplier / Vendor", contact.title],
-          ["Autograph by Marriott — Jericho, NY", firstProject], ["Demo project inquiry — equipment budget help", latestSubject],
+          ["Autograph by Marriott — Jericho, NY", firstProject], ["Jericho, NY 11753", projectRole],
+          ["Hotel Development", hasProject ? "Saved from Outlook email" : "No source-backed project"],
+          ["PROJECT IMAGE", hasProject ? "PROJECT LINK SAVED" : "NO PROJECT LINK"],
+          ["View Project", hasProject ? "Saved Project Link" : "No Project Link"],
+          ["Demo project inquiry — equipment budget help", latestSubject],
           ["Received: Jul 30, 2026 · 10:24 AM", "Received: " + receivedValue],
           ["From: Avery Walsh &lt;avery.walsh@example.com&gt;", "From: " + senderLabel],
           ["Re: Demo project inquiry", latestSubject], ["RE: Equipment information request", latestSubject], ["SCHEDULE MEETING", firstTask],
@@ -595,15 +602,15 @@ export default {
           ["Industry Match", "Email-signature facts only"],
           ["Confidence Score", "Source-backed score"],
           ["92%", "—"],
-          ["Contact linked to active project.", projectRows.length ? "Project link saved from this email." : "No project link found in this email."]
+          ["Contact linked to active project.", hasProject ? "Project link saved from this email." : "No project link found in this email."]
         ];
         for (const [from, to] of profileLabels) page = page.replaceAll(from, escapeCardHtml(to));
         const logoAttachment = (logoAttachments.results as Array<Record<string, unknown>>)[0];
         const logoUrl = logoAttachment?.id ? "/contact-system/files/" + String(logoAttachment.id) : "";
         const logoLabel = logoUrl ? "SOURCE LOGO ON FILE" : "LOGO NOT PROVIDED";
-        const templateTokens = /Avery Walsh|Northstar Climate Systems|avery\.walsh@example\.com|northstar\.example|Demo Contact Record|Mechanical Supplier \/ Vendor|Autograph by Marriott — Jericho, NY|Demo project inquiry — equipment budget help|Received: Jul 30, 2026 · 10:24 AM|From: Avery Walsh &lt;avery\.walsh@example\.com&gt;|Re: Demo project inquiry|RE: Equipment information request|SCHEDULE MEETING|REQUEST REFRIGERATOR SIZES|58%|PARTIAL<br>PROFILE|INCOMPLETE|ACTION REQUIRED|MISSING: COI EXPIRATION|MISSING: COI EMAIL|MISSING: COI DOCUMENT|Not in Master List|Candidate for Review|No Duplicates Found|Checked: Jul 30, 12:10 PM/g;
+        const templateTokens = /Avery Walsh|Northstar Climate Systems|avery\.walsh@example\.com|northstar\.example|Demo Contact Record|Mechanical Supplier \/ Vendor|Autograph by Marriott — Jericho, NY|Jericho, NY 11753|Hotel Development|PROJECT IMAGE|View Project|Demo project inquiry — equipment budget help|Received: Jul 30, 2026 · 10:24 AM|From: Avery Walsh &lt;avery\.walsh@example\.com&gt;|Re: Demo project inquiry|RE: Equipment information request|SCHEDULE MEETING|REQUEST REFRIGERATOR SIZES|58%|PARTIAL<br>PROFILE|INCOMPLETE|ACTION REQUIRED|MISSING: COI EXPIRATION|MISSING: COI EMAIL|MISSING: COI DOCUMENT|Not in Master List|Candidate for Review|No Duplicates Found|Checked: Jul 30, 12:10 PM/g;
         page = page.replace(templateTokens, token => replacements.get(token) || token);
-        page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}.malkin{font-size:0!important}.malkin{background-image:" + (logoUrl ? "url('" + logoUrl + "')" : "none") + "!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important}.malkin:after{content:'" + logoLabel + "';font-size:11px;color:#121518;letter-spacing:.06em;text-align:center;background:rgba(237,240,237,.78);padding:4px}.research .meter i{width:0!important}</style></head>");
+        page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}.malkin{font-size:0!important}.project-photo-frame img{display:none!important}.project-photo-frame{background:#071017!important;display:grid!important;place-items:center!important;color:#8daab8!important;font-size:10px!important}.malkin{background-image:" + (logoUrl ? "url('" + logoUrl + "')" : "none") + "!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important}.malkin:after{content:'" + logoLabel + "';font-size:11px;color:#121518;letter-spacing:.06em;text-align:center;background:rgba(237,240,237,.78);padding:4px}.research .meter i{width:0!important}</style></head>");
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
       } catch (error) {
         return json({ error: "Saved contact card render failed", detail: error instanceof Error ? error.message : String(error) }, 502);

@@ -257,7 +257,7 @@ function uploadPage() {
     :root { color-scheme: dark; --bg:#05080d; --panel:#0a111a; --line:#1d4158; --blue:#18bdf4; --gold:#d8b24a; --text:#e8f7ff; --muted:#8daab8; --bad:#ff6a62; --good:#38d987; }
     * { box-sizing: border-box; }
     body { margin:0; min-height:100vh; background:radial-gradient(circle at top, #102334 0, #05080d 42%, #020305 100%); color:var(--text); font:14px/1.45 Arial, sans-serif; padding:16px; }
-    main { width:100%; min-height:calc(100vh - 32px); margin:0; border:1px solid var(--line); background:rgba(5,10,16,.92); border-radius:8px; box-shadow:0 18px 60px rgba(0,0,0,.45); padding:18px; display:grid; grid-template-columns:300px minmax(0,1fr); gap:20px; align-items:start; }
+    main { width:100%; min-height:calc(100vh - 32px); margin:0; border:1px solid var(--line); background:rgba(5,10,16,.92); border-radius:8px; box-shadow:0 18px 60px rgba(0,0,0,.45); padding:12px; display:grid; grid-template-columns:260px minmax(0,1fr); gap:14px; align-items:start; }
     .uploadPane { min-width:0; }
     @media (max-width:960px) { main { display:block; } .card { margin-top:18px !important; min-height:0 !important; } }
     h1 { margin:0 0 6px; font-size:22px; letter-spacing:.08em; text-transform:uppercase; color:#fff; }
@@ -274,7 +274,7 @@ function uploadPage() {
     .ok { border-color:rgba(56,217,135,.65); color:#c8ffe0; }
     .bad { border-color:rgba(255,106,98,.75); color:#ffd1cd; }
     .note { margin-top:10px; color:var(--gold); font-size:12px; }
-    .card { display:block; min-height:calc(100vh - 70px); margin-top:0; padding:28px; border:1px solid #18bdf4; border-radius:8px; background:#08131d; }
+    .card { display:block; min-height:calc(100vh - 56px); margin-top:0; padding:20px; border:1px solid #18bdf4; border-radius:8px; background:#08131d; }
     .card h2 { margin:0 0 12px; letter-spacing:.06em; text-transform:uppercase; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .field { padding:10px; border:1px solid #1d4158; border-radius:6px; background:#07111a; }

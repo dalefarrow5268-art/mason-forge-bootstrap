@@ -271,6 +271,13 @@ function uploadPage() {
     .ok { border-color:rgba(56,217,135,.65); color:#c8ffe0; }
     .bad { border-color:rgba(255,106,98,.75); color:#ffd1cd; }
     .note { margin-top:14px; color:var(--gold); font-size:12px; }
+    .card { display:none; margin-top:18px; padding:18px; border:1px solid #18bdf4; border-radius:8px; background:#08131d; }
+    .card h2 { margin:0 0 12px; letter-spacing:.06em; text-transform:uppercase; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .field { padding:10px; border:1px solid #1d4158; border-radius:6px; background:#07111a; }
+    .field b { display:block; color:#8daab8; font-size:11px; margin-bottom:4px; }
+    .section { margin-top:14px; padding-top:12px; border-top:1px solid #1d4158; }
+    .section li { margin:5px 0; color:#c8dbe4; }
   </style>
 </head>
 <body>
@@ -290,6 +297,7 @@ function uploadPage() {
 
     <button id="upload">Upload Email And Create Contact</button>
     <div id="status" class="status">Waiting for .msg file.</div>
+    <section id="cardWindow" class="card"></section>
     <p class="note">This page is served by Cloudflare, so the upload goes directly to the same Cloudflare Worker and then into D1/R2 storage.</p>
   </main>
 
@@ -328,6 +336,16 @@ function uploadPage() {
       status.textContent = message;
       status.className = 'status ' + (ok === true ? 'ok' : ok === false ? 'bad' : '');
     }
+    const esc = value => { const el = document.createElement('div'); el.textContent = value || 'Not provided'; return el.innerHTML; };
+    async function showContactCard(contactId) {
+      if (!contactId) return;
+      const response = await fetch('/contact-system/contacts/' + encodeURIComponent(contactId));
+      if (!response.ok) return;
+      const data = await response.json();
+      const c = data.contact, projects = data.projects || [], tasks = data.tasks || [], emails = data.emails || [];
+      $('cardWindow').innerHTML = '<h2>Saved Contact Card</h2><div class="grid"><div class="field"><b>NAME</b>' + esc(c.display_name) + '</div><div class="field"><b>COMPANY</b>' + esc(c.company_name) + '</div><div class="field"><b>EMAIL</b>' + esc(c.primary_email) + '</div><div class="field"><b>PHONE</b>' + esc(c.primary_phone) + '</div><div class="field"><b>TITLE</b>' + esc(c.title) + '</div><div class="field"><b>COMPLETENESS</b>' + esc(String(data.completeness?.score || 0) + '%') + '</div></div><div class="section"><b>PROJECTS</b><ul>' + (projects.length ? projects.map(p => '<li>' + esc(p.project_name) + '</li>').join('') : '<li>None linked</li>') + '</ul></div><div class="section"><b>DALE TO DO</b><ul>' + (tasks.length ? tasks.map(t => '<li>' + esc(t.title) + ' — ' + esc(t.status) + '</li>').join('') : '<li>No open items</li>') + '</ul></div><div class="section"><b>STORED SOURCE EMAILS</b><ul>' + (emails.length ? emails.map(e => '<li>' + esc(e.subject || e.original_file_name) + '</li>').join('') : '<li>None</li>') + '</ul></div>';
+      $('cardWindow').style.display = 'block';
+    }
 
     upload.addEventListener('click', async () => {
       const token = tokenInput.value.trim();
@@ -360,6 +378,7 @@ function uploadPage() {
         const c = data.completion;
         const summary = c ? ['CONTACT CARD CREATED', 'NAME: ' + (c.contact ? c.contact.display_name : 'Needs review'), 'EMAIL: ' + (c.contact?.primary_email || 'Not found in email'), 'PHONE: ' + (c.contact?.primary_phone || 'Not found in email'), 'PROJECT: ' + (c.project ? c.project.project_name : 'Needs project review'), 'DALE TO DO: ' + (c.daleTodoCreated ? 'Created' : 'None found'), 'EMAIL STORED: YES'].join('\\n') : JSON.stringify(data, null, 2);
         setStatus((response.status === 409 && data.import?.status !== 'completed' ? 'ALREADY STORED' : 'COMPLETE') + '\\n\\n' + summary, true);
+        await showContactCard(data.completion?.contact?.id || data.contactId || data.import?.contact_id);
       } catch (error) {
         setStatus('FAILED\\n\\n' + (error.message || error), false);
       } finally {

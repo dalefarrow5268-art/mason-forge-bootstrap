@@ -2,6 +2,12 @@ name: Deploy SSX Contact System
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - agent/cloudflare-contact-system
+    paths:
+      - .github/workflows/deploy-contact-system.yml
+      - contact-worker/**
 
 permissions:
   contents: read
@@ -17,13 +23,18 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CONTACT_SYSTEM_TOKEN: ${{ secrets.CONTACT_SYSTEM_TOKEN }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: contact-worker/package-lock.json
+      - name: Check required secrets
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "Missing CLOUDFLARE_API_TOKEN"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+          test -n "$CONTACT_SYSTEM_TOKEN" || { echo "Missing CONTACT_SYSTEM_TOKEN"; exit 1; }
       - run: npm ci
-      - run: npx wrangler d1 migrations apply DB --remote
+      - run: npx wrangler d1 migrations apply mason-forge-cloud --remote
       - run: 'printf "%s" "$CONTACT_SYSTEM_TOKEN" | npx wrangler secret put CONTACT_SYSTEM_TOKEN'
       - run: npx wrangler deploy

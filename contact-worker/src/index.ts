@@ -8,7 +8,7 @@ export interface Env {
 
 type ContactInput = { displayName: string; firstName?: string; lastName?: string; email?: string; phone?: string; title?: string; companyId?: string };
 type ContactUpdateInput = Partial<ContactInput> & { sourceEmailId?: string; sourceLocation?: string };
-type CompanyInput = { name?: string; website?: string | null; phone?: string | null; emrRating?: number | null; emrEffectiveDate?: string | null; sourceContactId?: string; sourceEmailId?: string; sourceLocation?: string };
+type CompanyInput = { name?: string; website?: string | null; phone?: string | null; tradeCategory?: string | null; emrRating?: number | null; emrEffectiveDate?: string | null; sourceContactId?: string; sourceEmailId?: string; sourceLocation?: string };
 type ProjectLinkInput = { projectName: string; projectId?: number | null; projectRole?: string | null; isCurrent?: boolean; sourceEmailId: string; sourceLocation: string };
 type TaskUpdateInput = { status: "open" | "completed" | "dismissed" };
 type CoiInput = { attachmentId: string; insurerName?: string | null; policyNumber?: string | null; effectiveDate?: string | null; expirationDate?: string | null; notes?: string | null; sourceLocation: string };
@@ -64,7 +64,7 @@ function completeness(record: Record<string, unknown>) {
 }
 
 async function getContact(env: Env, contactId: string) {
-  const contact = await env.DB.prepare(`SELECT c.*, co.name AS company_name, co.website AS company_website, co.emr_rating AS company_emr_rating, co.emr_effective_date AS company_emr_effective_date, co.logo_r2_key AS company_logo_r2_key FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?`).bind(contactId).first();
+  const contact = await env.DB.prepare(`SELECT c.*, co.name AS company_name, co.website AS company_website, co.emr_rating AS company_emr_rating, co.emr_effective_date AS company_emr_effective_date, co.logo_r2_key AS company_logo_r2_key, co.trade_category AS company_trade_category FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?`).bind(contactId).first();
   if (!contact) return null;
   const [emails, attachments, tasks, projects, cois, evidence] = await env.DB.batch([
     env.DB.prepare("SELECT id, subject, sender_name, sender_email, received_at, extraction_status, original_file_name, original_size_bytes FROM ssx_contact_emails WHERE contact_id=? ORDER BY received_at DESC").bind(contactId),
@@ -128,7 +128,7 @@ function coiStatus(expirationDate?: string | null): "current" | "expiring" | "ex
 }
 
 async function saveCompany(env: Env, companyId: string | null, input: CompanyInput) {
-  const hasSourcedFact = input.website !== undefined || input.phone !== undefined || input.emrRating !== undefined || input.emrEffectiveDate !== undefined;
+  const hasSourcedFact = input.website !== undefined || input.phone !== undefined || input.tradeCategory !== undefined || input.emrRating !== undefined || input.emrEffectiveDate !== undefined;
   if (hasSourcedFact && (!input.sourceContactId || !input.sourceEmailId || !input.sourceLocation?.trim())) throw new Error("Company facts require sourceContactId, sourceEmailId, and sourceLocation from an imported Outlook email");
   if (input.emrRating !== undefined && input.emrRating !== null && (!Number.isFinite(input.emrRating) || input.emrRating < 0 || input.emrRating > 100)) throw new Error("emrRating must be between 0 and 100");
   const now = new Date().toISOString();
@@ -138,13 +138,13 @@ async function saveCompany(env: Env, companyId: string | null, input: CompanyInp
     const existing = await env.DB.prepare("SELECT * FROM ssx_companies WHERE normalized_name=?").bind(normalize(input.name)).first<any>();
     if (existing) record = existing;
     else {
-      record = { id: id(), name: input.name.trim(), normalized_name: normalize(input.name), website: null, phone: null, emr_rating: null, emr_effective_date: null };
+      record = { id: id(), name: input.name.trim(), normalized_name: normalize(input.name), website: null, phone: null, trade_category: null, emr_rating: null, emr_effective_date: null };
       await env.DB.prepare("INSERT INTO ssx_companies (id,name,normalized_name,created_at,updated_at) VALUES (?,?,?,?,?)").bind(record.id,record.name,record.normalized_name,now,now).run();
     }
   }
-  const next = { name: input.name?.trim() ?? record.name, website: input.website === undefined ? record.website : cleanWebsite(input.website), phone: input.phone === undefined ? record.phone : input.phone?.trim() || null, emrRating: input.emrRating === undefined ? record.emr_rating : input.emrRating, emrEffectiveDate: input.emrEffectiveDate === undefined ? record.emr_effective_date : input.emrEffectiveDate || null };
-  await env.DB.prepare("UPDATE ssx_companies SET name=?,normalized_name=?,website=?,phone=?,emr_rating=?,emr_effective_date=?,updated_at=? WHERE id=?").bind(next.name,normalize(next.name),next.website,next.phone,next.emrRating,next.emrEffectiveDate,now,record.id).run();
-  if (hasSourcedFact) for (const [field, value] of Object.entries({ company_name: input.name, company_website: input.website, company_phone: input.phone, emr_rating: input.emrRating, emr_effective_date: input.emrEffectiveDate })) if (value !== undefined) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),input.sourceContactId,input.sourceEmailId,field,value === null ? null : String(value),input.sourceLocation!.trim()).run();
+  const next = { name: input.name?.trim() ?? record.name, website: input.website === undefined ? record.website : cleanWebsite(input.website), phone: input.phone === undefined ? record.phone : input.phone?.trim() || null, tradeCategory: input.tradeCategory === undefined ? record.trade_category : input.tradeCategory?.trim() || null, emrRating: input.emrRating === undefined ? record.emr_rating : input.emrRating, emrEffectiveDate: input.emrEffectiveDate === undefined ? record.emr_effective_date : input.emrEffectiveDate || null };
+  await env.DB.prepare("UPDATE ssx_companies SET name=?,normalized_name=?,website=?,phone=?,trade_category=?,emr_rating=?,emr_effective_date=?,updated_at=? WHERE id=?").bind(next.name,normalize(next.name),next.website,next.phone,next.tradeCategory,next.emrRating,next.emrEffectiveDate,now,record.id).run();
+  if (hasSourcedFact) for (const [field, value] of Object.entries({ company_name: input.name, company_website: input.website, company_phone: input.phone, trade_category: input.tradeCategory, emr_rating: input.emrRating, emr_effective_date: input.emrEffectiveDate })) if (value !== undefined) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),input.sourceContactId,input.sourceEmailId,field,value === null ? null : String(value),input.sourceLocation!.trim()).run();
   return await env.DB.prepare("SELECT * FROM ssx_companies WHERE id=?").bind(record.id).first();
 }
 
@@ -195,9 +195,9 @@ function projectFromEmail(subject?: string, fileName?: string, body?: string) {
   return null;
 }
 
-type SignatureFacts = { companyName?: string; website?: string; phone?: string; title?: string };
+type SignatureFacts = { companyName?: string; website?: string; phone?: string; title?: string; tradeCategory?: string };
 
-function signatureFacts(body?: string): SignatureFacts {
+function signatureFacts(body?: string, senderName?: string): SignatureFacts {
   const lines = (body || "").replace(/\r/g, "").split("\n").map(line => line.replace(/\s+/g, " ").trim()).filter(Boolean);
   const signatureLines = lines.slice(-45);
   const phone = [...signatureLines].reverse().map(line => line.match(/(?:\+?1[ .-]?)?(?:\(?\d{3}\)?[ .-]?)\d{3}[ .-]\d{4}/)?.[0]).find(Boolean);
@@ -212,8 +212,11 @@ function signatureFacts(body?: string): SignatureFacts {
   const companyName = companyLine?.replace(/\s{2,}/g, " ").replace(/[|•]+/g, " ").trim();
   const companyIndex = companyName ? signatureLines.lastIndexOf(companyLine!) : -1;
   const candidateTitle = companyIndex > 0 ? signatureLines[companyIndex - 1] : undefined;
-  const title = candidateTitle && candidateTitle.length < 80 && !excluded.test(candidateTitle) && !/[0-9@]/.test(candidateTitle) ? candidateTitle : undefined;
-  return { companyName, website, phone, title };
+  const senderNormalized = normalize(senderName || "");
+  const title = candidateTitle && candidateTitle.length < 80 && !excluded.test(candidateTitle) && !/[0-9@]/.test(candidateTitle) && normalize(candidateTitle) !== senderNormalized ? candidateTitle : undefined;
+  const candidateTrade = companyIndex >= 0 ? signatureLines[companyIndex + 1] : undefined;
+  const tradeCategory = candidateTrade && candidateTrade.length < 100 && !excluded.test(candidateTrade) && !/[0-9@]/.test(candidateTrade) ? candidateTrade : undefined;
+  return { companyName, website, phone, title, tradeCategory };
 }
 
 async function importEmail(request: Request, env: Env) {
@@ -250,13 +253,14 @@ async function importEmail(request: Request, env: Env) {
   let company: Record<string, unknown> | null = null;
   let facts: SignatureFacts = {};
   if (contactId && !extracted.parseError) {
-    facts = signatureFacts(extracted.bodyText);
+    facts = signatureFacts(extracted.bodyText, extracted.senderName);
     const current = await env.DB.prepare("SELECT company_id,primary_phone,title FROM ssx_contacts WHERE id=?").bind(contactId).first<{company_id:string|null;primary_phone:string|null;title:string|null}>();
     if (facts.companyName) {
       company = await saveCompany(env, current?.company_id || null, {
         name: facts.companyName,
         website: facts.website,
         phone: facts.phone,
+        tradeCategory: facts.tradeCategory,
         sourceContactId: contactId,
         sourceEmailId: emailId,
         sourceLocation: "Outlook .msg signature"
@@ -271,7 +275,7 @@ async function importEmail(request: Request, env: Env) {
     }
     if (facts.phone || facts.title) {
       await env.DB.prepare("UPDATE ssx_contacts SET primary_phone=CASE WHEN primary_phone IS NULL OR trim(primary_phone)='' THEN ? ELSE primary_phone END,title=CASE WHEN title IS NULL OR trim(title)='' THEN ? ELSE title END,updated_at=? WHERE id=?").bind(facts.phone || null,facts.title || null,now,contactId).run();
-      for (const [field, value] of Object.entries({ primary_phone: facts.phone, title: facts.title })) if (value) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,field,value,"Outlook .msg signature").run();
+      for (const [field, value] of Object.entries({ primary_phone: facts.phone, title: facts.title, trade_category: facts.tradeCategory })) if (value) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,field,value,"Outlook .msg signature").run();
     }
   }
 
@@ -536,7 +540,7 @@ export default {
     const cardPreviewMatch = path.match(/^\/contact-system\/contact-card-preview\/([^/]+)$/);
     if (cardPreviewMatch && request.method === "GET") {
       try {
-        const contact = await env.DB.prepare("SELECT c.*,co.name AS company_name,co.website AS company_website,co.emr_rating AS company_emr_rating,co.emr_effective_date AS company_emr_effective_date, co.logo_r2_key AS company_logo_r2_key FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?").bind(cardPreviewMatch[1]).first<Record<string, unknown>>();
+        const contact = await env.DB.prepare("SELECT c.*,co.name AS company_name,co.website AS company_website,co.emr_rating AS company_emr_rating,co.emr_effective_date AS company_emr_effective_date, co.logo_r2_key AS company_logo_r2_key, co.trade_category AS company_trade_category FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?").bind(cardPreviewMatch[1]).first<Record<string, unknown>>();
         if (!contact) return json({ error: "Contact not found" }, 404);
         const [projects, tasks, emails, logoAttachments] = await env.DB.batch([
           env.DB.prepare("SELECT project_name,project_role,is_current,source_email_id FROM ssx_contact_projects WHERE contact_id=? ORDER BY is_current DESC,linked_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
@@ -594,7 +598,7 @@ export default {
           ["Company Verified", contact.company_name ? "Company on file" : "Company missing"],
           ["Company Basic", contact.company_website || contact.company_name ? "Company detail on file" : "Company detail missing"],
           ["Contact Title", contact.title ? "Title on file" : "Title missing"],
-          ["Trade Category", "Trade category not reviewed"],
+          ["Trade Category", contact.company_trade_category ? "Trade: " + String(contact.company_trade_category) : "Trade category missing"],
           ["Member Status", "Member status not reviewed"],
           ["Logo Verified", contact.company_logo_r2_key ? "Source logo on file" : "Logo not provided"],
           ["VERIFIED PROFILE", "RESEARCH NOT RUN"],

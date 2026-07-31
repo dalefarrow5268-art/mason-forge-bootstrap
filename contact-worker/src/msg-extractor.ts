@@ -52,9 +52,11 @@ export function extractOutlookMsg(bytes: ArrayBuffer): ExtractedMsg {
     subject: fields.subject?.trim() || undefined,
     bodyText: fields.body?.trim() || undefined,
     recipients: (fields.recipients || []).map(recipient => ({ name: recipient.name?.trim() || undefined, email: email(recipient.email), type: recipient.recipType })).filter(recipient => recipient.name || recipient.email)
-    ,attachments: (fields.attachments || []).flatMap(attachment => {
-      try { const data = new MsgReader(bytes).getAttachment(attachment); return data.fileName && data.content ? [{ fileName: data.fileName, content: data.content }] : []; }
-      catch { return []; }
+    ,attachments: (fields.attachments || []).flatMap((attachment, index) => {
+      try {
+        const data = new MsgReader(bytes).getAttachment(attachment);
+        return data.content ? [{ fileName: data.fileName || `outlook-inline-${index + 1}`, content: data.content }] : [];
+      } catch { return []; }
     })
   };
 }

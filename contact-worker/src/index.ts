@@ -170,7 +170,8 @@ async function importEmail(request: Request, env: Env) {
   if (!/^[a-f0-9]{64}$/.test(sha)) return json({ error: "A valid X-SSX-SHA256 header is required" }, 400);
   if (!fileName.toLowerCase().endsWith(".msg")) return json({ error: "Only .msg files are accepted" }, 415);
   const duplicate = await env.DB.prepare("SELECT id, contact_id, email_id, status FROM ssx_contact_import_jobs WHERE original_sha256=?").bind(sha).first<{id:string;contact_id:string|null;email_id:string|null;status:string}>();
-  const retryingReview = Boolean(duplicate && duplicate.status === "review" && !duplicate.contact_id && duplicate.email_id);
+  const existingEmail = duplicate ? await env.DB.prepare("SELECT id FROM ssx_contact_emails WHERE original_sha256=?").bind(sha).first<{id:string}>() : null;
+  const retryingReview = Boolean(duplicate && duplicate.status === "review" && !duplicate.contact_id && existingEmail);
   if (duplicate && !retryingReview) return json({ duplicate: true, import: duplicate }, 409);
   const bytes = await request.arrayBuffer();
   if (!bytes.byteLength || bytes.byteLength > 50 * 1024 * 1024) return json({ error: "Email must be between 1 byte and 50 MB" }, 413);
@@ -186,7 +187,7 @@ async function importEmail(request: Request, env: Env) {
   }
   const objectKey = `contacts/${contactId || "unassigned"}/emails/${sha}/${fileName}`;
   await env.CONTACT_FILES.put(objectKey, bytes, { httpMetadata: { contentType: "application/vnd.ms-outlook" }, customMetadata: { sha256: sha, importId } });
-  const emailId = duplicate?.email_id || id(); const status = extracted.parseError ? "review" : (contactId ? "completed" : "review");
+  const emailId = existingEmail?.id || id(); const status = extracted.parseError ? "review" : (contactId ? "completed" : "review");
   if (retryingReview) {
     await env.DB.prepare("UPDATE ssx_contact_emails SET contact_id=?,sender_name=?,sender_email=?,recipients_json=?,subject=?,body_text=?,extraction_status=? WHERE id=?").bind(contactId,extracted.senderName || null,extracted.senderEmail || null,JSON.stringify(extracted.recipients),extracted.subject || null,extracted.bodyText || null,extracted.parseError ? "review" : "extracted",emailId).run();
     await env.DB.prepare("UPDATE ssx_contact_import_jobs SET status=?,contact_id=?,error_message=?,updated_at=? WHERE id=?").bind(status,contactId,extracted.parseError || null,now,importId).run();
@@ -316,7 +317,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url); const path = url.pathname.replace(/\/+$/, "") || "/";
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
-    if (path === "/contact-system/health" && request.method === "GET") return json({ system:"SSX Contact System", storage:"Cloudflare D1 + private R2", mode:"source-only", aiEnrichment:false, ready:true, timestamp:new Date().toISOString() });
+    if (path === "/contact-system/health" && request.method === "GET") return json({ system:"SSX Contact System", storage:"Cloudflare D1 + private R2", mode:"source-only", aiEnrichment:false, importRetry:"sha-email-lookup-v2", ready:true, timestamp:new Date().toISOString() });
     if (path === "/contact-system/upload" && request.method === "GET") return uploadPage();
     const authError = requireAuth(request, env); if (authError) return authError;
     if (path === "/contact-system/review-queue" && request.method === "GET") {

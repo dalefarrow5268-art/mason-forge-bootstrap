@@ -465,13 +465,27 @@ export default {
         const firstProject = projects[0]?.project_name || "Project review needed";
         const firstTask = tasks[0]?.title || "No Dale action found";
         const latestSubject = emails[0]?.subject || emails[0]?.original_file_name || "Stored Outlook source email";
+        const cois = detail.cois as Array<Record<string, unknown>>;
+        const hasCoi = cois.length > 0;
+        const cardsComplete = Number(detail.completeness.score || 0) >= 75;
         const values: Array<[string, unknown]> = [
           ["Avery Walsh", contact.display_name], ["Northstar Climate Systems", contact.company_name],
           ["avery.walsh@example.com", contact.primary_email], ["northstar.example", contact.company_website],
           ["Demo Contact Record", contact.primary_phone], ["Mechanical Supplier / Vendor", contact.title],
           ["Autograph by Marriott — Jericho, NY", firstProject], ["Re: Demo project inquiry", latestSubject],
           ["RE: Equipment information request", latestSubject], ["SCHEDULE MEETING", firstTask],
-          ["REQUEST REFRIGERATOR SIZES", firstTask]
+          ["REQUEST REFRIGERATOR SIZES", firstTask],
+          ["58%", String(detail.completeness.score || 0) + "%"],
+          ["PARTIAL<br>PROFILE", cardsComplete ? "PROFILE<br>ON FILE" : "PROFILE<br>NEEDS REVIEW"],
+          ["INCOMPLETE", hasCoi ? "COI ON FILE" : "COI REVIEW"],
+          ["ACTION REQUIRED", hasCoi ? "SOURCE-VERIFIED" : "ACTION REQUIRED"],
+          ["MISSING: COI EXPIRATION", hasCoi ? "COI EXPIRATION: REVIEW CARD" : "MISSING: COI EXPIRATION"],
+          ["MISSING: COI EMAIL", hasCoi ? "COI SOURCE EMAIL: ON FILE" : "MISSING: COI EMAIL"],
+          ["MISSING: COI DOCUMENT", hasCoi ? "COI DOCUMENT: ON FILE" : "MISSING: COI DOCUMENT"],
+          ["Not in Master List", "Server Contact Record"],
+          ["Candidate for Review", "Saved in SSX Contact System"],
+          ["No Duplicates Found", "Duplicate Review Recorded"],
+          ["Checked: Jul 30, 12:10 PM", "Saved from Outlook email"]
         ];
         for (const [from, to] of values) page = page.split(from).join(escapeCardHtml(to));
         page = page.replace("</head>", "<style>body{zoom:.72!important;width:138.89%!important;overflow:hidden!important}</style></head>");

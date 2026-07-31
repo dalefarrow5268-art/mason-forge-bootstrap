@@ -39,3 +39,5 @@ jobs:
       - run: npx wrangler d1 migrations apply mason-forge-cloud --remote
       - run: 'printf "%s" "$CONTACT_SYSTEM_TOKEN" | npx wrangler secret put CONTACT_SYSTEM_TOKEN'
       - run: npx wrangler deploy
+
+# deploy trigger: 2026-07-31 contact system

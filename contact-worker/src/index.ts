@@ -458,7 +458,7 @@ export default {
       try {
         const template = await fetch(masterContactCardTemplateUrl);
         if (!template.ok) throw new Error("Approved card template could not be loaded");
-        const page = (await template.text()).replace("</head>", "<style>body{zoom:.72!important;width:138.89%!important;overflow:hidden!important}</style></head>");
+        const page = (await template.text()).replace("</head>", "<style>body{zoom:.90!important;width:111.12%!important;overflow:hidden!important}</style></head>");
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
       } catch (error) {
         return json({ error: "Approved contact card template failed to load", detail: error instanceof Error ? error.message : String(error) }, 502);
@@ -509,7 +509,7 @@ export default {
         const replacements = new Map(values.map(([from, to]) => [from, escapeCardHtml(to)]));
         const templateTokens = /Avery Walsh|Northstar Climate Systems|avery\.walsh@example\.com|northstar\.example|Demo Contact Record|Mechanical Supplier \/ Vendor|Autograph by Marriott — Jericho, NY|Re: Demo project inquiry|RE: Equipment information request|SCHEDULE MEETING|REQUEST REFRIGERATOR SIZES|58%|PARTIAL<br>PROFILE|INCOMPLETE|ACTION REQUIRED|MISSING: COI EXPIRATION|MISSING: COI EMAIL|MISSING: COI DOCUMENT|Not in Master List|Candidate for Review|No Duplicates Found|Checked: Jul 30, 12:10 PM/g;
         page = page.replace(templateTokens, token => replacements.get(token) || token);
-        page = page.replace("</head>", "<style>body{zoom:.72!important;width:138.89%!important;overflow:hidden!important}</style></head>");
+        page = page.replace("</head>", "<style>body{zoom:.90!important;width:111.12%!important;overflow:hidden!important}</style></head>");
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
       } catch (error) {
         return json({ error: "Saved contact card render failed", detail: error instanceof Error ? error.message : String(error) }, 502);

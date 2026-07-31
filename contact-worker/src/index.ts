@@ -346,7 +346,13 @@ async function importEmail(request: Request, env: Env) {
   const projectName = contactId ? projectFromEmail(extracted.subject, fileName, extracted.bodyText) : null;
   const project = contactId && projectName ? await linkProject(env, contactId, { projectName, projectRole: "Email correspondence", isCurrent: true, sourceEmailId: emailId, sourceLocation: "Outlook .msg subject/body" }) : null;
   const contact = contactId ? await env.DB.prepare("SELECT id,display_name,primary_email,primary_phone FROM ssx_contacts WHERE id=?").bind(contactId).first() : null;
-  return json({ id: importId, contactId, emailId, status, duplicate: refreshingDuplicate, retried: retryingReview, profileRefreshed: refreshingDuplicate, completion: { emailStored: true, contact, company: company ? { id: company.id, name: company.name, website: company.website, phone: company.phone, logoStored: Boolean(signatureLogoKey) } : null, project, daleTodoCreated: Boolean(action) }, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, retryingReview ? 200 : 201, await sessionHeaders(request, env));
+  const extractionAudit = {
+    htmlAndSignatureTextRead: Boolean(extracted.bodyText),
+    parsedFacts: facts,
+    realOutlookAttachments: extracted.attachments.map(attachment => ({ fileName: attachment.fileName, contentType: attachmentContentType(attachment.content, attachment.fileName), bytes: attachment.content.byteLength })),
+    signatureTail: (extracted.bodyText || "").replace(/\r/g, "").split("\n").map(line => line.trim()).filter(Boolean).slice(-18)
+  };
+  return json({ id: importId, contactId, emailId, status, duplicate: refreshingDuplicate, retried: retryingReview, profileRefreshed: refreshingDuplicate, completion: { emailStored: true, contact, company: company ? { id: company.id, name: company.name, website: company.website, phone: company.phone, logoStored: Boolean(signatureLogoKey) } : null, project, daleTodoCreated: Boolean(action), extractionAudit }, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, retryingReview ? 200 : 201, await sessionHeaders(request, env));
 }
 
 function daleTodoPage() {
@@ -526,7 +532,8 @@ function uploadPage() {
         if (!response.ok && response.status !== 409) throw new Error(JSON.stringify(data, null, 2));
         if (response.ok || response.status === 409) { signedIn = true; signIn.hidden = true; }
         const c = data.completion;
-        const summary = c ? ['CONTACT CARD CREATED', 'NAME: ' + (c.contact ? c.contact.display_name : 'Needs review'), 'EMAIL: ' + (c.contact?.primary_email || 'Not found in email'), 'PHONE: ' + (c.contact?.primary_phone || 'Not found in email'), 'PROJECT: ' + (c.project ? c.project.project_name : 'Needs project review'), 'DALE TO DO: ' + (c.daleTodoCreated ? 'Created' : 'None found'), 'EMAIL STORED: YES'].join('\\n') : JSON.stringify(data, null, 2);
+        const audit = c?.extractionAudit;
+        const summary = c ? ['CONTACT CARD CREATED', 'NAME: ' + (c.contact ? c.contact.display_name : 'Needs review'), 'EMAIL: ' + (c.contact?.primary_email || 'Not found in email'), 'PHONE: ' + (c.contact?.primary_phone || 'Not found in email'), 'PROJECT: ' + (c.project ? c.project.project_name : 'Needs project review'), 'DALE TO DO: ' + (c.daleTodoCreated ? 'Created' : 'None found'), 'EMAIL STORED: YES', '', 'SOURCE EXTRACTION AUDIT', 'PARSED: ' + JSON.stringify(audit?.parsedFacts || {}), 'ATTACHMENTS: ' + JSON.stringify(audit?.realOutlookAttachments || []), 'SIGNATURE TAIL:', ...(audit?.signatureTail || ['No HTML/plain signature text recovered.'])].join('\\n') : JSON.stringify(data, null, 2);
         setStatus((response.status === 409 && data.import?.status !== 'completed' ? 'ALREADY STORED' : 'COMPLETE') + '\\n\\n' + summary, true);
         copyResult.hidden = false;
         await showContactCard(data.completion?.contact?.id || data.contactId || data.import?.contact_id);

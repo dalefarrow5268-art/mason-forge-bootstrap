@@ -244,6 +244,7 @@ async function importEmail(request: Request, env: Env) {
     if (exact) contactId = exact.id;
     else if (extracted.senderName) contactId = (await createContact(env, { displayName: extracted.senderName, email: extracted.senderEmail }, "Outlook .msg sender header")).id;
   }
+  if (refreshingDuplicate && !contactId) contactId = duplicate!.contact_id;
   const objectKey = `contacts/${contactId || "unassigned"}/emails/${sha}/${fileName}`;
   await env.CONTACT_FILES.put(objectKey, bytes, { httpMetadata: { contentType: "application/vnd.ms-outlook" }, customMetadata: { sha256: sha, importId } });
   const emailId = existingEmail?.id || id(); const status = extracted.parseError ? "review" : (contactId ? "completed" : "review");
@@ -284,7 +285,7 @@ async function importEmail(request: Request, env: Env) {
   }
 
   const action = requestedAction(extracted.subject, extracted.bodyText);
-  if (contactId && action) {
+  if (contactId && action && !refreshingDuplicate) {
     const taskTitle = `Review email action request${extracted.subject ? `: ${extracted.subject.slice(0, 180)}` : ""}`;
     await env.DB.batch([
       env.DB.prepare("INSERT INTO ssx_contact_tasks (id,contact_id,email_id,title,description,priority,status) VALUES (?,?,?,?,?,'normal','open')").bind(id(),contactId,emailId,taskTitle,action),

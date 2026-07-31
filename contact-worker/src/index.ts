@@ -13,7 +13,15 @@ type ProjectLinkInput = { projectName: string; projectId?: number | null; projec
 type TaskUpdateInput = { status: "open" | "completed" | "dismissed" };
 type CoiInput = { attachmentId: string; insurerName?: string | null; policyNumber?: string | null; effectiveDate?: string | null; expirationDate?: string | null; notes?: string | null; sourceLocation: string };
 type DuplicateReviewUpdateInput = { status: "not_duplicate" };
-const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,POST,PATCH,OPTIONS",
+  "Access-Control-Allow-Headers": "Authorization,Content-Type,X-SSX-File-Name,X-SSX-SHA256",
+  "Access-Control-Max-Age": "86400"
+};
+const noStoreHeaders = { "Cache-Control": "no-store", ...corsHeaders };
+const json = (body: unknown, status = 200) => Response.json(body, { status, headers: noStoreHeaders });
 const id = () => crypto.randomUUID();
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
 const safeName = (value: string) => value.replace(/[^a-zA-Z0-9._ -]/g, "_").slice(0, 160);
@@ -204,7 +212,8 @@ async function importEmail(request: Request, env: Env) {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url); const path = url.pathname.replace(/\/+$/, "") || "/";
-    if (path === "/contact-system/health" && request.method === "GET") return Response.json({ system:"SSX Contact System", storage:"Cloudflare D1 + private R2", mode:"source-only", aiEnrichment:false, ready:true, timestamp:new Date().toISOString() }, { headers: { "Cache-Control":"no-store", "Access-Control-Allow-Origin":"*" } });
+    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
+    if (path === "/contact-system/health" && request.method === "GET") return json({ system:"SSX Contact System", storage:"Cloudflare D1 + private R2", mode:"source-only", aiEnrichment:false, ready:true, timestamp:new Date().toISOString() });
     const authError = requireAuth(request, env); if (authError) return authError;
     if (path === "/contact-system/review-queue" && request.method === "GET") {
       const [imports, duplicates, incomplete, cois] = await env.DB.batch([
@@ -312,7 +321,8 @@ export default {
       return new Response(object.body, { headers: {
         "Content-Type": attachment?.content_type || "application/vnd.ms-outlook",
         "Content-Disposition": `attachment; filename="${safeName(file.file_name)}"`,
-        "Cache-Control": "private, no-store"
+        "Cache-Control": "private, no-store",
+        ...corsHeaders
       }});
     }
     return json({ error: "Not found" }, 404);

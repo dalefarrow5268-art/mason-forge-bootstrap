@@ -52,7 +52,7 @@ function stringsFromPdfText(value: string) {
   const output: string[] = [];
   for (const match of value.matchAll(/\((?:\\.|[^\\)])*\)\s*(?:Tj|['"])/g)) output.push(decodePdfLiteral(match[0].replace(/\s*(?:Tj|['"])$/, "").slice(1,-1)));
   for (const match of value.matchAll(/\[(.*?)\]\s*TJ/gs)) for (const part of match[1].matchAll(/\((?:\\.|[^\\)])*\)/g)) output.push(decodePdfLiteral(part[0].slice(1,-1)));
-  return output.join(" ").replace(/\s+/g, " ").trim();
+  return output.join("\n").replace(/[ \t]+/g, " ").replace(/\n{2,}/g, "\n").trim();
 }
 async function pdfSourceText(bytes: Uint8Array) {
   const raw = new TextDecoder("latin1").decode(bytes);
@@ -67,7 +67,7 @@ async function pdfSourceText(bytes: Uint8Array) {
       pieces.push(stringsFromPdfText(new TextDecoder("latin1").decode(inflated)));
     } catch { /* some PDFs use unsupported filters; preserve file and continue */ }
   }
-  return pieces.join("\n").replace(/\s+/g, " ").trim().slice(0, 50000);
+  return pieces.join("\n").replace(/[ \t]+/g, " ").replace(/\n{2,}/g, "\n").trim().slice(0, 50000);
 }
 const masterContactCardTemplateUrl = "https://mason-forge-bootstrap.vercel.app/final-templates/master-contact-card-template.html";
 const escapeCardHtml = (value: unknown) => String(value ?? "Not provided").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");

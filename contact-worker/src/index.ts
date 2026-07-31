@@ -176,6 +176,15 @@ function requestedAction(subject?: string, body?: string) {
   return source.replace(/\s+/g, " ").slice(0, 800);
 }
 
+function projectFromEmail(subject?: string, fileName?: string, body?: string) {
+  const text = `${subject || ""}\n${fileName || ""}\n${body || ""}`;
+  if (/autograph.*jericho|jericho.*autograph/i.test(text)) return "Autograph by Marriott – Jericho, NY";
+  if (/tmc.*helix.*houston/i.test(text)) return "TMC Helix Park – Houston, TX";
+  if (/sam'?s club.*maple grove/i.test(text)) return "Sam's Club Maple Grove, MN";
+  if (/walmart.*monroe/i.test(text)) return "Walmart Monroe, NY 2637-259";
+  return null;
+}
+
 async function importEmail(request: Request, env: Env) {
   const fileName = safeName(decodeFileHeader(request.headers.get("X-SSX-File-Name") || "email.msg"));
   const sha = (request.headers.get("X-SSX-SHA256") || "").toLowerCase();
@@ -222,8 +231,11 @@ async function importEmail(request: Request, env: Env) {
     await env.CONTACT_FILES.put(attachmentKey, attachment.content, { httpMetadata: { contentType: "application/octet-stream" }, customMetadata: { sha256: attachmentSha, emailId } });
     await env.DB.prepare("INSERT INTO ssx_contact_attachments (id,email_id,file_name,content_type,r2_key,sha256,size_bytes) VALUES (?,?,?,?,?,?,?)").bind(id(),emailId,attachmentName,"application/octet-stream",attachmentKey,attachmentSha,attachment.content.byteLength).run();
   }
-  if (contactId) for (const [field,value] of Object.entries({ sender_name: extracted.senderName, sender_email: extracted.senderEmail, subject: extracted.subject })) if (value) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,field,value,"Outlook .msg header").run();
-  return json({ id: importId, contactId, emailId, status, duplicate: false, retried: retryingReview, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, retryingReview ? 200 : 201, await sessionHeaders(request, env));
+  if (contactId) for (const [field,value] of Object.entries({ sender_name: extracted.senderName, sender_email: extracted.senderEmail, subject: extracted.subject })) if (value) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,emailId,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,field,value,"Outlook .msg header").run();
+  const projectName = contactId ? projectFromEmail(extracted.subject, fileName, extracted.bodyText) : null;
+  const project = contactId && projectName ? await linkProject(env, contactId, { projectName, projectRole: "Email correspondence", isCurrent: true, sourceEmailId: emailId, sourceLocation: "Outlook .msg subject/body" }) : null;
+  const contact = contactId ? await env.DB.prepare("SELECT id,display_name,primary_email FROM ssx_contacts WHERE id=?").bind(contactId).first() : null;
+  return json({ id: importId, contactId, emailId, status, duplicate: false, retried: retryingReview, completion: { emailStored: true, contact, project, daleTodoCreated: Boolean(action) }, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, retryingReview ? 200 : 201, await sessionHeaders(request, env));
 }
 
 function daleTodoPage() {
@@ -345,7 +357,9 @@ function uploadPage() {
         try { data = JSON.parse(text); } catch { data = { raw: text }; }
         if (!response.ok && response.status !== 409) throw new Error(JSON.stringify(data, null, 2));
         if (response.ok || response.status === 409) { signedIn = true; signIn.hidden = true; }
-        setStatus((response.status === 409 ? 'DUPLICATE - ALREADY STORED' : 'SUCCESS') + '\\n\\n' + JSON.stringify(data, null, 2) + '\\n\\nSHA-256: ' + sha, true);
+        const c = data.completion;
+        const summary = c ? ['EMAIL STORED: YES', 'CONTACT CARD: ' + (c.contact ? c.contact.display_name : 'Needs review'), 'PROJECT: ' + (c.project ? c.project.project_name : 'Needs project review'), 'DALE TO DO: ' + (c.daleTodoCreated ? 'Created' : 'None found')].join('\\n') : JSON.stringify(data, null, 2);
+        setStatus((response.status === 409 && data.import?.status !== 'completed' ? 'ALREADY STORED' : 'COMPLETE') + '\\n\\n' + summary, true);
       } catch (error) {
         setStatus('FAILED\\n\\n' + (error.message || error), false);
       } finally {

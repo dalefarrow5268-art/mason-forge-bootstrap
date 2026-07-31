@@ -583,7 +583,7 @@ export default {
         const logoLabel = contact.company_logo_r2_key ? "SOURCE LOGO ON FILE" : "LOGO NOT PROVIDED";
         const templateTokens = /Avery Walsh|Northstar Climate Systems|avery\.walsh@example\.com|northstar\.example|Demo Contact Record|Mechanical Supplier \/ Vendor|Autograph by Marriott — Jericho, NY|Re: Demo project inquiry|RE: Equipment information request|SCHEDULE MEETING|REQUEST REFRIGERATOR SIZES|58%|PARTIAL<br>PROFILE|INCOMPLETE|ACTION REQUIRED|MISSING: COI EXPIRATION|MISSING: COI EMAIL|MISSING: COI DOCUMENT|Not in Master List|Candidate for Review|No Duplicates Found|Checked: Jul 30, 12:10 PM/g;
         page = page.replace(templateTokens, token => replacements.get(token) || token);
-        page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}.malkin{font-size:0!important}.malkin:after{content:'\${logoLabel}';font-size:11px;color:#121518;letter-spacing:.06em;text-align:center}.research .meter i{width:0!important}</style></head>");
+        page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}.malkin{font-size:0!important}.malkin:after{content:'" + logoLabel + "';font-size:11px;color:#121518;letter-spacing:.06em;text-align:center}.research .meter i{width:0!important}</style></head>");
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
       } catch (error) {
         return json({ error: "Saved contact card render failed", detail: error instanceof Error ? error.message : String(error) }, 502);

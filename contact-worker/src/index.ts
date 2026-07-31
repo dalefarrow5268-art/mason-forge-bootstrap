@@ -34,7 +34,7 @@ function imageContentType(bytes: Uint8Array) {
   const b = bytes;
   if (b.length >= 8 && b[0]===137 && b[1]===80 && b[2]===78 && b[3]===71 && b[4]===13 && b[5]===10 && b[6]===26 && b[7]===10) return "image/png";
   if (b.length >= 3 && b[0]===255 && b[1]===216 && b[2]===255) return "image/jpeg";
-  if (b.length >= 6 && String.fromCharCode(...b.slice(0,6)) === "GIF87a" || b.length >= 6 && String.fromCharCode(...b.slice(0,6)) === "GIF89a") return "image/gif";
+  if (b.length >= 6 && (String.fromCharCode(...b.slice(0,6)) === "GIF87a" || String.fromCharCode(...b.slice(0,6)) === "GIF89a")) return "image/gif";
   if (b.length >= 12 && String.fromCharCode(...b.slice(0,4)) === "RIFF" && String.fromCharCode(...b.slice(8,12)) === "WEBP") return "image/webp";
   return null;
 }
@@ -204,12 +204,14 @@ function projectFromEmail(subject?: string, fileName?: string, body?: string) {
 
 type SignatureFacts = { companyName?: string; website?: string; phone?: string; title?: string; tradeCategory?: string };
 
-function signatureFacts(body?: string, senderName?: string): SignatureFacts {
+function signatureFacts(body?: string, senderName?: string, senderEmail?: string): SignatureFacts {
   const lines = (body || "").replace(/\r/g, "").split("\n").map(line => line.replace(/\s+/g, " ").trim()).filter(Boolean);
-  const signatureLines = lines.slice(-45);
+  const signatureLines = lines.slice(-70);
   const phone = [...signatureLines].reverse().map(line => line.match(/(?:\+?1[ .-]?)?(?:\(?\d{3}\)?[ .-]?)\d{3}[ .-]\d{4}/)?.[0]).find(Boolean);
-  const websiteMatch = [...signatureLines].reverse().map(line => line.match(/(?:https?:\/\/|www\.)[^\s<>]+/i)?.[0]).find(Boolean);
-  const website = websiteMatch?.replace(/[),.;]+$/, "");
+  const urls = signatureLines.flatMap(line => line.match(/(?:https?:\/\/|www\.)[^\s<>]+/ig) || []).map(value => value.replace(/[),.;]+$/, ""));
+  const senderDomain = (senderEmail || "").split("@")[1]?.toLowerCase();
+  const domainUrl = senderDomain ? urls.find(value => { try { return new URL(value.startsWith("http") ? value : "https://" + value).hostname.replace(/^www\./,"").endsWith(senderDomain); } catch { return false; } }) : undefined;
+  const website = domainUrl || urls[0] || (senderDomain ? "https://" + senderDomain : undefined);
   const excluded = /^(thanks|thank you|regards|best|sincerely|sent from|tel|phone|fax|mobile|office|direct|www\.|https?:\/\/|\S+@\S+|\d{1,6}\s+.+|.*\b(?:street|st\.?|avenue|ave\.?|road|rd\.?|suite|floor|ny|tx|mn|ca)\b.*)$/i;
   const companyLine = [...signatureLines].reverse().find(line => {
     const letters = (line.match(/[A-Za-z]/g) || []).length;
@@ -218,11 +220,14 @@ function signatureFacts(body?: string, senderName?: string): SignatureFacts {
   });
   const companyName = companyLine?.replace(/\s{2,}/g, " ").replace(/[|•]+/g, " ").trim();
   const companyIndex = companyName ? signatureLines.lastIndexOf(companyLine!) : -1;
-  const candidateTitle = companyIndex > 0 ? signatureLines[companyIndex - 1] : undefined;
   const senderNormalized = normalize(senderName || "");
-  const title = candidateTitle && !excluded.test(candidateTitle) && normalize(candidateTitle) !== senderNormalized && validTitle(candidateTitle) ? candidateTitle : undefined;
+  const nearby = companyIndex >= 0 ? signatureLines.slice(Math.max(0, companyIndex - 4), Math.min(signatureLines.length, companyIndex + 5)) : signatureLines;
+  const titleLine = nearby.find(line => /\b(?:chief|president|vice president|vp|director|manager|engineer|estimator|superintendent|coordinator|architect|principal|partner|sales|consultant|specialist)\b/i.test(line) && validTitle(line) && normalize(line) !== senderNormalized && !excluded.test(line));
+  const candidateTitle = companyIndex > 0 ? signatureLines[companyIndex - 1] : undefined;
+  const title = titleLine || (candidateTitle && !excluded.test(candidateTitle) && normalize(candidateTitle) !== senderNormalized && validTitle(candidateTitle) ? candidateTitle : undefined);
+  const tradeLine = nearby.find(line => line !== companyLine && line.length < 110 && !excluded.test(line) && !/[0-9@]/.test(line) && /\b(?:construction|engineering|architect(?:ure|ural)?|mechanical|electrical|plumbing|hvac|roofing|concrete|steel|survey(?:ing)?|inspection|testing|landscape|civil|geotechnical|environmental|fire protection|fabrication)\b/i.test(line));
   const candidateTrade = companyIndex >= 0 ? signatureLines[companyIndex + 1] : undefined;
-  const tradeCategory = candidateTrade && candidateTrade.length < 100 && !excluded.test(candidateTrade) && !/[0-9@]/.test(candidateTrade) ? candidateTrade : undefined;
+  const tradeCategory = tradeLine || (candidateTrade && candidateTrade.length < 100 && !excluded.test(candidateTrade) && !/[0-9@]/.test(candidateTrade) ? candidateTrade : undefined);
   return { companyName, website, phone, title, tradeCategory };
 }
 
@@ -268,7 +273,7 @@ async function importEmail(request: Request, env: Env) {
   let company: Record<string, unknown> | null = null;
   let facts: SignatureFacts = {};
   if (contactId && !extracted.parseError) {
-    facts = signatureFacts(extracted.bodyText, extracted.senderName);
+    facts = signatureFacts(extracted.bodyText, extracted.senderName, extracted.senderEmail);
     const current = await env.DB.prepare("SELECT company_id,primary_phone,title FROM ssx_contacts WHERE id=?").bind(contactId).first<{company_id:string|null;primary_phone:string|null;title:string|null}>();
     if (facts.companyName) {
       company = await saveCompany(env, current?.company_id || null, {
@@ -317,7 +322,7 @@ async function importEmail(request: Request, env: Env) {
   }
   if (contactId && company?.id && signatureLogoKey) {
     await env.DB.batch([
-      env.DB.prepare("UPDATE ssx_companies SET logo_r2_key=COALESCE(logo_r2_key,?),updated_at=? WHERE id=?").bind(signatureLogoKey,now,String(company.id)),
+      env.DB.prepare("UPDATE ssx_companies SET logo_r2_key=?,updated_at=? WHERE id=?").bind(signatureLogoKey,now,String(company.id)),
       env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,"company_logo_r2_key",signatureLogoKey,"Outlook .msg signature image")
     ]);
   }
@@ -561,7 +566,7 @@ export default {
           env.DB.prepare("SELECT project_name,project_role,is_current,source_email_id FROM ssx_contact_projects WHERE contact_id=? ORDER BY is_current DESC,linked_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
           env.DB.prepare("SELECT title,status FROM ssx_contact_tasks WHERE contact_id=? ORDER BY created_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
           env.DB.prepare("SELECT id,subject,sender_name,sender_email,received_at,original_file_name FROM ssx_contact_emails WHERE contact_id=? ORDER BY received_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
-          env.DB.prepare("SELECT a.id FROM ssx_contact_attachments a JOIN ssx_contact_emails e ON e.id=a.email_id WHERE e.contact_id=? AND a.r2_key=? LIMIT 1").bind(cardPreviewMatch[1], String(contact.company_logo_r2_key || "")),
+          env.DB.prepare("SELECT a.id,a.content_type FROM ssx_contact_attachments a JOIN ssx_contact_emails e ON e.id=a.email_id WHERE e.contact_id=? AND a.r2_key=? LIMIT 1").bind(cardPreviewMatch[1], String(contact.company_logo_r2_key || "")),
           env.DB.prepare("SELECT a.id,a.file_name,a.content_type,a.size_bytes FROM ssx_contact_attachments a JOIN ssx_contact_emails e ON e.id=a.email_id WHERE e.contact_id=? ORDER BY a.created_at DESC LIMIT 20").bind(cardPreviewMatch[1])
         ]);
         const detail = { contact, projects: projects.results, tasks: tasks.results, emails: emails.results, cois: [], completeness: completeness(contact) };
@@ -616,7 +621,7 @@ export default {
           ["Contact Title", validTitle(contact.title) ? "Title on file" : "Title missing"],
           ["Trade Category", contact.company_trade_category ? "Trade: " + String(contact.company_trade_category) : "Trade category missing"],
           ["Member Status", "Member status not reviewed"],
-          ["Logo Verified", contact.company_logo_r2_key ? "Source logo on file" : "Logo not provided"],
+          ["Logo Verified", "Logo validated below"],
           ["VERIFIED PROFILE", "RESEARCH NOT RUN"],
           ["Online Presence Found", "No online research stored"],
           ["Industry Match", "Email-signature facts only"],
@@ -626,7 +631,7 @@ export default {
         ];
         for (const [from, to] of profileLabels) page = page.replaceAll(from, escapeCardHtml(to));
         const logoAttachment = (logoAttachments.results as Array<Record<string, unknown>>)[0];
-        const logoUrl = logoAttachment?.id ? "/contact-system/files/" + String(logoAttachment.id) + "?inline=1" : "";
+        const logoUrl = logoAttachment?.id && String(logoAttachment.content_type || "").startsWith("image/") ? "/contact-system/files/" + String(logoAttachment.id) + "?inline=1" : "";
         const logoLabel = logoUrl ? "SOURCE LOGO ON FILE" : "NO SOURCE LOGO SAVED";
         const completenessRows = [
           ["Email", Boolean(contact.primary_email)],

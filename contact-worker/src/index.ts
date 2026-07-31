@@ -256,16 +256,16 @@ function uploadPage() {
   <style>
     :root { color-scheme: dark; --bg:#05080d; --panel:#0a111a; --line:#1d4158; --blue:#18bdf4; --gold:#d8b24a; --text:#e8f7ff; --muted:#8daab8; --bad:#ff6a62; --good:#38d987; }
     * { box-sizing: border-box; }
-    body { margin:0; min-height:100vh; background:radial-gradient(circle at top, #102334 0, #05080d 42%, #020305 100%); color:var(--text); font:14px/1.45 Arial, sans-serif; display:grid; place-items:center; padding:24px; }
-    main { width:min(1500px, 100%); border:1px solid var(--line); background:rgba(5,10,16,.92); border-radius:8px; box-shadow:0 18px 60px rgba(0,0,0,.45); padding:22px; display:grid; grid-template-columns:minmax(470px,1fr) minmax(420px,.9fr); gap:18px; align-items:start; }
+    body { margin:0; min-height:100vh; background:radial-gradient(circle at top, #102334 0, #05080d 42%, #020305 100%); color:var(--text); font:14px/1.45 Arial, sans-serif; padding:18px; }
+    main { width:min(1780px, 100%); margin:0; border:1px solid var(--line); background:rgba(5,10,16,.92); border-radius:8px; box-shadow:0 18px 60px rgba(0,0,0,.45); padding:18px; display:grid; grid-template-columns:360px minmax(0,1fr); gap:24px; align-items:start; }
     .uploadPane { min-width:0; }
-    @media (max-width:960px) { main { display:block; } .card { margin-top:18px !important; } }
+    @media (max-width:960px) { main { display:block; } .card { margin-top:18px !important; min-height:0 !important; } }
     h1 { margin:0 0 6px; font-size:22px; letter-spacing:.08em; text-transform:uppercase; color:#fff; }
     .sub { margin:0 0 18px; color:var(--muted); }
     label { display:block; margin:14px 0 6px; color:#bfefff; font-weight:700; letter-spacing:.04em; text-transform:uppercase; font-size:11px; }
     input, button { width:100%; border-radius:6px; border:1px solid var(--line); background:#07111a; color:var(--text); padding:11px 12px; font:inherit; }
     input[type=file] { display:none; }
-    .drop { margin-top:8px; border:2px dashed #1d6e92; border-radius:8px; padding:28px 18px; text-align:center; color:#bfefff; cursor:pointer; background:#07111a; }
+    .drop { margin-top:8px; border:2px dashed #1d6e92; border-radius:8px; padding:18px 12px; text-align:center; color:#bfefff; cursor:pointer; background:#07111a; }
     .drop.over { border-color:#18bdf4; background:#0d2738; }
     button { margin-top:16px; border-color:var(--blue); background:linear-gradient(180deg, #0d4f75, #082739); color:#e9fbff; font-weight:800; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
     button:disabled { opacity:.55; cursor:not-allowed; }
@@ -273,13 +273,14 @@ function uploadPage() {
     .ok { border-color:rgba(56,217,135,.65); color:#c8ffe0; }
     .bad { border-color:rgba(255,106,98,.75); color:#ffd1cd; }
     .note { margin-top:14px; color:var(--gold); font-size:12px; }
-    .card { display:none; margin-top:0; padding:18px; border:1px solid #18bdf4; border-radius:8px; background:#08131d; }
+    .card { display:block; min-height:760px; margin-top:0; padding:26px; border:1px solid #18bdf4; border-radius:8px; background:#08131d; }
     .card h2 { margin:0 0 12px; letter-spacing:.06em; text-transform:uppercase; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .field { padding:10px; border:1px solid #1d4158; border-radius:6px; background:#07111a; }
     .field b { display:block; color:#8daab8; font-size:11px; margin-bottom:4px; }
     .section { margin-top:14px; padding-top:12px; border-top:1px solid #1d4158; }
     .section li { margin:5px 0; color:#c8dbe4; }
+    .cardPlaceholder { min-height:680px; display:grid; place-items:center; border:1px dashed #1d4158; border-radius:6px; color:var(--muted); text-align:center; padding:24px; }
   </style>
 </head>
 <body>
@@ -300,9 +301,9 @@ function uploadPage() {
 
     <button id="upload">Upload Email And Create Contact</button>
     <div id="status" class="status">Waiting for .msg file.</div>
+    <p class="note">Upload goes directly into the Cloudflare contact system and private D1/R2 storage.</p>
     </div>
-    <section id="cardWindow" class="card"></section>
-    <p class="note">This page is served by Cloudflare, so the upload goes directly to the same Cloudflare Worker and then into D1/R2 storage.</p>
+    <section id="cardWindow" class="card"><div class="cardPlaceholder"><div><strong>SAVED CONTACT CARD</strong><br><br>After each email is processed, the completed contact card appears here.</div></div></section>
   </main>
 
   <script>

@@ -37,7 +37,7 @@ function fallbackExtract(bytes: ArrayBuffer, reason: string): ExtractedMsg {
     subject: subjectMatch?.[1]?.trim(),
     bodyText,
     recipients: addresses.slice(1).map(value => ({ email: value, type: "to" })),
-    attachments: []
+    attachments: embeddedImages(bytes)
   };
 }
 

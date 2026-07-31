@@ -169,13 +169,14 @@ async function importEmail(request: Request, env: Env) {
   const sha = (request.headers.get("X-SSX-SHA256") || "").toLowerCase();
   if (!/^[a-f0-9]{64}$/.test(sha)) return json({ error: "A valid X-SSX-SHA256 header is required" }, 400);
   if (!fileName.toLowerCase().endsWith(".msg")) return json({ error: "Only .msg files are accepted" }, 415);
-  const duplicate = await env.DB.prepare("SELECT id, contact_id, status FROM ssx_contact_import_jobs WHERE original_sha256=?").bind(sha).first();
-  if (duplicate) return json({ duplicate: true, import: duplicate }, 409);
+  const duplicate = await env.DB.prepare("SELECT id, contact_id, email_id, status FROM ssx_contact_import_jobs WHERE original_sha256=?").bind(sha).first<{id:string;contact_id:string|null;email_id:string|null;status:string}>();
+  const retryingReview = Boolean(duplicate && duplicate.status === "review" && !duplicate.contact_id && duplicate.email_id);
+  if (duplicate && !retryingReview) return json({ duplicate: true, import: duplicate }, 409);
   const bytes = await request.arrayBuffer();
   if (!bytes.byteLength || bytes.byteLength > 50 * 1024 * 1024) return json({ error: "Email must be between 1 byte and 50 MB" }, 413);
   const computed = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))).map(v => v.toString(16).padStart(2,"0")).join("");
   if (computed !== sha) return json({ error: "SHA-256 does not match uploaded bytes" }, 400);
-  const importId = id(); const now = new Date().toISOString();
+  const importId = duplicate?.id || id(); const now = new Date().toISOString();
   const extracted = extractOutlookMsg(bytes);
   let contactId: string | null = null;
   if (!extracted.parseError && extracted.senderEmail) {
@@ -185,10 +186,14 @@ async function importEmail(request: Request, env: Env) {
   }
   const objectKey = `contacts/${contactId || "unassigned"}/emails/${sha}/${fileName}`;
   await env.CONTACT_FILES.put(objectKey, bytes, { httpMetadata: { contentType: "application/vnd.ms-outlook" }, customMetadata: { sha256: sha, importId } });
-  const emailId = id(); const status = extracted.parseError ? "review" : (contactId ? "completed" : "review");
-  // Insert the parent email first: ssx_contact_import_jobs.email_id has a foreign-key relationship to it.
-  await env.DB.prepare("INSERT INTO ssx_contact_emails (id,contact_id,direction,sender_name,sender_email,recipients_json,subject,received_at,body_text,original_msg_r2_key,original_file_name,original_sha256,original_size_bytes,extraction_status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(emailId,contactId,"received",extracted.senderName || null,extracted.senderEmail || null,JSON.stringify(extracted.recipients),extracted.subject || null,now,extracted.bodyText || null,objectKey,fileName,sha,bytes.byteLength,extracted.parseError ? "review" : "extracted",now).run();
-  await env.DB.prepare("INSERT INTO ssx_contact_import_jobs (id,original_file_name,original_sha256,status,contact_id,email_id,error_message,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)").bind(importId,fileName,sha,status,contactId,emailId,extracted.parseError || null,now,now).run();
+  const emailId = duplicate?.email_id || id(); const status = extracted.parseError ? "review" : (contactId ? "completed" : "review");
+  if (retryingReview) {
+    await env.DB.prepare("UPDATE ssx_contact_emails SET contact_id=?,sender_name=?,sender_email=?,recipients_json=?,subject=?,body_text=?,extraction_status=? WHERE id=?").bind(contactId,extracted.senderName || null,extracted.senderEmail || null,JSON.stringify(extracted.recipients),extracted.subject || null,extracted.bodyText || null,extracted.parseError ? "review" : "extracted",emailId).run();
+    await env.DB.prepare("UPDATE ssx_contact_import_jobs SET status=?,contact_id=?,error_message=?,updated_at=? WHERE id=?").bind(status,contactId,extracted.parseError || null,now,importId).run();
+  } else {
+    await env.DB.prepare("INSERT INTO ssx_contact_emails (id,contact_id,direction,sender_name,sender_email,recipients_json,subject,received_at,body_text,original_msg_r2_key,original_file_name,original_sha256,original_size_bytes,extraction_status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(emailId,contactId,"received",extracted.senderName || null,extracted.senderEmail || null,JSON.stringify(extracted.recipients),extracted.subject || null,now,extracted.bodyText || null,objectKey,fileName,sha,bytes.byteLength,extracted.parseError ? "review" : "extracted",now).run();
+    await env.DB.prepare("INSERT INTO ssx_contact_import_jobs (id,original_file_name,original_sha256,status,contact_id,email_id,error_message,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)").bind(importId,fileName,sha,status,contactId,emailId,extracted.parseError || null,now,now).run();
+  }
   const action = requestedAction(extracted.subject, extracted.bodyText);
   if (contactId && action) {
     const taskTitle = `Review email action request${extracted.subject ? `: ${extracted.subject.slice(0, 180)}` : ""}`;
@@ -205,7 +210,7 @@ async function importEmail(request: Request, env: Env) {
     await env.DB.prepare("INSERT INTO ssx_contact_attachments (id,email_id,file_name,content_type,r2_key,sha256,size_bytes) VALUES (?,?,?,?,?,?,?)").bind(id(),emailId,attachmentName,"application/octet-stream",attachmentKey,attachmentSha,attachment.content.byteLength).run();
   }
   if (contactId) for (const [field,value] of Object.entries({ sender_name: extracted.senderName, sender_email: extracted.senderEmail, subject: extracted.subject })) if (value) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,field,value,"Outlook .msg header").run();
-  return json({ id: importId, contactId, emailId, status, duplicate: false, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, 201);
+  return json({ id: importId, contactId, emailId, status, duplicate: false, retried: retryingReview, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, retryingReview ? 200 : 201);
 }
 
 function uploadPage() {

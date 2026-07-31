@@ -26,6 +26,8 @@ const id = () => crypto.randomUUID();
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
 const safeName = (value: string) => value.replace(/[^a-zA-Z0-9._ -]/g, "_").slice(0, 160);
 const decodeFileHeader = (value: string) => { try { return decodeURIComponent(value); } catch { return value; } };
+const masterContactCardTemplateUrl = "https://mason-forge-bootstrap.vercel.app/final-templates/master-contact-card-template.html";
+const escapeCardHtml = (value: unknown) => String(value ?? "Not provided").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 const sessionMaxAge = 60 * 60 * 24 * 30;
 const cookie = (request: Request, name: string) => request.headers.get("Cookie")?.split(/;\s*/).find(value => value.startsWith(name + "="))?.slice(name.length + 1);
 const toBase64Url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -274,7 +276,8 @@ function uploadPage() {
     .ok { border-color:rgba(56,217,135,.65); color:#c8ffe0; }
     .bad { border-color:rgba(255,106,98,.75); color:#ffd1cd; }
     .note { margin-top:10px; color:var(--gold); font-size:12px; }
-    .card { display:block; min-height:calc(100vh - 56px); margin-top:0; padding:20px; border:1px solid #18bdf4; border-radius:8px; background:#08131d; }
+    .card { display:block; min-height:calc(100vh - 56px); margin-top:0; padding:0; overflow:hidden; border:1px solid #18bdf4; border-radius:8px; background:#08131d; }
+    .cardPreview { display:block; width:100%; height:calc(100vh - 56px); border:0; background:#05080d; }
     .card h2 { margin:0 0 12px; letter-spacing:.06em; text-transform:uppercase; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .field { padding:10px; border:1px solid #1d4158; border-radius:6px; background:#07111a; }
@@ -383,12 +386,7 @@ function uploadPage() {
     const esc = value => { const el = document.createElement('div'); el.textContent = value || 'Not provided'; return el.innerHTML; };
     async function showContactCard(contactId) {
       if (!contactId) return;
-      const response = await fetch('/contact-system/contacts/' + encodeURIComponent(contactId));
-      if (!response.ok) return;
-      const data = await response.json();
-      const c = data.contact, projects = data.projects || [], tasks = data.tasks || [], emails = data.emails || [];
-      $('cardWindow').innerHTML = '<div class="cardTemplate"><header class="cardHeader"><div><div class="cardKicker">SSX Contact Card · Saved from Outlook Email</div><div class="contactName">' + esc(c.display_name) + '</div><div>' + esc(c.company_name) + '</div></div><span class="badge">INSTALLED</span></header><div class="templateGrid"><section class="templatePanel"><h3>CONTACT IDENTITY</h3><div class="infoRows"><div class="info"><span>EMAIL</span><strong>' + esc(c.primary_email) + '</strong></div><div class="info"><span>PHONE</span><strong>' + esc(c.primary_phone) + '</strong></div><div class="info"><span>TITLE</span><strong>' + esc(c.title) + '</strong></div><div class="info"><span>PROFILE COMPLETENESS</span><strong>' + esc(String(data.completeness?.score || 0) + '%') + '</strong></div><div class="info wide"><span>COMPANY WEBSITE</span><strong>' + esc(c.company_website) + '</strong></div><div class="info"><span>EMR RATING</span><strong>' + esc(c.company_emr_rating === null || c.company_emr_rating === undefined ? 'Not provided' : String(c.company_emr_rating)) + '</strong></div><div class="info"><span>EMR EFFECTIVE DATE</span><strong>' + esc(c.company_emr_effective_date) + '</strong></div></div></section><section class="templatePanel"><h3>CURRENT PROJECTS</h3><ul class="templateList">' + (projects.length ? projects.map(p => '<li>' + esc(p.project_name) + '</li>').join('') : '<li class="alert">Project review needed</li>') + '</ul><h3 style="margin-top:18px">DALE TO DO</h3><ul class="templateList">' + (tasks.length ? tasks.map(t => '<li class="alert">' + esc(t.title) + ' — ' + esc(t.status) + '</li>').join('') : '<li>No action found in this email</li>') + '</ul></section><section class="templatePanel wide"><h3>STORED SOURCE EMAILS &amp; EVIDENCE</h3><ul class="templateList">' + (emails.length ? emails.map(e => '<li><strong>' + esc(e.subject || e.original_file_name) + '</strong><br><span class="cardKicker">' + esc(e.sender_email || 'Stored Outlook email') + '</span></li>').join('') : '<li>Original email is being indexed</li>') + '</ul></section></div></div>';
-      $('cardWindow').style.display = 'block';
+      $('cardWindow').innerHTML = '<iframe class="cardPreview" title="Saved SSX Contact Card" src="/contact-system/contact-card-preview/' + encodeURIComponent(contactId) + '"></iframe>';
     }
 
     upload.addEventListener('click', async () => {
@@ -452,6 +450,36 @@ export default {
     if (path === "/contact-system/upload" && request.method === "GET") return await authorized(request, env) ? uploadPage() : loginPage();
     if (path === "/contact-system/dale-todos" && request.method === "GET") return await authorized(request, env) ? daleTodoPage() : loginPage();
     const authError = await requireAuth(request, env); if (authError) return authError;
+    const cardPreviewMatch = path.match(/^\/contact-system\/contact-card-preview\/([^/]+)$/);
+    if (cardPreviewMatch && request.method === "GET") {
+      const detail = await getContact(env, cardPreviewMatch[1]);
+      if (!detail) return json({ error: "Contact not found" }, 404);
+      try {
+        const template = await fetch(masterContactCardTemplateUrl);
+        if (!template.ok) throw new Error("Approved card template could not be loaded");
+        let page = await template.text();
+        const contact = detail.contact as Record<string, unknown>;
+        const projects = detail.projects as Array<Record<string, unknown>>;
+        const tasks = detail.tasks as Array<Record<string, unknown>>;
+        const emails = detail.emails as Array<Record<string, unknown>>;
+        const firstProject = projects[0]?.project_name || "Project review needed";
+        const firstTask = tasks[0]?.title || "No Dale action found";
+        const latestSubject = emails[0]?.subject || emails[0]?.original_file_name || "Stored Outlook source email";
+        const values: Array<[string, unknown]> = [
+          ["Avery Walsh", contact.display_name], ["Northstar Climate Systems", contact.company_name],
+          ["avery.walsh@example.com", contact.primary_email], ["northstar.example", contact.company_website],
+          ["Demo Contact Record", contact.primary_phone], ["Mechanical Supplier / Vendor", contact.title],
+          ["Autograph by Marriott — Jericho, NY", firstProject], ["Re: Demo project inquiry", latestSubject],
+          ["RE: Equipment information request", latestSubject], ["SCHEDULE MEETING", firstTask],
+          ["REQUEST REFRIGERATOR SIZES", firstTask]
+        ];
+        for (const [from, to] of values) page = page.split(from).join(escapeCardHtml(to));
+        page = page.replace("</head>", "<style>body{zoom:.72!important;width:138.89%!important;overflow:hidden!important}</style></head>");
+        return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
+      } catch (error) {
+        return json({ error: "Contact card preview failed", detail: error instanceof Error ? error.message : String(error) }, 502);
+      }
+    }
     if (path === "/contact-system/dale-todos/data" && request.method === "GET") {
       const tasks = await env.DB.prepare("SELECT t.id,t.title,t.description,t.priority,t.created_at,c.display_name AS contact_name,co.name AS company_name,e.subject FROM ssx_contact_tasks t LEFT JOIN ssx_contacts c ON c.id=t.contact_id LEFT JOIN ssx_companies co ON co.id=c.company_id LEFT JOIN ssx_contact_emails e ON e.id=t.email_id WHERE t.status='open' ORDER BY CASE t.priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 ELSE 3 END,t.created_at DESC").all();
       return json({ generatedAt: new Date().toISOString(), tasks: tasks.results });

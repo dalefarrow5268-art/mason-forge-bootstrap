@@ -26,6 +26,14 @@ const id = () => crypto.randomUUID();
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
 const safeName = (value: string) => value.replace(/[^a-zA-Z0-9._ -]/g, "_").slice(0, 160);
 const decodeFileHeader = (value: string) => { try { return decodeURIComponent(value); } catch { return value; } };
+function imageContentType(bytes: Uint8Array) {
+  const b = bytes;
+  if (b.length >= 8 && b[0]===137 && b[1]===80 && b[2]===78 && b[3]===71 && b[4]===13 && b[5]===10 && b[6]===26 && b[7]===10) return "image/png";
+  if (b.length >= 3 && b[0]===255 && b[1]===216 && b[2]===255) return "image/jpeg";
+  if (b.length >= 6 && String.fromCharCode(...b.slice(0,6)) === "GIF87a" || b.length >= 6 && String.fromCharCode(...b.slice(0,6)) === "GIF89a") return "image/gif";
+  if (b.length >= 12 && String.fromCharCode(...b.slice(0,4)) === "RIFF" && String.fromCharCode(...b.slice(8,12)) === "WEBP") return "image/webp";
+  return null;
+}
 const masterContactCardTemplateUrl = "https://mason-forge-bootstrap.vercel.app/final-templates/master-contact-card-template.html";
 const escapeCardHtml = (value: unknown) => String(value ?? "Not provided").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 const sessionMaxAge = 60 * 60 * 24 * 30;
@@ -277,12 +285,16 @@ async function importEmail(request: Request, env: Env) {
   }
   let signatureLogoKey: string | null = null;
   for (const attachment of extracted.attachments) {
-    const attachmentName = safeName(attachment.fileName || "attachment.bin");
+    const detectedImageType = imageContentType(attachment.content);
+    const extension = detectedImageType === "image/png" ? ".png" : detectedImageType === "image/jpeg" ? ".jpg" : detectedImageType === "image/gif" ? ".gif" : detectedImageType === "image/webp" ? ".webp" : "";
+    const rawName = attachment.fileName || "outlook-inline-attachment";
+    const attachmentName = safeName(/\.[a-z0-9]{2,5}$/i.test(rawName) || !extension ? rawName : rawName + extension);
     const attachmentSha = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", attachment.content))).map(v => v.toString(16).padStart(2,"0")).join("");
     const attachmentKey = `contacts/${contactId || "unassigned"}/attachments/${attachmentSha}/${attachmentName}`;
-    await env.CONTACT_FILES.put(attachmentKey, attachment.content, { httpMetadata: { contentType: "application/octet-stream" }, customMetadata: { sha256: attachmentSha, emailId } });
-    await env.DB.prepare("INSERT INTO ssx_contact_attachments (id,email_id,file_name,content_type,r2_key,sha256,size_bytes) VALUES (?,?,?,?,?,?,?)").bind(id(),emailId,attachmentName,"application/octet-stream",attachmentKey,attachmentSha,attachment.content.byteLength).run();
-    if (!signatureLogoKey && /\.(?:png|jpe?g|gif|webp)$/i.test(attachmentName)) signatureLogoKey = attachmentKey;
+    const contentType = detectedImageType || "application/octet-stream";
+    await env.CONTACT_FILES.put(attachmentKey, attachment.content, { httpMetadata: { contentType }, customMetadata: { sha256: attachmentSha, emailId } });
+    await env.DB.prepare("INSERT INTO ssx_contact_attachments (id,email_id,file_name,content_type,r2_key,sha256,size_bytes) VALUES (?,?,?,?,?,?,?)").bind(id(),emailId,attachmentName,contentType,attachmentKey,attachmentSha,attachment.content.byteLength).run();
+    if (!signatureLogoKey && detectedImageType) signatureLogoKey = attachmentKey;
   }
   if (contactId && company?.id && signatureLogoKey) {
     await env.DB.batch([
@@ -526,10 +538,11 @@ export default {
       try {
         const contact = await env.DB.prepare("SELECT c.*,co.name AS company_name,co.website AS company_website,co.emr_rating AS company_emr_rating,co.emr_effective_date AS company_emr_effective_date, co.logo_r2_key AS company_logo_r2_key FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?").bind(cardPreviewMatch[1]).first<Record<string, unknown>>();
         if (!contact) return json({ error: "Contact not found" }, 404);
-        const [projects, tasks, emails] = await env.DB.batch([
+        const [projects, tasks, emails, logoAttachments] = await env.DB.batch([
           env.DB.prepare("SELECT project_name,project_role,is_current FROM ssx_contact_projects WHERE contact_id=? ORDER BY is_current DESC,linked_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
           env.DB.prepare("SELECT title,status FROM ssx_contact_tasks WHERE contact_id=? ORDER BY created_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
-          env.DB.prepare("SELECT subject,sender_name,sender_email,received_at,original_file_name FROM ssx_contact_emails WHERE contact_id=? ORDER BY received_at DESC LIMIT 20").bind(cardPreviewMatch[1])
+          env.DB.prepare("SELECT subject,sender_name,sender_email,received_at,original_file_name FROM ssx_contact_emails WHERE contact_id=? ORDER BY received_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
+          env.DB.prepare("SELECT a.id FROM ssx_contact_attachments a JOIN ssx_contact_emails e ON e.id=a.email_id WHERE e.contact_id=? AND a.r2_key=? LIMIT 1").bind(cardPreviewMatch[1], String(contact.company_logo_r2_key || ""))
         ]);
         const detail = { contact, projects: projects.results, tasks: tasks.results, emails: emails.results, cois: [], completeness: completeness(contact) };
         const template = await fetch(masterContactCardTemplateUrl);
@@ -585,10 +598,12 @@ export default {
           ["Contact linked to active project.", projectRows.length ? "Project link saved from this email." : "No project link found in this email."]
         ];
         for (const [from, to] of profileLabels) page = page.replaceAll(from, escapeCardHtml(to));
-        const logoLabel = contact.company_logo_r2_key ? "SOURCE LOGO ON FILE" : "LOGO NOT PROVIDED";
+        const logoAttachment = (logoAttachments.results as Array<Record<string, unknown>>)[0];
+        const logoUrl = logoAttachment?.id ? "/contact-system/files/" + String(logoAttachment.id) : "";
+        const logoLabel = logoUrl ? "SOURCE LOGO ON FILE" : "LOGO NOT PROVIDED";
         const templateTokens = /Avery Walsh|Northstar Climate Systems|avery\.walsh@example\.com|northstar\.example|Demo Contact Record|Mechanical Supplier \/ Vendor|Autograph by Marriott — Jericho, NY|Demo project inquiry — equipment budget help|Received: Jul 30, 2026 · 10:24 AM|From: Avery Walsh &lt;avery\.walsh@example\.com&gt;|Re: Demo project inquiry|RE: Equipment information request|SCHEDULE MEETING|REQUEST REFRIGERATOR SIZES|58%|PARTIAL<br>PROFILE|INCOMPLETE|ACTION REQUIRED|MISSING: COI EXPIRATION|MISSING: COI EMAIL|MISSING: COI DOCUMENT|Not in Master List|Candidate for Review|No Duplicates Found|Checked: Jul 30, 12:10 PM/g;
         page = page.replace(templateTokens, token => replacements.get(token) || token);
-        page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}.malkin{font-size:0!important}.malkin:after{content:'" + logoLabel + "';font-size:11px;color:#121518;letter-spacing:.06em;text-align:center}.research .meter i{width:0!important}</style></head>");
+        page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}.malkin{font-size:0!important}.malkin{background-image:" + (logoUrl ? "url('" + logoUrl + "')" : "none") + "!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important}.malkin:after{content:'" + logoLabel + "';font-size:11px;color:#121518;letter-spacing:.06em;text-align:center;background:rgba(237,240,237,.78);padding:4px}.research .meter i{width:0!important}</style></head>");
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
       } catch (error) {
         return json({ error: "Saved contact card render failed", detail: error instanceof Error ? error.message : String(error) }, 502);

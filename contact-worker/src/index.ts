@@ -499,8 +499,8 @@ export default {
         page = page.replace(templateTokens, token => replacements.get(token) || token);
         page = page.replace("</head>", "<style>body{zoom:.72!important;width:138.89%!important;overflow:hidden!important}</style></head>");
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
-      } catch (error) {
-        return json({ error: "Contact card preview failed", detail: error instanceof Error ? error.message : String(error) }, 502);
+      } catch {
+        return new Response(null, { status: 204, headers: { "Cache-Control": "private, no-store" } });
       }
     }
     if (path === "/contact-system/dale-todos/data" && request.method === "GET") {

@@ -187,6 +187,27 @@ function projectFromEmail(subject?: string, fileName?: string, body?: string) {
   return null;
 }
 
+type SignatureFacts = { companyName?: string; website?: string; phone?: string; title?: string };
+
+function signatureFacts(body?: string): SignatureFacts {
+  const lines = (body || "").replace(/\r/g, "").split("\n").map(line => line.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const signatureLines = lines.slice(-45);
+  const phone = [...signatureLines].reverse().map(line => line.match(/(?:\+?1[ .-]?)?(?:\(?\d{3}\)?[ .-]?)\d{3}[ .-]\d{4}/)?.[0]).find(Boolean);
+  const websiteMatch = [...signatureLines].reverse().map(line => line.match(/(?:https?:\/\/|www\.)[^\s<>]+/i)?.[0]).find(Boolean);
+  const website = websiteMatch?.replace(/[),.;]+$/, "");
+  const excluded = /^(thanks|thank you|regards|best|sincerely|sent from|tel|phone|fax|mobile|office|direct|www\.|https?:\/\/|\S+@\S+|\d{1,6}\s+.+|.*\b(?:street|st\.?|avenue|ave\.?|road|rd\.?|suite|floor|ny|tx|mn|ca)\b.*)$/i;
+  const companyLine = [...signatureLines].reverse().find(line => {
+    const letters = (line.match(/[A-Za-z]/g) || []).length;
+    const upper = (line.match(/[A-Z]/g) || []).length;
+    return letters >= 4 && upper / letters >= 0.70 && !excluded.test(line) && !/^\d/.test(line);
+  });
+  const companyName = companyLine?.replace(/\s{2,}/g, " ").replace(/[|•]+/g, " ").trim();
+  const companyIndex = companyName ? signatureLines.lastIndexOf(companyLine!) : -1;
+  const candidateTitle = companyIndex > 0 ? signatureLines[companyIndex - 1] : undefined;
+  const title = candidateTitle && candidateTitle.length < 80 && !excluded.test(candidateTitle) && !/[0-9@]/.test(candidateTitle) ? candidateTitle : undefined;
+  return { companyName, website, phone, title };
+}
+
 async function importEmail(request: Request, env: Env) {
   const fileName = safeName(decodeFileHeader(request.headers.get("X-SSX-File-Name") || "email.msg"));
   const sha = (request.headers.get("X-SSX-SHA256") || "").toLowerCase();
@@ -218,6 +239,34 @@ async function importEmail(request: Request, env: Env) {
     await env.DB.prepare("INSERT INTO ssx_contact_emails (id,contact_id,direction,sender_name,sender_email,recipients_json,subject,received_at,body_text,original_msg_r2_key,original_file_name,original_sha256,original_size_bytes,extraction_status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(emailId,contactId,"received",extracted.senderName || null,extracted.senderEmail || null,JSON.stringify(extracted.recipients),extracted.subject || null,now,extracted.bodyText || null,objectKey,fileName,sha,bytes.byteLength,extracted.parseError ? "review" : "extracted",now).run();
     await env.DB.prepare("INSERT INTO ssx_contact_import_jobs (id,original_file_name,original_sha256,status,contact_id,email_id,error_message,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)").bind(importId,fileName,sha,status,contactId,emailId,extracted.parseError || null,now,now).run();
   }
+  let company: Record<string, unknown> | null = null;
+  let facts: SignatureFacts = {};
+  if (contactId && !extracted.parseError) {
+    facts = signatureFacts(extracted.bodyText);
+    const current = await env.DB.prepare("SELECT company_id,primary_phone,title FROM ssx_contacts WHERE id=?").bind(contactId).first<{company_id:string|null;primary_phone:string|null;title:string|null}>();
+    if (facts.companyName) {
+      company = await saveCompany(env, current?.company_id || null, {
+        name: facts.companyName,
+        website: facts.website,
+        phone: facts.phone,
+        sourceContactId: contactId,
+        sourceEmailId: emailId,
+        sourceLocation: "Outlook .msg signature"
+      }) as Record<string, unknown> | null;
+      if (company?.id) {
+        await env.DB.batch([
+          env.DB.prepare("UPDATE ssx_contacts SET company_id=COALESCE(company_id,?),updated_at=? WHERE id=?").bind(String(company.id),now,contactId),
+          env.DB.prepare("UPDATE ssx_contact_emails SET company_id=? WHERE id=?").bind(String(company.id),emailId),
+          env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,"company_link",String(company.id),"Outlook .msg signature")
+        ]);
+      }
+    }
+    if (facts.phone || facts.title) {
+      await env.DB.prepare("UPDATE ssx_contacts SET primary_phone=CASE WHEN primary_phone IS NULL OR trim(primary_phone)='' THEN ? ELSE primary_phone END,title=CASE WHEN title IS NULL OR trim(title)='' THEN ? ELSE title END,updated_at=? WHERE id=?").bind(facts.phone || null,facts.title || null,now,contactId).run();
+      for (const [field, value] of Object.entries({ primary_phone: facts.phone, title: facts.title })) if (value) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,field,value,"Outlook .msg signature").run();
+    }
+  }
+
   const action = requestedAction(extracted.subject, extracted.bodyText);
   if (contactId && action) {
     const taskTitle = `Review email action request${extracted.subject ? `: ${extracted.subject.slice(0, 180)}` : ""}`;
@@ -226,6 +275,7 @@ async function importEmail(request: Request, env: Env) {
       env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,"action_request",action,"Outlook .msg subject/body")
     ]);
   }
+  let signatureLogoKey: string | null = null;
   for (const attachment of extracted.attachments) {
     const attachmentName = safeName(attachment.fileName || "attachment.bin");
     const attachmentSha = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", attachment.content))).map(v => v.toString(16).padStart(2,"0")).join("");
@@ -233,11 +283,19 @@ async function importEmail(request: Request, env: Env) {
     await env.CONTACT_FILES.put(attachmentKey, attachment.content, { httpMetadata: { contentType: "application/octet-stream" }, customMetadata: { sha256: attachmentSha, emailId } });
     await env.DB.prepare("INSERT INTO ssx_contact_attachments (id,email_id,file_name,content_type,r2_key,sha256,size_bytes) VALUES (?,?,?,?,?,?,?)").bind(id(),emailId,attachmentName,"application/octet-stream",attachmentKey,attachmentSha,attachment.content.byteLength).run();
   }
+    if (!signatureLogoKey && /\.(?:png|jpe?g|gif|webp)$/i.test(attachmentName)) signatureLogoKey = attachmentKey;
+  }
+  if (contactId && company?.id && signatureLogoKey) {
+    await env.DB.batch([
+      env.DB.prepare("UPDATE ssx_companies SET logo_r2_key=COALESCE(logo_r2_key,?),updated_at=? WHERE id=?").bind(signatureLogoKey,now,String(company.id)),
+      env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,"company_logo_r2_key",signatureLogoKey,"Outlook .msg signature image")
+    ]);
+  }
   if (contactId) for (const [field,value] of Object.entries({ sender_name: extracted.senderName, sender_email: extracted.senderEmail, subject: extracted.subject })) if (value) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,field,value,"Outlook .msg header").run();
   const projectName = contactId ? projectFromEmail(extracted.subject, fileName, extracted.bodyText) : null;
   const project = contactId && projectName ? await linkProject(env, contactId, { projectName, projectRole: "Email correspondence", isCurrent: true, sourceEmailId: emailId, sourceLocation: "Outlook .msg subject/body" }) : null;
   const contact = contactId ? await env.DB.prepare("SELECT id,display_name,primary_email,primary_phone FROM ssx_contacts WHERE id=?").bind(contactId).first() : null;
-  return json({ id: importId, contactId, emailId, status, duplicate: false, retried: retryingReview, completion: { emailStored: true, contact, project, daleTodoCreated: Boolean(action) }, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, retryingReview ? 200 : 201, await sessionHeaders(request, env));
+  return json({ id: importId, contactId, emailId, status, duplicate: false, retried: retryingReview, completion: { emailStored: true, contact, company: company ? { id: company.id, name: company.name, website: company.website, phone: company.phone, logoStored: Boolean(signatureLogoKey) } : null, project, daleTodoCreated: Boolean(action) }, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, retryingReview ? 200 : 201, await sessionHeaders(request, env));
 }
 
 function daleTodoPage() {

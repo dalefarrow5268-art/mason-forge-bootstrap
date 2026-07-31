@@ -38,6 +38,13 @@ function imageContentType(bytes: Uint8Array) {
   if (b.length >= 12 && String.fromCharCode(...b.slice(0,4)) === "RIFF" && String.fromCharCode(...b.slice(8,12)) === "WEBP") return "image/webp";
   return null;
 }
+function attachmentContentType(bytes: Uint8Array, fileName: string) {
+  const image = imageContentType(bytes);
+  if (image) return image;
+  if (bytes.length >= 5 && String.fromCharCode(...bytes.slice(0,5)) === "%PDF-") return "application/pdf";
+  if (/\.pdf$/i.test(fileName)) return "application/pdf";
+  return "application/octet-stream";
+}
 const masterContactCardTemplateUrl = "https://mason-forge-bootstrap.vercel.app/final-templates/master-contact-card-template.html";
 const escapeCardHtml = (value: unknown) => String(value ?? "Not provided").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 const sessionMaxAge = 60 * 60 * 24 * 30;
@@ -308,6 +315,11 @@ async function importEmail(request: Request, env: Env) {
     ]);
   }
   let signatureLogoKey: string | null = null;
+  if (refreshingDuplicate) {
+    // Remove only records made by the former byte-scanning fallback. The
+    // original .msg stays in R2; true named Outlook attachments are preserved.
+    await env.DB.prepare("DELETE FROM ssx_contact_attachments WHERE email_id=? AND file_name LIKE 'outlook-embedded-image-%'").bind(emailId).run();
+  }
   for (const attachment of extracted.attachments) {
     const detectedImageType = imageContentType(attachment.content);
     const extension = detectedImageType === "image/png" ? ".png" : detectedImageType === "image/jpeg" ? ".jpg" : detectedImageType === "image/gif" ? ".gif" : detectedImageType === "image/webp" ? ".webp" : "";
@@ -315,7 +327,7 @@ async function importEmail(request: Request, env: Env) {
     const attachmentName = safeName(/\.[a-z0-9]{2,5}$/i.test(rawName) || !extension ? rawName : rawName + extension);
     const attachmentSha = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", attachment.content))).map(v => v.toString(16).padStart(2,"0")).join("");
     const attachmentKey = `contacts/${contactId || "unassigned"}/attachments/${attachmentSha}/${attachmentName}`;
-    const contentType = detectedImageType || "application/octet-stream";
+    const contentType = attachmentContentType(attachment.content, attachmentName);
     await env.CONTACT_FILES.put(attachmentKey, attachment.content, { httpMetadata: { contentType }, customMetadata: { sha256: attachmentSha, emailId } });
     await env.DB.prepare("INSERT OR IGNORE INTO ssx_contact_attachments (id,email_id,file_name,content_type,r2_key,sha256,size_bytes) VALUES (?,?,?,?,?,?,?)").bind(id(),emailId,attachmentName,contentType,attachmentKey,attachmentSha,attachment.content.byteLength).run();
     if (!signatureLogoKey && detectedImageType) signatureLogoKey = attachmentKey;
@@ -325,6 +337,10 @@ async function importEmail(request: Request, env: Env) {
       env.DB.prepare("UPDATE ssx_companies SET logo_r2_key=?,updated_at=? WHERE id=?").bind(signatureLogoKey,now,String(company.id)),
       env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,"company_logo_r2_key",signatureLogoKey,"Outlook .msg signature image")
     ]);
+  } else if (refreshingDuplicate && contactId && company?.id) {
+    // A prior import may have stored an image-like byte fragment as a logo.
+    // Do not display or count that as a company logo.
+    await env.DB.prepare("UPDATE ssx_companies SET logo_r2_key=NULL,updated_at=? WHERE id=? AND logo_r2_key LIKE '%/outlook-embedded-image-%'").bind(now,String(company.id)).run();
   }
   if (contactId) for (const [field,value] of Object.entries({ sender_name: extracted.senderName, sender_email: extracted.senderEmail, subject: extracted.subject })) if (value) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,field,value,"Outlook .msg header").run();
   const projectName = contactId ? projectFromEmail(extracted.subject, fileName, extracted.bodyText) : null;

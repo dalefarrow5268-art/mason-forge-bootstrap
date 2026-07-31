@@ -332,7 +332,7 @@ function uploadPage() {
     <button id="copyResult" class="copy" hidden>Copy Result</button>
     <p class="note">Upload goes directly into the Cloudflare contact system and private D1/R2 storage.</p>
     </div>
-    <section id="cardWindow" class="card"><iframe class="cardPreview" title="Approved SSX Contact Card Template" src="/contact-system/contact-card-template"></iframe></section>
+    <section id="cardWindow" class="card" aria-label="Completed contact card preview"></section>
   </main>
 
   <script>

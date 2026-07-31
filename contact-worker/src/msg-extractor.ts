@@ -41,6 +41,30 @@ function fallbackExtract(bytes: ArrayBuffer, reason: string): ExtractedMsg {
   };
 }
 
+function embeddedImages(bytes: ArrayBuffer) {
+  const data = new Uint8Array(bytes);
+  const images: Array<{ fileName: string; content: Uint8Array }> = [];
+  const push = (extension: string, start: number, end: number) => {
+    if (end <= start || end - start > 3 * 1024 * 1024 || images.length >= 4) return;
+    images.push({ fileName: `outlook-embedded-image-${images.length + 1}.${extension}`, content: data.slice(start, end) });
+  };
+  for (let i = 0; i < data.length - 12 && images.length < 4; i++) {
+    // PNG: signature through IEND chunk.
+    if (data[i]===137 && data[i+1]===80 && data[i+2]===78 && data[i+3]===71 && data[i+4]===13 && data[i+5]===10 && data[i+6]===26 && data[i+7]===10) {
+      for (let j=i+8; j < Math.min(data.length - 8, i + 3 * 1024 * 1024); j++) if (data[j]===73 && data[j+1]===69 && data[j+2]===78 && data[j+3]===68 && data[j+4]===174 && data[j+5]===66 && data[j+6]===96 && data[j+7]===130) { push("png", i, j + 8); i = j + 7; break; }
+    }
+    // JPEG: start through EOI marker.
+    else if (data[i]===255 && data[i+1]===216 && data[i+2]===255) {
+      for (let j=i+3; j < Math.min(data.length - 1, i + 3 * 1024 * 1024); j++) if (data[j]===255 && data[j+1]===217) { push("jpg", i, j + 2); i = j + 1; break; }
+    }
+    // GIF: header through trailer byte.
+    else if (data[i]===71 && data[i+1]===73 && data[i+2]===70 && data[i+3]===56 && (data[i+4]===55 || data[i+4]===57) && data[i+5]===97) {
+      for (let j=i+13; j < Math.min(data.length, i + 3 * 1024 * 1024); j++) if (data[j]===59) { push("gif", i, j + 1); i = j; break; }
+    }
+  }
+  return images;
+}
+
 export function extractOutlookMsg(bytes: ArrayBuffer): ExtractedMsg {
   let fields: FieldsData;
   try { fields = new MsgReader(bytes).getFileData(); }
@@ -52,11 +76,20 @@ export function extractOutlookMsg(bytes: ArrayBuffer): ExtractedMsg {
     subject: fields.subject?.trim() || undefined,
     bodyText: fields.body?.trim() || undefined,
     recipients: (fields.recipients || []).map(recipient => ({ name: recipient.name?.trim() || undefined, email: email(recipient.email), type: recipient.recipType })).filter(recipient => recipient.name || recipient.email)
-    ,attachments: (fields.attachments || []).flatMap((attachment, index) => {
-      try {
-        const data = new MsgReader(bytes).getAttachment(attachment);
-        return data.content ? [{ fileName: data.fileName || `outlook-inline-${index + 1}`, content: data.content }] : [];
-      } catch { return []; }
-    })
+    ,attachments: (() => {
+      const normal = (fields.attachments || []).flatMap((attachment, index) => {
+        try {
+          const data = new MsgReader(bytes).getAttachment(attachment);
+          return data.content ? [{ fileName: data.fileName || `outlook-inline-${index + 1}`, content: data.content }] : [];
+        } catch { return []; }
+      });
+      const seen = new Set(normal.map(item => Array.from(item.content.slice(0, 24)).join(",")));
+      return [...normal, ...embeddedImages(bytes).filter(item => {
+        const key = Array.from(item.content.slice(0, 24)).join(",");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })];
+    })()
   };
 }

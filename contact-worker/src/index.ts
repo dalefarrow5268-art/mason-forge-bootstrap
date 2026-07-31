@@ -21,15 +21,26 @@ const corsHeaders = {
   "Access-Control-Max-Age": "86400"
 };
 const noStoreHeaders = { "Cache-Control": "no-store", ...corsHeaders };
-const json = (body: unknown, status = 200) => Response.json(body, { status, headers: noStoreHeaders });
+const json = (body: unknown, status = 200, headers: HeadersInit = {}) => Response.json(body, { status, headers: { ...noStoreHeaders, ...headers } });
 const id = () => crypto.randomUUID();
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
 const safeName = (value: string) => value.replace(/[^a-zA-Z0-9._ -]/g, "_").slice(0, 160);
-
-function authorized(request: Request, env: Env) {
-  return Boolean(env.CONTACT_SYSTEM_TOKEN) && request.headers.get("Authorization") === `Bearer ${env.CONTACT_SYSTEM_TOKEN}`;
+const sessionMaxAge = 60 * 60 * 24 * 30;
+const cookie = (request: Request, name: string) => request.headers.get("Cookie")?.split(/;\s*/).find(value => value.startsWith(name + "="))?.slice(name.length + 1);
+const toBase64Url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+async function sessionValue(env: Env) {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(env.CONTACT_SYSTEM_TOKEN), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return toBase64Url(new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode("ssx-contact-upload-session-v1"))));
 }
-function requireAuth(request: Request, env: Env) { return authorized(request, env) ? null : json({ error: "Unauthorized" }, 401); }
+async function authorized(request: Request, env: Env) {
+  if (!env.CONTACT_SYSTEM_TOKEN) return false;
+  if (request.headers.get("Authorization") === "Bearer " + env.CONTACT_SYSTEM_TOKEN) return true;
+  return cookie(request, "ssx_upload_session") === await sessionValue(env);
+}
+async function sessionHeaders(request: Request, env: Env): Promise<Record<string, string>> {
+  return request.headers.get("Authorization") === "Bearer " + env.CONTACT_SYSTEM_TOKEN ? { "Set-Cookie": "ssx_upload_session=" + await sessionValue(env) + "; Max-Age=" + sessionMaxAge + "; Path=/contact-system; HttpOnly; Secure; SameSite=Strict" } : {};
+}
+async function requireAuth(request: Request, env: Env) { return await authorized(request, env) ? null : json({ error: "Unauthorized" }, 401); }
 
 function completeness(record: Record<string, unknown>) {
   const fields = [
@@ -172,7 +183,7 @@ async function importEmail(request: Request, env: Env) {
   const duplicate = await env.DB.prepare("SELECT id, contact_id, email_id, status FROM ssx_contact_import_jobs WHERE original_sha256=?").bind(sha).first<{id:string;contact_id:string|null;email_id:string|null;status:string}>();
   const existingEmail = duplicate ? await env.DB.prepare("SELECT id FROM ssx_contact_emails WHERE original_sha256=?").bind(sha).first<{id:string}>() : null;
   const retryingReview = Boolean(duplicate && duplicate.status === "review" && !duplicate.contact_id && existingEmail);
-  if (duplicate && !retryingReview) return json({ duplicate: true, import: duplicate }, 409);
+  if (duplicate && !retryingReview) return json({ duplicate: true, import: duplicate }, 409, await sessionHeaders(request, env));
   const bytes = await request.arrayBuffer();
   if (!bytes.byteLength || bytes.byteLength > 50 * 1024 * 1024) return json({ error: "Email must be between 1 byte and 50 MB" }, 413);
   const computed = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))).map(v => v.toString(16).padStart(2,"0")).join("");
@@ -211,7 +222,7 @@ async function importEmail(request: Request, env: Env) {
     await env.DB.prepare("INSERT INTO ssx_contact_attachments (id,email_id,file_name,content_type,r2_key,sha256,size_bytes) VALUES (?,?,?,?,?,?,?)").bind(id(),emailId,attachmentName,"application/octet-stream",attachmentKey,attachmentSha,attachment.content.byteLength).run();
   }
   if (contactId) for (const [field,value] of Object.entries({ sender_name: extracted.senderName, sender_email: extracted.senderEmail, subject: extracted.subject })) if (value) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,field,value,"Outlook .msg header").run();
-  return json({ id: importId, contactId, emailId, status, duplicate: false, retried: retryingReview, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, retryingReview ? 200 : 201);
+  return json({ id: importId, contactId, emailId, status, duplicate: false, retried: retryingReview, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, retryingReview ? 200 : 201, await sessionHeaders(request, env));
 }
 
 function uploadPage() {
@@ -244,8 +255,11 @@ function uploadPage() {
     <h1>SSX Contact System Upload</h1>
     <p class="sub">Upload an Outlook .msg file directly into the live Cloudflare Contact System.</p>
 
-    <label for="token">Contact System Token</label>
-    <input id="token" type="password" autocomplete="off" placeholder="Paste token here. It stays in this browser request." />
+    <div id="signIn">
+      <label for="token">One-time sign-in code</label>
+      <input id="token" type="password" autocomplete="off" placeholder="Use the contact-system code one final time." />
+      <p class="note">After this first upload, this page remembers a secure session for 30 days. The code itself is not saved on this computer.</p>
+    </div>
 
     <label for="file">Outlook Email File</label>
     <input id="file" type="file" accept=".msg,application/vnd.ms-outlook" />
@@ -259,6 +273,13 @@ function uploadPage() {
     const $ = (id) => document.getElementById(id);
     const status = $('status');
     const upload = $('upload');
+    const tokenInput = $('token');
+    const signIn = $('signIn');
+    let signedIn = false;
+    fetch('/contact-system/session').then(response => {
+      signedIn = response.ok;
+      if (signedIn) { signIn.hidden = true; setStatus('Signed in. Choose an Outlook .msg file to upload.', true); }
+    });
 
     function hex(buffer) {
       return [...new Uint8Array(buffer)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -270,9 +291,9 @@ function uploadPage() {
     }
 
     upload.addEventListener('click', async () => {
-      const token = $('token').value.trim();
+      const token = tokenInput.value.trim();
       const file = $('file').files[0];
-      if (!token) return setStatus('Missing CONTACT_SYSTEM_TOKEN.', false);
+      if (!signedIn && !token) return setStatus('Enter the one-time sign-in code for this first upload.', false);
       if (!file) return setStatus('Choose one .msg file first.', false);
       if (!file.name.toLowerCase().endsWith('.msg')) return setStatus('Only .msg files are accepted.', false);
 
@@ -285,7 +306,7 @@ function uploadPage() {
         const response = await fetch('/contact-system/email-imports', {
           method: 'POST',
           headers: {
-            Authorization: 'Bearer ' + token,
+            ...(token ? { Authorization: 'Bearer ' + token } : {}),
             'Content-Type': 'application/vnd.ms-outlook',
             'X-SSX-File-Name': file.name,
             'X-SSX-SHA256': sha
@@ -296,6 +317,7 @@ function uploadPage() {
         let data;
         try { data = JSON.parse(text); } catch { data = { raw: text }; }
         if (!response.ok && response.status !== 409) throw new Error(JSON.stringify(data, null, 2));
+        if (response.ok || response.status === 409) { signedIn = true; signIn.hidden = true; }
         setStatus((response.status === 409 ? 'DUPLICATE - ALREADY STORED' : 'SUCCESS') + '\\n\\n' + JSON.stringify(data, null, 2) + '\\n\\nSHA-256: ' + sha, true);
       } catch (error) {
         setStatus('FAILED\\n\\n' + (error.message || error), false);
@@ -319,7 +341,8 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
     if (path === "/contact-system/health" && request.method === "GET") return json({ system:"SSX Contact System", storage:"Cloudflare D1 + private R2", mode:"source-only", aiEnrichment:false, importRetry:"sha-email-lookup-v2", ready:true, timestamp:new Date().toISOString() });
     if (path === "/contact-system/upload" && request.method === "GET") return uploadPage();
-    const authError = requireAuth(request, env); if (authError) return authError;
+    if (path === "/contact-system/session" && request.method === "GET") return await authorized(request, env) ? json({ signedIn: true }) : json({ signedIn: false }, 401);
+    const authError = await requireAuth(request, env); if (authError) return authError;
     if (path === "/contact-system/review-queue" && request.method === "GET") {
       const [imports, duplicates, incomplete, cois] = await env.DB.batch([
         env.DB.prepare("SELECT id,original_file_name,error_message,created_at FROM ssx_contact_import_jobs WHERE status='review' ORDER BY created_at DESC LIMIT 100"),

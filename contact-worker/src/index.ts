@@ -293,7 +293,8 @@ function uploadPage() {
     function chooseFile(file) {
       if (!file) return;
       selectedFile = file;
-      fileLabel.textContent = file.name + ' ready to upload';
+      fileLabel.textContent = file.name + ' uploading…';
+      setTimeout(() => upload.click(), 0);
     }
     fileInput.addEventListener('change', () => chooseFile(fileInput.files[0]));
     dropZone.addEventListener('click', () => fileInput.click());

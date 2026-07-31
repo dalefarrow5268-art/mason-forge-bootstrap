@@ -489,7 +489,9 @@ export default {
           ["No Duplicates Found", "Duplicate Review Recorded"],
           ["Checked: Jul 30, 12:10 PM", "Saved from Outlook email"]
         ];
-        for (const [from, to] of values) page = page.split(from).join(escapeCardHtml(to));
+        const replacements = new Map(values.map(([from, to]) => [from, escapeCardHtml(to)]));
+        const templateTokens = /Avery Walsh|Northstar Climate Systems|avery\.walsh@example\.com|northstar\.example|Demo Contact Record|Mechanical Supplier \/ Vendor|Autograph by Marriott — Jericho, NY|Re: Demo project inquiry|RE: Equipment information request|SCHEDULE MEETING|REQUEST REFRIGERATOR SIZES|58%|PARTIAL<br>PROFILE|INCOMPLETE|ACTION REQUIRED|MISSING: COI EXPIRATION|MISSING: COI EMAIL|MISSING: COI DOCUMENT|Not in Master List|Candidate for Review|No Duplicates Found|Checked: Jul 30, 12:10 PM/g;
+        page = page.replace(templateTokens, token => replacements.get(token) || token);
         page = page.replace("</head>", "<style>body{zoom:.72!important;width:138.89%!important;overflow:hidden!important}</style></head>");
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
       } catch (error) {

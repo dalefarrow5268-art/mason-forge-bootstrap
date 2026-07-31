@@ -242,6 +242,12 @@ async function importEmail(request: Request, env: Env) {
   if (computed !== sha) return json({ error: "SHA-256 does not match uploaded bytes" }, 400);
   const importId = duplicate?.id || id(); const now = new Date().toISOString();
   const extracted = extractOutlookMsg(bytes);
+  // Outlook can export the same message with different file bytes.  Stop those
+  // copies before they become separate communication-history records.
+  if (!duplicate && extracted.senderEmail && extracted.subject && extracted.bodyText) {
+    const semanticDuplicate = await env.DB.prepare("SELECT e.id AS email_id,e.contact_id,j.id AS import_id FROM ssx_contact_emails e LEFT JOIN ssx_contact_import_jobs j ON j.email_id=e.id WHERE e.sender_email=? AND COALESCE(e.subject,'')=? AND COALESCE(e.body_text,'')=? ORDER BY e.created_at DESC LIMIT 1").bind(extracted.senderEmail, extracted.subject, extracted.bodyText).first<{email_id:string;contact_id:string|null;import_id:string|null}>();
+    if (semanticDuplicate?.email_id) return json({ id: semanticDuplicate.import_id || semanticDuplicate.email_id, contactId: semanticDuplicate.contact_id, emailId: semanticDuplicate.email_id, status: "completed", duplicate: true, message: "Same Outlook email already stored; no second communication record was created." }, 200, await sessionHeaders(request, env));
+  }
   let contactId: string | null = null;
   if (!extracted.parseError && extracted.senderEmail) {
     const exact = await env.DB.prepare("SELECT id FROM ssx_contacts WHERE primary_email=?").bind(extracted.senderEmail).first<{id:string}>();
@@ -621,7 +627,14 @@ export default {
         const logoAttachment = (logoAttachments.results as Array<Record<string, unknown>>)[0];
         const logoUrl = logoAttachment?.id ? "/contact-system/files/" + String(logoAttachment.id) : "";
         const logoLabel = logoUrl ? "SOURCE LOGO ON FILE" : "LOGO NOT PROVIDED";
-        const communicationRows = emailRows.slice(0, 3).map(email => {
+        const communicationSeen = new Set<string>();
+        const historyEmails = emailRows.filter(email => {
+          const key = normalize(String(email.sender_email || "") + "|" + String(email.subject || email.original_file_name || ""));
+          if (communicationSeen.has(key)) return false;
+          communicationSeen.add(key);
+          return true;
+        }).slice(0, 3);
+        const communicationRows = historyEmails.map(email => {
           const subject = escapeCardHtml(email.subject || email.original_file_name || "Outlook email");
           const occurred = typeof email.received_at === "string" ? escapeCardHtml(email.received_at.replace("T", " ").replace(/\.\d{3}Z$/, " UTC")) : "";
           return "<span><i>✉</i><b>" + subject + "</b><em>" + occurred + "</em></span>";

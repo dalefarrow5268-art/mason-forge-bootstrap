@@ -209,17 +209,117 @@ async function importEmail(request: Request, env: Env) {
   return json({ id: importId, contactId, emailId, status, duplicate: false, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, 201);
 }
 
+function uploadPage() {
+  return new Response(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SSX Contact System Upload</title>
+  <style>
+    :root { color-scheme: dark; --bg:#05080d; --panel:#0a111a; --line:#1d4158; --blue:#18bdf4; --gold:#d8b24a; --text:#e8f7ff; --muted:#8daab8; --bad:#ff6a62; --good:#38d987; }
+    * { box-sizing: border-box; }
+    body { margin:0; min-height:100vh; background:radial-gradient(circle at top, #102334 0, #05080d 42%, #020305 100%); color:var(--text); font:14px/1.45 Arial, sans-serif; display:grid; place-items:center; padding:24px; }
+    main { width:min(860px, 100%); border:1px solid var(--line); background:rgba(5,10,16,.92); border-radius:8px; box-shadow:0 18px 60px rgba(0,0,0,.45); padding:22px; }
+    h1 { margin:0 0 6px; font-size:22px; letter-spacing:.08em; text-transform:uppercase; color:#fff; }
+    .sub { margin:0 0 18px; color:var(--muted); }
+    label { display:block; margin:14px 0 6px; color:#bfefff; font-weight:700; letter-spacing:.04em; text-transform:uppercase; font-size:11px; }
+    input, button { width:100%; border-radius:6px; border:1px solid var(--line); background:#07111a; color:var(--text); padding:11px 12px; font:inherit; }
+    input[type=file] { padding:9px; }
+    button { margin-top:16px; border-color:var(--blue); background:linear-gradient(180deg, #0d4f75, #082739); color:#e9fbff; font-weight:800; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
+    button:disabled { opacity:.55; cursor:not-allowed; }
+    .status { margin-top:16px; padding:12px; border:1px solid var(--line); border-radius:6px; background:#07111a; white-space:pre-wrap; min-height:48px; color:var(--muted); }
+    .ok { border-color:rgba(56,217,135,.65); color:#c8ffe0; }
+    .bad { border-color:rgba(255,106,98,.75); color:#ffd1cd; }
+    .note { margin-top:14px; color:var(--gold); font-size:12px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>SSX Contact System Upload</h1>
+    <p class="sub">Upload an Outlook .msg file directly into the live Cloudflare Contact System.</p>
+
+    <label for="token">Contact System Token</label>
+    <input id="token" type="password" autocomplete="off" placeholder="Paste token here. It stays in this browser request." />
+
+    <label for="file">Outlook Email File</label>
+    <input id="file" type="file" accept=".msg,application/vnd.ms-outlook" />
+
+    <button id="upload">Upload Email And Create Contact</button>
+    <div id="status" class="status">Waiting for .msg file.</div>
+    <p class="note">This page is served by Cloudflare, so the upload goes directly to the same Cloudflare Worker and then into D1/R2 storage.</p>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const status = $('status');
+    const upload = $('upload');
+
+    function hex(buffer) {
+      return [...new Uint8Array(buffer)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+    }
+
+    function setStatus(message, ok) {
+      status.textContent = message;
+      status.className = 'status ' + (ok === true ? 'ok' : ok === false ? 'bad' : '');
+    }
+
+    upload.addEventListener('click', async () => {
+      const token = $('token').value.trim();
+      const file = $('file').files[0];
+      if (!token) return setStatus('Missing CONTACT_SYSTEM_TOKEN.', false);
+      if (!file) return setStatus('Choose one .msg file first.', false);
+      if (!file.name.toLowerCase().endsWith('.msg')) return setStatus('Only .msg files are accepted.', false);
+
+      upload.disabled = true;
+      try {
+        setStatus('Reading file and calculating SHA-256...', null);
+        const bytes = await file.arrayBuffer();
+        const sha = hex(await crypto.subtle.digest('SHA-256', bytes));
+        setStatus('Uploading directly to Cloudflare storage...', null);
+        const response = await fetch('/contact-system/email-imports', {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer ' + token,
+            'Content-Type': 'application/vnd.ms-outlook',
+            'X-SSX-File-Name': file.name,
+            'X-SSX-SHA256': sha
+          },
+          body: bytes
+        });
+        const text = await response.text();
+        let data;
+        try { data = JSON.parse(text); } catch { data = { raw: text }; }
+        if (!response.ok && response.status !== 409) throw new Error(JSON.stringify(data, null, 2));
+        setStatus((response.status === 409 ? 'DUPLICATE - ALREADY STORED' : 'SUCCESS') + '\\n\\n' + JSON.stringify(data, null, 2) + '\\n\\nSHA-256: ' + sha, true);
+      } catch (error) {
+        setStatus('FAILED\\n\\n' + (error.message || error), false);
+      } finally {
+        upload.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>`, {
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store"
+    }
+  });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url); const path = url.pathname.replace(/\/+$/, "") || "/";
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
     if (path === "/contact-system/health" && request.method === "GET") return json({ system:"SSX Contact System", storage:"Cloudflare D1 + private R2", mode:"source-only", aiEnrichment:false, ready:true, timestamp:new Date().toISOString() });
+    if (path === "/contact-system/upload" && request.method === "GET") return uploadPage();
     const authError = requireAuth(request, env); if (authError) return authError;
     if (path === "/contact-system/review-queue" && request.method === "GET") {
       const [imports, duplicates, incomplete, cois] = await env.DB.batch([
         env.DB.prepare("SELECT id,original_file_name,error_message,created_at FROM ssx_contact_import_jobs WHERE status='review' ORDER BY created_at DESC LIMIT 100"),
         env.DB.prepare("SELECT d.id,d.contact_id,c.display_name,d.possible_duplicate_contact_id,d.match_reason,d.created_at FROM ssx_contact_duplicate_reviews d JOIN ssx_contacts c ON c.id=d.contact_id WHERE d.status='open' ORDER BY d.created_at DESC LIMIT 100"),
-        env.DB.prepare("SELECT c.id,c.display_name,c.primary_email,c.primary_phone,c.title,co.name AS company_name,co.website AS company_website,co.emr_rating FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id ORDER BY c.updated_at DESC LIMIT 250"),
+        env.DB.prepare("SELECT c.id,c.display_name,c.primary_email,c.primary_phone,c.title,status FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id ORDER BY c.updated_at DESC LIMIT 250"),
         env.DB.prepare("SELECT c.id,c.contact_id,c.expiration_date,c.status,a.file_name FROM ssx_contact_cois c JOIN ssx_contact_attachments a ON a.id=c.attachment_id ORDER BY c.expiration_date ASC LIMIT 100")
       ]);
       const incompleteContacts = (incomplete.results as Array<Record<string, unknown>>).map(contact => ({ ...contact, completeness: completeness(contact) })).filter(contact => !(contact.completeness as {complete:boolean}).complete);

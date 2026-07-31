@@ -54,10 +54,13 @@ async function sessionHeaders(request: Request, env: Env): Promise<Record<string
 async function requireAuth(request: Request, env: Env) { return await authorized(request, env) ? null : json({ error: "Unauthorized" }, 401); }
 
 function completeness(record: Record<string, unknown>) {
+  // This score is strictly the source-backed email-contact profile.  Optional
+  // compliance and enrichment fields (EMR, photo, research) are not used to
+  // lower a new contact's score.
   const fields = [
     ["Contact name", record.display_name], ["Email", record.primary_email], ["Phone", record.primary_phone],
     ["Title", record.title], ["Company", record.company_name], ["Company website", record.company_website],
-    ["EMR rating", record.company_emr_rating], ["Contact photo", record.photo_r2_key]
+    ["Trade category", record.company_trade_category], ["Company logo", record.company_logo_r2_key]
   ] as const;
   const present = fields.filter(([, value]) => value !== null && value !== undefined && value !== "").length;
   return { score: Math.round((present / fields.length) * 100), complete: present === fields.length, missing: fields.filter(([, value]) => value === null || value === undefined || value === "").map(([name]) => name) };

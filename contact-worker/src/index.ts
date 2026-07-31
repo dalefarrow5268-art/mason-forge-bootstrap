@@ -626,7 +626,17 @@ export default {
         for (const [from, to] of profileLabels) page = page.replaceAll(from, escapeCardHtml(to));
         const logoAttachment = (logoAttachments.results as Array<Record<string, unknown>>)[0];
         const logoUrl = logoAttachment?.id ? "/contact-system/files/" + String(logoAttachment.id) : "";
-        const logoLabel = logoUrl ? "SOURCE LOGO ON FILE" : "LOGO NOT PROVIDED";
+        const logoLabel = logoUrl ? "SOURCE LOGO ON FILE" : "NO SOURCE LOGO SAVED";
+        const completenessRows = [
+          ["Email", Boolean(contact.primary_email)],
+          ["Company", Boolean(contact.company_name)],
+          ["Website", Boolean(contact.company_website)],
+          ["Title", validTitle(contact.title)],
+          ["Trade category", Boolean(contact.company_trade_category)],
+          ["Logo", Boolean(logoUrl)]
+        ].map(([label, present]) => "<span class=\"" + (present ? "ok" : "bad") + "\">" + label + ": " + (present ? "on file" : "missing") + "</span>").join("");
+        page = page.replace(/<div class="checks">[\s\S]*?<\/div>/, "<div class=\"checks\">" + completenessRows + "</div>");
+        page = page.replace(/<div class="malkin">[\s\S]*?<\/div>/, "<div class=\"malkin\">" + (logoUrl ? "<img src=\"" + logoUrl + "\" alt=\"Company logo\">" : "<span>NO SOURCE LOGO SAVED</span>") + "</div>");
         const communicationSeen = new Set<string>();
         const historyEmails = emailRows.filter(email => {
           const key = normalize(String(email.sender_email || "") + "|" + String(email.subject || email.original_file_name || ""));
@@ -642,7 +652,7 @@ export default {
         page = page.replace(/<section class="sub detail-card communication-card">[\s\S]*?<\/section>\n<section class="sub detail-card attachments-card">/, "<section class=\"sub detail-card communication-card\"><h3>Communication History</h3><div class=\"communication-list\">" + communicationRows + "</div></section>\n<section class=\"sub detail-card attachments-card\">");
         const templateTokens = /Avery Walsh|Northstar Climate Systems|avery\.walsh@example\.com|northstar\.example|Demo Contact Record|Mechanical Supplier \/ Vendor|Autograph by Marriott — Jericho, NY|Jericho, NY 11753|Hotel Development|PROJECT IMAGE|View Project|Demo project inquiry — equipment budget help|Received: Jul 30, 2026 · 10:24 AM|From: Avery Walsh &lt;avery\.walsh@example\.com&gt;|Re: Demo project inquiry|RE: Equipment information request|SCHEDULE MEETING|REQUEST REFRIGERATOR SIZES|58%|PARTIAL<br>PROFILE|INCOMPLETE|ACTION REQUIRED|MISSING: COI EXPIRATION|MISSING: COI EMAIL|MISSING: COI DOCUMENT|Not in Master List|Candidate for Review|No Duplicates Found|Checked: Jul 30, 12:10 PM/g;
         page = page.replace(templateTokens, token => replacements.get(token) || token);
-        page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}.malkin{font-size:0!important;color:transparent!important}.malkin>*{display:none!important}.malkin:before{content:none!important}.project-photo-frame img{display:none!important}.project-photo-frame{background:#071017!important;display:grid!important;place-items:center!important;color:#8daab8!important;font-size:10px!important}.malkin{background-image:" + (logoUrl ? "url('" + logoUrl + "')" : "none") + "!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important}.malkin:after{content:'" + logoLabel + "';font-size:11px;color:#121518;letter-spacing:.06em;text-align:center;background:rgba(237,240,237,.78);padding:4px}.research .meter i{width:0!important}</style></head>");
+        page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}.malkin{font-size:11px!important;color:#121518!important}.malkin>*{display:block!important}.malkin img{width:100%!important;height:100%!important;object-fit:contain!important}.malkin span{display:grid!important;place-items:center!important;width:100%!important;height:100%!important;text-align:center!important;font-weight:700!important}.malkin:before,.malkin:after{content:none!important}.project-photo-frame img{display:none!important}.project-photo-frame{background:#071017!important;display:grid!important;place-items:center!important;color:#8daab8!important;font-size:10px!important}.malkin{background-image:none!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important}.ring{background:conic-gradient(#e4ae24 0 " + String(detail.completeness.score || 0) + "%,#1c2931 " + String(detail.completeness.score || 0) + "% 100%)!important}.research .meter i{width:0!important}</style></head>");
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
       } catch (error) {
         return json({ error: "Saved contact card render failed", detail: error instanceof Error ? error.message : String(error) }, 502);

@@ -435,7 +435,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url); const path = url.pathname.replace(/\/+$/, "") || "/";
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
-    if (path === "/contact-system/health" && request.method === "GET") return json({ system:"SSX Contact System", storage:"Cloudflare D1 + private R2", mode:"source-only", aiEnrichment:false, importRetry:"sha-email-lookup-v2", approvedContactCardPreview:"server-rendered-from-saved-contact-record", viewerInitialState:"blank-until-contact-is-saved", ready:true, timestamp:new Date().toISOString() });
+    if (path === "/contact-system/health" && request.method === "GET") return json({ system:"SSX Contact System", storage:"Cloudflare D1 + private R2", mode:"source-only", aiEnrichment:false, importRetry:"sha-email-lookup-v2", approvedContactCardPreview:"server-rendered-from-saved-contact-record", viewerInitialState:"blank-until-contact-is-saved", cardRenderer:"single-pass-template-fill-v1", ready:true, timestamp:new Date().toISOString() });
     if (path === "/contact-system/login" && request.method === "GET") return loginPage();
     if (path === "/contact-system/session" && request.method === "POST") return request.headers.get("Authorization") === "Bearer " + env.CONTACT_SYSTEM_TOKEN ? json({ signedIn: true }, 200, await sessionHeaders(request, env)) : json({ signedIn: false }, 401);
     if (path === "/contact-system/session" && request.method === "GET") return await authorized(request, env) ? json({ signedIn: true }) : json({ signedIn: false }, 401);

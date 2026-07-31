@@ -45,6 +45,30 @@ function attachmentContentType(bytes: Uint8Array, fileName: string) {
   if (/\.pdf$/i.test(fileName)) return "application/pdf";
   return "application/octet-stream";
 }
+function decodePdfLiteral(value: string) {
+  return value.replace(/\\([nrtbf()\\])/g, (_, token) => ({n:"\n",r:"\r",t:"\t",b:"\b",f:"\f"}[token] || token)).replace(/\\[0-7]{1,3}/g, token => String.fromCharCode(parseInt(token.slice(1), 8)));
+}
+function stringsFromPdfText(value: string) {
+  const output: string[] = [];
+  for (const match of value.matchAll(/\((?:\\.|[^\\)])*\)\s*(?:Tj|['"])/g)) output.push(decodePdfLiteral(match[0].replace(/\s*(?:Tj|['"])$/, "").slice(1,-1)));
+  for (const match of value.matchAll(/\[(.*?)\]\s*TJ/gs)) for (const part of match[1].matchAll(/\((?:\\.|[^\\)])*\)/g)) output.push(decodePdfLiteral(part[0].slice(1,-1)));
+  return output.join(" ").replace(/\s+/g, " ").trim();
+}
+async function pdfSourceText(bytes: Uint8Array) {
+  const raw = new TextDecoder("latin1").decode(bytes);
+  const pieces = [stringsFromPdfText(raw)];
+  for (const match of raw.matchAll(/<<(?:[^>]|>(?!>)){0,1200}\/FlateDecode[\s\S]{0,1200}?>>\s*stream\r?\n/g)) {
+    const start = (match.index || 0) + match[0].length;
+    const end = raw.indexOf("endstream", start);
+    if (end < start || end - start > 5 * 1024 * 1024) continue;
+    try {
+      const compressed = bytes.slice(start, end);
+      const inflated = new Uint8Array(await new Response(new Blob([compressed]).stream().pipeThrough(new DecompressionStream("deflate"))).arrayBuffer());
+      pieces.push(stringsFromPdfText(new TextDecoder("latin1").decode(inflated)));
+    } catch { /* some PDFs use unsupported filters; preserve file and continue */ }
+  }
+  return pieces.join("\n").replace(/\s+/g, " ").trim().slice(0, 50000);
+}
 const masterContactCardTemplateUrl = "https://mason-forge-bootstrap.vercel.app/final-templates/master-contact-card-template.html";
 const escapeCardHtml = (value: unknown) => String(value ?? "Not provided").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 const sessionMaxAge = 60 * 60 * 24 * 30;
@@ -254,6 +278,8 @@ async function importEmail(request: Request, env: Env) {
   if (computed !== sha) return json({ error: "SHA-256 does not match uploaded bytes" }, 400);
   const importId = duplicate?.id || id(); const now = new Date().toISOString();
   const extracted = extractOutlookMsg(bytes);
+  const pdfTexts = await Promise.all(extracted.attachments.filter(attachment => attachmentContentType(attachment.content, attachment.fileName) === "application/pdf").map(attachment => pdfSourceText(attachment.content)));
+  const combinedSourceText = [extracted.bodyText || "", ...pdfTexts].filter(Boolean).join("\n\n");
   // Outlook can export the same message with different file bytes.  Stop those
   // copies before they become separate communication-history records.
   if (!duplicate && extracted.senderEmail && extracted.subject && extracted.bodyText) {
@@ -280,7 +306,7 @@ async function importEmail(request: Request, env: Env) {
   let company: Record<string, unknown> | null = null;
   let facts: SignatureFacts = {};
   if (contactId && !extracted.parseError) {
-    facts = signatureFacts(extracted.bodyText, extracted.senderName, extracted.senderEmail);
+    facts = signatureFacts(combinedSourceText, extracted.senderName, extracted.senderEmail);
     const current = await env.DB.prepare("SELECT company_id,primary_phone,title FROM ssx_contacts WHERE id=?").bind(contactId).first<{company_id:string|null;primary_phone:string|null;title:string|null}>();
     if (facts.companyName) {
       company = await saveCompany(env, current?.company_id || null, {
@@ -306,7 +332,7 @@ async function importEmail(request: Request, env: Env) {
     }
   }
 
-  const action = requestedAction(extracted.subject, extracted.bodyText);
+  const action = requestedAction(extracted.subject, combinedSourceText);
   if (contactId && action && !refreshingDuplicate) {
     const taskTitle = `Review email action request${extracted.subject ? `: ${extracted.subject.slice(0, 180)}` : ""}`;
     await env.DB.batch([
@@ -343,14 +369,15 @@ async function importEmail(request: Request, env: Env) {
     await env.DB.prepare("UPDATE ssx_companies SET logo_r2_key=NULL,updated_at=? WHERE id=? AND logo_r2_key LIKE '%/outlook-embedded-image-%'").bind(now,String(company.id)).run();
   }
   if (contactId) for (const [field,value] of Object.entries({ sender_name: extracted.senderName, sender_email: extracted.senderEmail, subject: extracted.subject })) if (value) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,field,value,"Outlook .msg header").run();
-  const projectName = contactId ? projectFromEmail(extracted.subject, fileName, extracted.bodyText) : null;
+  const projectName = contactId ? projectFromEmail(extracted.subject, fileName, combinedSourceText) : null;
   const project = contactId && projectName ? await linkProject(env, contactId, { projectName, projectRole: "Email correspondence", isCurrent: true, sourceEmailId: emailId, sourceLocation: "Outlook .msg subject/body" }) : null;
   const contact = contactId ? await env.DB.prepare("SELECT id,display_name,primary_email,primary_phone FROM ssx_contacts WHERE id=?").bind(contactId).first() : null;
   const extractionAudit = {
     htmlAndSignatureTextRead: Boolean(extracted.bodyText),
     parsedFacts: facts,
     realOutlookAttachments: extracted.attachments.map(attachment => ({ fileName: attachment.fileName, contentType: attachmentContentType(attachment.content, attachment.fileName), bytes: attachment.content.byteLength })),
-    signatureTail: (extracted.bodyText || "").replace(/\r/g, "").split("\n").map(line => line.trim()).filter(Boolean).slice(-18)
+    signatureTail: combinedSourceText.replace(/\r/g, "").split("\n").map(line => line.trim()).filter(Boolean).slice(-18),
+    pdfTextExtracted: pdfTexts.map((text, index) => ({ fileName: extracted.attachments.filter(attachment => attachmentContentType(attachment.content, attachment.fileName) === "application/pdf")[index]?.fileName, characters: text.length }))
   };
   return json({ id: importId, contactId, emailId, status, duplicate: refreshingDuplicate, retried: retryingReview, profileRefreshed: refreshingDuplicate, completion: { emailStored: true, contact, company: company ? { id: company.id, name: company.name, website: company.website, phone: company.phone, logoStored: Boolean(signatureLogoKey) } : null, project, daleTodoCreated: Boolean(action), extractionAudit }, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, retryingReview ? 200 : 201, await sessionHeaders(request, env));
 }

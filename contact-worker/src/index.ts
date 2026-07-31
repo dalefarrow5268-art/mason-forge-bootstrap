@@ -349,8 +349,7 @@ function uploadPage() {
     function chooseFile(file) {
       if (!file) return;
       selectedFile = file;
-      fileLabel.textContent = file.name + ' uploading…';
-      setTimeout(() => upload.click(), 0);
+      fileLabel.textContent = file.name + ' ready — click Upload Email And Create Contact.';
     }
     fileInput.addEventListener('change', () => chooseFile(fileInput.files[0]));
     dropZone.addEventListener('click', () => fileInput.click());
@@ -454,9 +453,15 @@ export default {
     }
     const cardPreviewMatch = path.match(/^\/contact-system\/contact-card-preview\/([^/]+)$/);
     if (cardPreviewMatch && request.method === "GET") {
-      const detail = await getContact(env, cardPreviewMatch[1]);
-      if (!detail) return json({ error: "Contact not found" }, 404);
       try {
+        const contact = await env.DB.prepare("SELECT c.*,co.name AS company_name,co.website AS company_website,co.emr_rating AS company_emr_rating,co.emr_effective_date AS company_emr_effective_date FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?").bind(cardPreviewMatch[1]).first<Record<string, unknown>>();
+        if (!contact) return json({ error: "Contact not found" }, 404);
+        const [projects, tasks, emails] = await env.DB.batch([
+          env.DB.prepare("SELECT project_name,project_role,is_current FROM ssx_contact_projects WHERE contact_id=? ORDER BY is_current DESC,linked_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
+          env.DB.prepare("SELECT title,status FROM ssx_contact_tasks WHERE contact_id=? ORDER BY created_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
+          env.DB.prepare("SELECT subject,sender_email,original_file_name FROM ssx_contact_emails WHERE contact_id=? ORDER BY received_at DESC LIMIT 20").bind(cardPreviewMatch[1])
+        ]);
+        const detail = { contact, projects: projects.results, tasks: tasks.results, emails: emails.results, cois: [], completeness: completeness(contact) };
         const template = await fetch(masterContactCardTemplateUrl);
         if (!template.ok) throw new Error("Approved card template could not be loaded");
         let page = await template.text();

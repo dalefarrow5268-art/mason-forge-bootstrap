@@ -17,7 +17,7 @@ type DuplicateReviewUpdateInput = { status: "not_duplicate" };
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET,POST,PATCH,OPTIONS",
-  "Access-Control-Allow-Headers": "Authorization,Content-Type,X-SSX-File-Name,X-SSX-SHA256",
+  "Access-Control-Allow-Headers": "Authorization,Content-Type,X-SSX-File-Name,X-SSX-SHA256,X-SSX-Refresh-Profile",
   "Access-Control-Max-Age": "86400"
 };
 const noStoreHeaders = { "Cache-Control": "no-store", ...corsHeaders };
@@ -230,7 +230,8 @@ async function importEmail(request: Request, env: Env) {
   const duplicate = await env.DB.prepare("SELECT id, contact_id, email_id, status FROM ssx_contact_import_jobs WHERE original_sha256=?").bind(sha).first<{id:string;contact_id:string|null;email_id:string|null;status:string}>();
   const existingEmail = duplicate ? await env.DB.prepare("SELECT id FROM ssx_contact_emails WHERE original_sha256=?").bind(sha).first<{id:string}>() : null;
   const retryingReview = Boolean(duplicate && duplicate.status === "review" && !duplicate.contact_id && existingEmail);
-  if (duplicate && !retryingReview) return json({ duplicate: true, import: duplicate }, 409, await sessionHeaders(request, env));
+  const refreshingDuplicate = Boolean(duplicate && duplicate.contact_id && duplicate.email_id && request.headers.get("X-SSX-Refresh-Profile") === "1");
+  if (duplicate && !retryingReview && !refreshingDuplicate) return json({ duplicate: true, import: duplicate }, 409, await sessionHeaders(request, env));
   const bytes = await request.arrayBuffer();
   if (!bytes.byteLength || bytes.byteLength > 50 * 1024 * 1024) return json({ error: "Email must be between 1 byte and 50 MB" }, 413);
   const computed = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))).map(v => v.toString(16).padStart(2,"0")).join("");
@@ -246,9 +247,9 @@ async function importEmail(request: Request, env: Env) {
   const objectKey = `contacts/${contactId || "unassigned"}/emails/${sha}/${fileName}`;
   await env.CONTACT_FILES.put(objectKey, bytes, { httpMetadata: { contentType: "application/vnd.ms-outlook" }, customMetadata: { sha256: sha, importId } });
   const emailId = existingEmail?.id || id(); const status = extracted.parseError ? "review" : (contactId ? "completed" : "review");
-  if (retryingReview) {
+  if (retryingReview || refreshingDuplicate) {
     await env.DB.prepare("UPDATE ssx_contact_emails SET contact_id=?,sender_name=?,sender_email=?,recipients_json=?,subject=?,body_text=?,extraction_status=? WHERE id=?").bind(contactId,extracted.senderName || null,extracted.senderEmail || null,JSON.stringify(extracted.recipients),extracted.subject || null,extracted.bodyText || null,extracted.parseError ? "review" : "extracted",emailId).run();
-    await env.DB.prepare("UPDATE ssx_contact_import_jobs SET status=?,contact_id=?,error_message=?,updated_at=? WHERE id=?").bind(status,contactId,extracted.parseError || null,now,importId).run();
+    if (retryingReview) await env.DB.prepare("UPDATE ssx_contact_import_jobs SET status=?,contact_id=?,error_message=?,updated_at=? WHERE id=?").bind(status,contactId,extracted.parseError || null,now,importId).run();
   } else {
     await env.DB.prepare("INSERT INTO ssx_contact_emails (id,contact_id,direction,sender_name,sender_email,recipients_json,subject,received_at,body_text,original_msg_r2_key,original_file_name,original_sha256,original_size_bytes,extraction_status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(emailId,contactId,"received",extracted.senderName || null,extracted.senderEmail || null,JSON.stringify(extracted.recipients),extracted.subject || null,now,extracted.bodyText || null,objectKey,fileName,sha,bytes.byteLength,extracted.parseError ? "review" : "extracted",now).run();
     await env.DB.prepare("INSERT INTO ssx_contact_import_jobs (id,original_file_name,original_sha256,status,contact_id,email_id,error_message,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)").bind(importId,fileName,sha,status,contactId,emailId,extracted.parseError || null,now,now).run();
@@ -300,7 +301,7 @@ async function importEmail(request: Request, env: Env) {
     const attachmentKey = `contacts/${contactId || "unassigned"}/attachments/${attachmentSha}/${attachmentName}`;
     const contentType = detectedImageType || "application/octet-stream";
     await env.CONTACT_FILES.put(attachmentKey, attachment.content, { httpMetadata: { contentType }, customMetadata: { sha256: attachmentSha, emailId } });
-    await env.DB.prepare("INSERT INTO ssx_contact_attachments (id,email_id,file_name,content_type,r2_key,sha256,size_bytes) VALUES (?,?,?,?,?,?,?)").bind(id(),emailId,attachmentName,contentType,attachmentKey,attachmentSha,attachment.content.byteLength).run();
+    await env.DB.prepare("INSERT OR IGNORE INTO ssx_contact_attachments (id,email_id,file_name,content_type,r2_key,sha256,size_bytes) VALUES (?,?,?,?,?,?,?)").bind(id(),emailId,attachmentName,contentType,attachmentKey,attachmentSha,attachment.content.byteLength).run();
     if (!signatureLogoKey && detectedImageType) signatureLogoKey = attachmentKey;
   }
   if (contactId && company?.id && signatureLogoKey) {
@@ -313,7 +314,7 @@ async function importEmail(request: Request, env: Env) {
   const projectName = contactId ? projectFromEmail(extracted.subject, fileName, extracted.bodyText) : null;
   const project = contactId && projectName ? await linkProject(env, contactId, { projectName, projectRole: "Email correspondence", isCurrent: true, sourceEmailId: emailId, sourceLocation: "Outlook .msg subject/body" }) : null;
   const contact = contactId ? await env.DB.prepare("SELECT id,display_name,primary_email,primary_phone FROM ssx_contacts WHERE id=?").bind(contactId).first() : null;
-  return json({ id: importId, contactId, emailId, status, duplicate: false, retried: retryingReview, completion: { emailStored: true, contact, company: company ? { id: company.id, name: company.name, website: company.website, phone: company.phone, logoStored: Boolean(signatureLogoKey) } : null, project, daleTodoCreated: Boolean(action) }, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, retryingReview ? 200 : 201, await sessionHeaders(request, env));
+  return json({ id: importId, contactId, emailId, status, duplicate: refreshingDuplicate, retried: retryingReview, profileRefreshed: refreshingDuplicate, completion: { emailStored: true, contact, company: company ? { id: company.id, name: company.name, website: company.website, phone: company.phone, logoStored: Boolean(signatureLogoKey) } : null, project, daleTodoCreated: Boolean(action) }, message: extracted.parseError ? "Original .msg stored privately; parser needs review." : "Original .msg stored and source-supported contact facts recorded." }, retryingReview ? 200 : 201, await sessionHeaders(request, env));
 }
 
 function daleTodoPage() {
@@ -483,7 +484,7 @@ function uploadPage() {
             ...(token ? { Authorization: 'Bearer ' + token } : {}),
             'Content-Type': 'application/vnd.ms-outlook',
             'X-SSX-File-Name': encodeURIComponent(file.name),
-            'X-SSX-SHA256': sha
+            'X-SSX-SHA256': sha, 'X-SSX-Refresh-Profile': '1'
           },
           body: bytes
         });

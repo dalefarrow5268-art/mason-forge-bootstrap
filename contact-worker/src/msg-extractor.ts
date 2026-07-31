@@ -37,32 +37,25 @@ function fallbackExtract(bytes: ArrayBuffer, reason: string): ExtractedMsg {
     subject: subjectMatch?.[1]?.trim(),
     bodyText,
     recipients: addresses.slice(1).map(value => ({ email: value, type: "to" })),
-    attachments: embeddedImages(bytes)
+    attachments: []
   };
 }
 
-function embeddedImages(bytes: ArrayBuffer) {
-  const data = new Uint8Array(bytes);
-  const images: Array<{ fileName: string; content: Uint8Array }> = [];
-  const push = (extension: string, start: number, end: number) => {
-    if (end <= start || end - start > 3 * 1024 * 1024 || images.length >= 4) return;
-    images.push({ fileName: `outlook-embedded-image-${images.length + 1}.${extension}`, content: data.slice(start, end) });
-  };
-  for (let i = 0; i < data.length - 12 && images.length < 4; i++) {
-    // PNG: signature through IEND chunk.
-    if (data[i]===137 && data[i+1]===80 && data[i+2]===78 && data[i+3]===71 && data[i+4]===13 && data[i+5]===10 && data[i+6]===26 && data[i+7]===10) {
-      for (let j=i+8; j < Math.min(data.length - 8, i + 3 * 1024 * 1024); j++) if (data[j]===73 && data[j+1]===69 && data[j+2]===78 && data[j+3]===68 && data[j+4]===174 && data[j+5]===66 && data[j+6]===96 && data[j+7]===130) { push("png", i, j + 8); i = j + 7; break; }
-    }
-    // JPEG: start through EOI marker.
-    else if (data[i]===255 && data[i+1]===216 && data[i+2]===255) {
-      for (let j=i+3; j < Math.min(data.length - 1, i + 3 * 1024 * 1024); j++) if (data[j]===255 && data[j+1]===217) { push("jpg", i, j + 2); i = j + 1; break; }
-    }
-    // GIF: header through trailer byte.
-    else if (data[i]===71 && data[i+1]===73 && data[i+2]===70 && data[i+3]===56 && (data[i+4]===55 || data[i+4]===57) && data[i+5]===97) {
-      for (let j=i+13; j < Math.min(data.length, i + 3 * 1024 * 1024); j++) if (data[j]===59) { push("gif", i, j + 1); i = j; break; }
-    }
-  }
-  return images;
+function htmlToText(value?: string) {
+  if (!value) return "";
+  return value
+    .replace(/<\/(?:p|div|tr|li|h[1-6])\s*>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">")
+    .replace(/&#(?:x([0-9a-f]+)|([0-9]+));/gi, (_, hex, decimal) => String.fromCharCode(parseInt(hex || decimal, hex ? 16 : 10)))
+    .replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function messageBodyText(fields: FieldsData) {
+  const html = fields.bodyHtml || (fields.html ? new TextDecoder().decode(fields.html) : "");
+  const parts = [fields.body?.trim(), htmlToText(html)].filter(Boolean);
+  return [...new Set(parts)].join("\n\n").trim() || undefined;
 }
 
 export function extractOutlookMsg(bytes: ArrayBuffer): ExtractedMsg {
@@ -74,22 +67,15 @@ export function extractOutlookMsg(bytes: ArrayBuffer): ExtractedMsg {
     senderName: fields.senderName?.trim() || undefined,
     senderEmail: email(fields.senderEmail),
     subject: fields.subject?.trim() || undefined,
-    bodyText: fields.body?.trim() || undefined,
-    recipients: (fields.recipients || []).map(recipient => ({ name: recipient.name?.trim() || undefined, email: email(recipient.email), type: recipient.recipType })).filter(recipient => recipient.name || recipient.email)
-    ,attachments: (() => {
-      const normal = (fields.attachments || []).flatMap((attachment, index) => {
-        try {
-          const data = new MsgReader(bytes).getAttachment(attachment);
-          return data.content ? [{ fileName: data.fileName || `outlook-inline-${index + 1}`, content: data.content }] : [];
-        } catch { return []; }
-      });
-      const seen = new Set(normal.map(item => Array.from(item.content.slice(0, 24)).join(",")));
-      return [...normal, ...embeddedImages(bytes).filter(item => {
-        const key = Array.from(item.content.slice(0, 24)).join(",");
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })];
-    })()
+    bodyText: messageBodyText(fields),
+    recipients: (fields.recipients || []).map(recipient => ({ name: recipient.name?.trim() || undefined, email: email(recipient.email), type: recipient.recipType })).filter(recipient => recipient.name || recipient.email),
+    // Only true Outlook attachment objects are retained. Scanning arbitrary
+    // .msg bytes for image signatures created false image attachments.
+    attachments: (fields.attachments || []).flatMap((attachment, index) => {
+      try {
+        const data = new MsgReader(bytes).getAttachment(attachment);
+        return data.content ? [{ fileName: data.fileName || `outlook-attachment-${index + 1}`, content: data.content }] : [];
+      } catch { return []; }
+    })
   };
 }

@@ -256,8 +256,8 @@ function uploadPage() {
   <style>
     :root { color-scheme: dark; --bg:#05080d; --panel:#0a111a; --line:#1d4158; --blue:#18bdf4; --gold:#d8b24a; --text:#e8f7ff; --muted:#8daab8; --bad:#ff6a62; --good:#38d987; }
     * { box-sizing: border-box; }
-    body { margin:0; min-height:100vh; background:radial-gradient(circle at top, #102334 0, #05080d 42%, #020305 100%); color:var(--text); font:14px/1.45 Arial, sans-serif; padding:18px; }
-    main { width:min(1780px, 100%); margin:0; border:1px solid var(--line); background:rgba(5,10,16,.92); border-radius:8px; box-shadow:0 18px 60px rgba(0,0,0,.45); padding:18px; display:grid; grid-template-columns:360px minmax(0,1fr); gap:24px; align-items:start; }
+    body { margin:0; min-height:100vh; background:radial-gradient(circle at top, #102334 0, #05080d 42%, #020305 100%); color:var(--text); font:14px/1.45 Arial, sans-serif; padding:16px; }
+    main { width:100%; min-height:calc(100vh - 32px); margin:0; border:1px solid var(--line); background:rgba(5,10,16,.92); border-radius:8px; box-shadow:0 18px 60px rgba(0,0,0,.45); padding:18px; display:grid; grid-template-columns:410px minmax(0,1fr); gap:24px; align-items:stretch; }
     .uploadPane { min-width:0; }
     @media (max-width:960px) { main { display:block; } .card { margin-top:18px !important; min-height:0 !important; } }
     h1 { margin:0 0 6px; font-size:22px; letter-spacing:.08em; text-transform:uppercase; color:#fff; }
@@ -265,23 +265,30 @@ function uploadPage() {
     label { display:block; margin:14px 0 6px; color:#bfefff; font-weight:700; letter-spacing:.04em; text-transform:uppercase; font-size:11px; }
     input, button { width:100%; border-radius:6px; border:1px solid var(--line); background:#07111a; color:var(--text); padding:11px 12px; font:inherit; }
     input[type=file] { display:none; }
-    .drop { margin-top:8px; min-height:260px; display:grid; place-items:center; border:2px dashed #1d6e92; border-radius:8px; padding:28px 16px; text-align:center; color:#bfefff; cursor:pointer; background:#07111a; }
+    .drop { margin-top:8px; min-height:360px; display:grid; place-items:center; border:2px dashed #1d6e92; border-radius:8px; padding:32px 18px; text-align:center; color:#bfefff; cursor:pointer; background:#07111a; }
     .drop.over { border-color:#18bdf4; background:#0d2738; }
     button { margin-top:16px; border-color:var(--blue); background:linear-gradient(180deg, #0d4f75, #082739); color:#e9fbff; font-weight:800; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
     button:disabled { opacity:.55; cursor:not-allowed; }
     .copy { margin-top:8px; padding:8px 10px; font-size:12px; }
-    .status { margin-top:16px; max-height:150px; overflow:auto; padding:10px; border:1px solid var(--line); border-radius:6px; background:#07111a; white-space:pre-wrap; min-height:42px; color:var(--muted); user-select:text; }
+    .status { margin-top:16px; max-height:92px; overflow:auto; padding:10px; border:1px solid var(--line); border-radius:6px; background:#07111a; white-space:pre-wrap; min-height:42px; color:var(--muted); user-select:text; }
     .ok { border-color:rgba(56,217,135,.65); color:#c8ffe0; }
     .bad { border-color:rgba(255,106,98,.75); color:#ffd1cd; }
     .note { margin-top:14px; color:var(--gold); font-size:12px; }
-    .card { display:block; min-height:760px; margin-top:0; padding:26px; border:1px solid #18bdf4; border-radius:8px; background:#08131d; }
+    .card { display:block; min-height:calc(100vh - 70px); margin-top:0; padding:28px; border:1px solid #18bdf4; border-radius:8px; background:#08131d; }
     .card h2 { margin:0 0 12px; letter-spacing:.06em; text-transform:uppercase; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .field { padding:10px; border:1px solid #1d4158; border-radius:6px; background:#07111a; }
     .field b { display:block; color:#8daab8; font-size:11px; margin-bottom:4px; }
     .section { margin-top:14px; padding-top:12px; border-top:1px solid #1d4158; }
     .section li { margin:5px 0; color:#c8dbe4; }
-    .cardPlaceholder { min-height:680px; display:grid; place-items:center; border:1px dashed #1d4158; border-radius:6px; color:var(--muted); text-align:center; padding:24px; }
+    .cardPlaceholder { min-height:calc(100vh - 160px); padding:24px; }
+    .cardTop { display:flex; justify-content:space-between; align-items:center; padding-bottom:18px; border-bottom:1px solid #1d4158; }
+    .cardTop h2 { margin:0; }
+    .badge { color:#38d987; border:1px solid #38d987; border-radius:999px; padding:5px 10px; font-size:11px; font-weight:700; }
+    .cardColumns { display:grid; grid-template-columns:1.1fr .9fr; gap:18px; margin-top:18px; }
+    .cardGroup { min-height:205px; padding:16px; border:1px solid #1d4158; border-radius:6px; background:#07111a; }
+    .cardGroup b { color:#bfefff; font-size:11px; letter-spacing:.05em; }
+    .blankLine { height:34px; margin-top:12px; border-bottom:1px solid #173244; color:#627e8d; font-size:12px; padding-top:12px; }
   </style>
 </head>
 <body>
@@ -305,7 +312,15 @@ function uploadPage() {
     <button id="copyResult" class="copy" hidden>Copy Result</button>
     <p class="note">Upload goes directly into the Cloudflare contact system and private D1/R2 storage.</p>
     </div>
-    <section id="cardWindow" class="card"><div class="cardPlaceholder"><div><strong>SAVED CONTACT CARD</strong><br><br>After each email is processed, the completed contact card appears here.</div></div></section>
+    <section id="cardWindow" class="card">
+      <div class="cardTop"><h2>Saved Contact Card</h2><span class="badge">READY FOR EMAIL</span></div>
+      <div class="cardColumns">
+        <div class="cardGroup"><b>CONTACT IDENTITY</b><div class="blankLine">Name will appear here</div><div class="blankLine">Company</div><div class="blankLine">Email</div><div class="blankLine">Phone</div></div>
+        <div class="cardGroup"><b>PROJECT &amp; ACTIONS</b><div class="blankLine">Project link</div><div class="blankLine">Dale To Do</div><div class="blankLine">Source email stored</div></div>
+        <div class="cardGroup"><b>COMPANY PROFILE</b><div class="blankLine">Website</div><div class="blankLine">EMR Rating</div><div class="blankLine">Company risk / notes</div></div>
+        <div class="cardGroup"><b>EMAIL &amp; EVIDENCE</b><div class="blankLine">Original .msg file</div><div class="blankLine">Attachments</div><div class="blankLine">Source-backed facts</div></div>
+      </div>
+    </section>
   </main>
 
   <script>

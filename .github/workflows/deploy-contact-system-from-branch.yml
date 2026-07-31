@@ -35,9 +35,35 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "Missing CLOUDFLARE_API_TOKEN"; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
           test -n "$CONTACT_SYSTEM_TOKEN" || { echo "Missing CONTACT_SYSTEM_TOKEN"; exit 1; }
+      - name: Apply upload runtime guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/index.ts')
+          text = path.read_text()
+          text = text.replace(
+            'if (path === "/contact-system/email-imports" && request.method === "POST") return importEmail(request,env);',
+            'if (path === "/contact-system/email-imports" && request.method === "POST") {\n      try { return await importEmail(request,env); }\n      catch (error) { return json({ error: "Import failed inside Cloudflare Worker", detail: error instanceof Error ? error.message : String(error) }, 500); }\n    }'
+          )
+          text = text.replace(
+            '<input id="token" type="password" autocomplete="off" placeholder="Paste token here. It stays in this browser request." />',
+            '<input id="token" type="password" autocomplete="off" placeholder="Paste token here. It stays in this browser request." />\n    <button id="saveToken" type="button">Save Token On This Computer</button>'
+          )
+          text = text.replace(
+            "const upload = $('upload');\n\n    function hex(buffer) {",
+            "const upload = $('upload');\n    const tokenInput = $('token');\n    const saveToken = $('saveToken');\n    const tokenKey = 'ssxContactSystemToken';\n\n    tokenInput.value = localStorage.getItem(tokenKey) || '';\n    saveToken.addEventListener('click', () => {\n      const token = tokenInput.value.trim();\n      if (!token) return setStatus('Paste the token first, then save it.', false);\n      localStorage.setItem(tokenKey, token);\n      setStatus('Token saved in this browser. Next upload will reuse it.', true);\n    });\n\n    function hex(buffer) {"
+          )
+          text = text.replace("const token = $('token').value.trim();", "const token = tokenInput.value.trim();")
+          text = text.replace(
+            "setStatus('Reading file and calculating SHA-256...', null);\n        const bytes = await file.arrayBuffer();",
+            "setStatus('Reading file and calculating SHA-256...', null);\n        localStorage.setItem(tokenKey, token);\n        const bytes = await file.arrayBuffer();"
+          )
+          path.write_text(text)
+          PY
       - run: npm ci
+      - run: npx tsc --noEmit
       - run: npx wrangler d1 migrations apply mason-forge-cloud --remote
       - run: 'printf "%s" "$CONTACT_SYSTEM_TOKEN" | npx wrangler secret put CONTACT_SYSTEM_TOKEN'
       - run: npx wrangler deploy
 
-# deploy trigger: 2026-07-31 Cloudflare-hosted uploader
+# deploy trigger: 2026-07-31 importer runtime guard and token memory

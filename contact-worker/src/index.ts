@@ -25,6 +25,7 @@ const json = (body: unknown, status = 200, headers: HeadersInit = {}) => Respons
 const id = () => crypto.randomUUID();
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
 const safeName = (value: string) => value.replace(/[^a-zA-Z0-9._ -]/g, "_").slice(0, 160);
+const decodeFileHeader = (value: string) => { try { return decodeURIComponent(value); } catch { return value; } };
 const sessionMaxAge = 60 * 60 * 24 * 30;
 const cookie = (request: Request, name: string) => request.headers.get("Cookie")?.split(/;\s*/).find(value => value.startsWith(name + "="))?.slice(name.length + 1);
 const toBase64Url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -176,7 +177,7 @@ function requestedAction(subject?: string, body?: string) {
 }
 
 async function importEmail(request: Request, env: Env) {
-  const fileName = safeName(request.headers.get("X-SSX-File-Name") || "email.msg");
+  const fileName = safeName(decodeFileHeader(request.headers.get("X-SSX-File-Name") || "email.msg"));
   const sha = (request.headers.get("X-SSX-SHA256") || "").toLowerCase();
   if (!/^[a-f0-9]{64}$/.test(sha)) return json({ error: "A valid X-SSX-SHA256 header is required" }, 400);
   if (!fileName.toLowerCase().endsWith(".msg")) return json({ error: "Only .msg files are accepted" }, 415);
@@ -334,7 +335,7 @@ function uploadPage() {
           headers: {
             ...(token ? { Authorization: 'Bearer ' + token } : {}),
             'Content-Type': 'application/vnd.ms-outlook',
-            'X-SSX-File-Name': file.name,
+            'X-SSX-File-Name': encodeURIComponent(file.name),
             'X-SSX-SHA256': sha
           },
           body: bytes

@@ -626,7 +626,7 @@ export default {
         ];
         for (const [from, to] of profileLabels) page = page.replaceAll(from, escapeCardHtml(to));
         const logoAttachment = (logoAttachments.results as Array<Record<string, unknown>>)[0];
-        const logoUrl = logoAttachment?.id ? "/contact-system/files/" + String(logoAttachment.id) : "";
+        const logoUrl = logoAttachment?.id ? "/contact-system/files/" + String(logoAttachment.id) + "?inline=1" : "";
         const logoLabel = logoUrl ? "SOURCE LOGO ON FILE" : "NO SOURCE LOGO SAVED";
         const completenessRows = [
           ["Email", Boolean(contact.primary_email)],
@@ -774,7 +774,7 @@ export default {
       if (!object) return json({ error: "Stored file is unavailable" }, 404);
       return new Response(object.body, { headers: {
         "Content-Type": attachment?.content_type || "application/vnd.ms-outlook",
-        "Content-Disposition": `attachment; filename="${safeName(file.file_name)}"`,
+        "Content-Disposition": url.searchParams.get("inline") === "1" ? `inline; filename="${safeName(file.file_name)}"` : `attachment; filename="${safeName(file.file_name)}"`,
         "Cache-Control": "private, no-store",
         ...corsHeaders
       }});

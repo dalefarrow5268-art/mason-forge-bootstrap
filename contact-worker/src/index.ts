@@ -265,11 +265,12 @@ function uploadPage() {
     label { display:block; margin:14px 0 6px; color:#bfefff; font-weight:700; letter-spacing:.04em; text-transform:uppercase; font-size:11px; }
     input, button { width:100%; border-radius:6px; border:1px solid var(--line); background:#07111a; color:var(--text); padding:11px 12px; font:inherit; }
     input[type=file] { display:none; }
-    .drop { margin-top:8px; border:2px dashed #1d6e92; border-radius:8px; padding:18px 12px; text-align:center; color:#bfefff; cursor:pointer; background:#07111a; }
+    .drop { margin-top:8px; min-height:260px; display:grid; place-items:center; border:2px dashed #1d6e92; border-radius:8px; padding:28px 16px; text-align:center; color:#bfefff; cursor:pointer; background:#07111a; }
     .drop.over { border-color:#18bdf4; background:#0d2738; }
     button { margin-top:16px; border-color:var(--blue); background:linear-gradient(180deg, #0d4f75, #082739); color:#e9fbff; font-weight:800; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
     button:disabled { opacity:.55; cursor:not-allowed; }
-    .status { margin-top:16px; padding:12px; border:1px solid var(--line); border-radius:6px; background:#07111a; white-space:pre-wrap; min-height:48px; color:var(--muted); }
+    .copy { margin-top:8px; padding:8px 10px; font-size:12px; }
+    .status { margin-top:16px; max-height:150px; overflow:auto; padding:10px; border:1px solid var(--line); border-radius:6px; background:#07111a; white-space:pre-wrap; min-height:42px; color:var(--muted); user-select:text; }
     .ok { border-color:rgba(56,217,135,.65); color:#c8ffe0; }
     .bad { border-color:rgba(255,106,98,.75); color:#ffd1cd; }
     .note { margin-top:14px; color:var(--gold); font-size:12px; }
@@ -301,6 +302,7 @@ function uploadPage() {
 
     <button id="upload">Upload Email And Create Contact</button>
     <div id="status" class="status">Waiting for .msg file.</div>
+    <button id="copyResult" class="copy" hidden>Copy Result</button>
     <p class="note">Upload goes directly into the Cloudflare contact system and private D1/R2 storage.</p>
     </div>
     <section id="cardWindow" class="card"><div class="cardPlaceholder"><div><strong>SAVED CONTACT CARD</strong><br><br>After each email is processed, the completed contact card appears here.</div></div></section>
@@ -310,6 +312,7 @@ function uploadPage() {
     const $ = (id) => document.getElementById(id);
     const status = $('status');
     const upload = $('upload');
+    const copyResult = $('copyResult');
     const tokenInput = $('token');
     const signIn = $('signIn');
     const fileInput = $('file');
@@ -341,6 +344,10 @@ function uploadPage() {
       status.textContent = message;
       status.className = 'status ' + (ok === true ? 'ok' : ok === false ? 'bad' : '');
     }
+    copyResult.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(status.textContent); copyResult.textContent = 'Copied'; setTimeout(() => copyResult.textContent = 'Copy Result', 1400); }
+      catch { setStatus('Select the result text and press Ctrl+C to copy it.', false); }
+    });
     const esc = value => { const el = document.createElement('div'); el.textContent = value || 'Not provided'; return el.innerHTML; };
     async function showContactCard(contactId) {
       if (!contactId) return;
@@ -383,8 +390,10 @@ function uploadPage() {
         const c = data.completion;
         const summary = c ? ['CONTACT CARD CREATED', 'NAME: ' + (c.contact ? c.contact.display_name : 'Needs review'), 'EMAIL: ' + (c.contact?.primary_email || 'Not found in email'), 'PHONE: ' + (c.contact?.primary_phone || 'Not found in email'), 'PROJECT: ' + (c.project ? c.project.project_name : 'Needs project review'), 'DALE TO DO: ' + (c.daleTodoCreated ? 'Created' : 'None found'), 'EMAIL STORED: YES'].join('\\n') : JSON.stringify(data, null, 2);
         setStatus((response.status === 409 && data.import?.status !== 'completed' ? 'ALREADY STORED' : 'COMPLETE') + '\\n\\n' + summary, true);
+        copyResult.hidden = false;
         await showContactCard(data.completion?.contact?.id || data.contactId || data.import?.contact_id);
       } catch (error) {
+        copyResult.hidden = true;
         setStatus('FAILED\\n\\n' + (error.message || error), false);
       } finally {
         upload.disabled = false;

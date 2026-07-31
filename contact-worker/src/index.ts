@@ -249,7 +249,9 @@ function uploadPage() {
     .sub { margin:0 0 18px; color:var(--muted); }
     label { display:block; margin:14px 0 6px; color:#bfefff; font-weight:700; letter-spacing:.04em; text-transform:uppercase; font-size:11px; }
     input, button { width:100%; border-radius:6px; border:1px solid var(--line); background:#07111a; color:var(--text); padding:11px 12px; font:inherit; }
-    input[type=file] { padding:9px; }
+    input[type=file] { display:none; }
+    .drop { margin-top:8px; border:2px dashed #1d6e92; border-radius:8px; padding:28px 18px; text-align:center; color:#bfefff; cursor:pointer; background:#07111a; }
+    .drop.over { border-color:#18bdf4; background:#0d2738; }
     button { margin-top:16px; border-color:var(--blue); background:linear-gradient(180deg, #0d4f75, #082739); color:#e9fbff; font-weight:800; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
     button:disabled { opacity:.55; cursor:not-allowed; }
     .status { margin-top:16px; padding:12px; border:1px solid var(--line); border-radius:6px; background:#07111a; white-space:pre-wrap; min-height:48px; color:var(--muted); }
@@ -269,8 +271,9 @@ function uploadPage() {
       <p class="note">After this first upload, this page remembers a secure session for 30 days. The code itself is not saved on this computer.</p>
     </div>
 
-    <label for="file">Outlook Email File</label>
+    <label for="file">Drop Outlook Email Here</label>
     <input id="file" type="file" accept=".msg,application/vnd.ms-outlook" />
+    <div id="dropZone" class="drop"><strong>DROP .MSG EMAIL HERE</strong><br><span id="fileLabel">or click to choose an Outlook email</span></div>
 
     <button id="upload">Upload Email And Create Contact</button>
     <div id="status" class="status">Waiting for .msg file.</div>
@@ -283,6 +286,20 @@ function uploadPage() {
     const upload = $('upload');
     const tokenInput = $('token');
     const signIn = $('signIn');
+    const fileInput = $('file');
+    const dropZone = $('dropZone');
+    const fileLabel = $('fileLabel');
+    let selectedFile;
+    function chooseFile(file) {
+      if (!file) return;
+      selectedFile = file;
+      fileLabel.textContent = file.name + ' ready to upload';
+    }
+    fileInput.addEventListener('change', () => chooseFile(fileInput.files[0]));
+    dropZone.addEventListener('click', () => fileInput.click());
+    ['dragenter','dragover'].forEach(event => dropZone.addEventListener(event, e => { e.preventDefault(); dropZone.classList.add('over'); }));
+    ['dragleave','drop'].forEach(event => dropZone.addEventListener(event, e => { e.preventDefault(); dropZone.classList.remove('over'); }));
+    dropZone.addEventListener('drop', e => chooseFile(e.dataTransfer.files[0]));
     let signedIn = false;
     fetch('/contact-system/session').then(response => {
       signedIn = response.ok;
@@ -300,7 +317,7 @@ function uploadPage() {
 
     upload.addEventListener('click', async () => {
       const token = tokenInput.value.trim();
-      const file = $('file').files[0];
+      const file = selectedFile || fileInput.files[0];
       if (!signedIn && !token) return setStatus('Enter the one-time sign-in code for this first upload.', false);
       if (!file) return setStatus('Choose one .msg file first.', false);
       if (!file.name.toLowerCase().endsWith('.msg')) return setStatus('Only .msg files are accepted.', false);

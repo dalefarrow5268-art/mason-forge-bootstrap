@@ -376,8 +376,16 @@ function uploadPage() {
     });
     const esc = value => { const el = document.createElement('div'); el.textContent = value || 'Not provided'; return el.innerHTML; };
     async function showContactCard(contactId) {
-      if (!contactId) return;
-      $('cardWindow').innerHTML = '<iframe class="cardPreview" title="Saved SSX Contact Card" src="/contact-system/contact-card-preview/' + encodeURIComponent(contactId) + '"></iframe>';
+      if (!contactId) throw new Error('The email was saved, but no contact record was created.');
+      const response = await fetch('/contact-system/contact-card-preview/' + encodeURIComponent(contactId), { cache: 'no-store' });
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error('Saved contact card could not be rendered: ' + message);
+      }
+      const cardHtml = await response.text();
+      if (!cardHtml.trim()) throw new Error('Saved contact card is not ready yet.');
+      const cardUrl = URL.createObjectURL(new Blob([cardHtml], { type: 'text/html' }));
+      $('cardWindow').innerHTML = '<iframe class="cardPreview" title="Saved SSX Contact Card" src="' + cardUrl + '"></iframe>';
     }
 
     upload.addEventListener('click', async () => {
@@ -498,8 +506,8 @@ export default {
         page = page.replace(templateTokens, token => replacements.get(token) || token);
         page = page.replace("</head>", "<style>body{zoom:.72!important;width:138.89%!important;overflow:hidden!important}</style></head>");
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
-      } catch {
-        return new Response(null, { status: 204, headers: { "Cache-Control": "private, no-store" } });
+      } catch (error) {
+        return json({ error: "Saved contact card render failed", detail: error instanceof Error ? error.message : String(error) }, 502);
       }
     }
     if (path === "/contact-system/dale-todos/data" && request.method === "GET") {

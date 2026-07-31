@@ -332,15 +332,7 @@ function uploadPage() {
     <button id="copyResult" class="copy" hidden>Copy Result</button>
     <p class="note">Upload goes directly into the Cloudflare contact system and private D1/R2 storage.</p>
     </div>
-    <section id="cardWindow" class="card">
-      <div class="cardTop"><h2>Saved Contact Card</h2><span class="badge">READY FOR EMAIL</span></div>
-      <div class="cardColumns">
-        <div class="cardGroup"><b>CONTACT IDENTITY</b><div class="blankLine">Name will appear here</div><div class="blankLine">Company</div><div class="blankLine">Email</div><div class="blankLine">Phone</div></div>
-        <div class="cardGroup"><b>PROJECT &amp; ACTIONS</b><div class="blankLine">Project link</div><div class="blankLine">Dale To Do</div><div class="blankLine">Source email stored</div></div>
-        <div class="cardGroup"><b>COMPANY PROFILE</b><div class="blankLine">Website</div><div class="blankLine">EMR Rating</div><div class="blankLine">Company risk / notes</div></div>
-        <div class="cardGroup"><b>EMAIL &amp; EVIDENCE</b><div class="blankLine">Original .msg file</div><div class="blankLine">Attachments</div><div class="blankLine">Source-backed facts</div></div>
-      </div>
-    </section>
+    <section id="cardWindow" class="card"><iframe class="cardPreview" title="Approved SSX Contact Card Template" src="/contact-system/contact-card-template"></iframe></section>
   </main>
 
   <script>
@@ -450,6 +442,16 @@ export default {
     if (path === "/contact-system/upload" && request.method === "GET") return await authorized(request, env) ? uploadPage() : loginPage();
     if (path === "/contact-system/dale-todos" && request.method === "GET") return await authorized(request, env) ? daleTodoPage() : loginPage();
     const authError = await requireAuth(request, env); if (authError) return authError;
+    if (path === "/contact-system/contact-card-template" && request.method === "GET") {
+      try {
+        const template = await fetch(masterContactCardTemplateUrl);
+        if (!template.ok) throw new Error("Approved card template could not be loaded");
+        const page = (await template.text()).replace("</head>", "<style>body{zoom:.72!important;width:138.89%!important;overflow:hidden!important}</style></head>");
+        return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
+      } catch (error) {
+        return json({ error: "Approved contact card template failed to load", detail: error instanceof Error ? error.message : String(error) }, 502);
+      }
+    }
     const cardPreviewMatch = path.match(/^\/contact-system\/contact-card-preview\/([^/]+)$/);
     if (cardPreviewMatch && request.method === "GET") {
       const detail = await getContact(env, cardPreviewMatch[1]);

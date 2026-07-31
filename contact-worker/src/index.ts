@@ -26,6 +26,10 @@ const id = () => crypto.randomUUID();
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
 const safeName = (value: string) => value.replace(/[^a-zA-Z0-9._ -]/g, "_").slice(0, 160);
 const decodeFileHeader = (value: string) => { try { return decodeURIComponent(value); } catch { return value; } };
+const validTitle = (value: unknown) => {
+  const title = typeof value === "string" ? value.trim() : "";
+  return Boolean(title && title.length <= 80 && !/[0-9]/.test(title) && !/^(?:o|m|p|f|phone|office|mobile|direct)\s*:/i.test(title) && !/^dale farrow$/i.test(title));
+};
 function imageContentType(bytes: Uint8Array) {
   const b = bytes;
   if (b.length >= 8 && b[0]===137 && b[1]===80 && b[2]===78 && b[3]===71 && b[4]===13 && b[5]===10 && b[6]===26 && b[7]===10) return "image/png";
@@ -59,7 +63,7 @@ function completeness(record: Record<string, unknown>) {
   // lower a new contact's score.
   const fields = [
     ["Contact name", record.display_name], ["Email", record.primary_email], ["Phone", record.primary_phone],
-    ["Title", record.title], ["Company", record.company_name], ["Company website", record.company_website],
+    ["Title", validTitle(record.title) ? record.title : null], ["Company", record.company_name], ["Company website", record.company_website],
     ["Trade category", record.company_trade_category], ["Company logo", record.company_logo_r2_key]
   ] as const;
   const present = fields.filter(([, value]) => value !== null && value !== undefined && value !== "").length;
@@ -216,7 +220,7 @@ function signatureFacts(body?: string, senderName?: string): SignatureFacts {
   const companyIndex = companyName ? signatureLines.lastIndexOf(companyLine!) : -1;
   const candidateTitle = companyIndex > 0 ? signatureLines[companyIndex - 1] : undefined;
   const senderNormalized = normalize(senderName || "");
-  const title = candidateTitle && candidateTitle.length < 80 && !excluded.test(candidateTitle) && !/[0-9@]/.test(candidateTitle) && normalize(candidateTitle) !== senderNormalized ? candidateTitle : undefined;
+  const title = candidateTitle && !excluded.test(candidateTitle) && normalize(candidateTitle) !== senderNormalized && validTitle(candidateTitle) ? candidateTitle : undefined;
   const candidateTrade = companyIndex >= 0 ? signatureLines[companyIndex + 1] : undefined;
   const tradeCategory = candidateTrade && candidateTrade.length < 100 && !excluded.test(candidateTrade) && !/[0-9@]/.test(candidateTrade) ? candidateTrade : undefined;
   return { companyName, website, phone, title, tradeCategory };
@@ -279,7 +283,7 @@ async function importEmail(request: Request, env: Env) {
       }
     }
     if (facts.phone || facts.title) {
-      await env.DB.prepare("UPDATE ssx_contacts SET primary_phone=CASE WHEN primary_phone IS NULL OR trim(primary_phone)='' THEN ? ELSE primary_phone END,title=CASE WHEN title IS NULL OR trim(title)='' THEN ? ELSE title END,updated_at=? WHERE id=?").bind(facts.phone || null,facts.title || null,now,contactId).run();
+      await env.DB.prepare("UPDATE ssx_contacts SET primary_phone=CASE WHEN primary_phone IS NULL OR trim(primary_phone)='' THEN ? ELSE primary_phone END,title=CASE WHEN title IS NULL OR trim(title)='' OR title GLOB '*[0-9]*' OR lower(title) GLOB 'o:*' OR lower(title) GLOB 'm:*' OR lower(title)='dale farrow' THEN ? ELSE title END,updated_at=? WHERE id=?").bind(facts.phone || null,facts.title || null,now,contactId).run();
       for (const [field, value] of Object.entries({ primary_phone: facts.phone, title: facts.title, trade_category: facts.tradeCategory })) if (value) await env.DB.prepare("INSERT INTO ssx_contact_evidence (id,contact_id,email_id,field_name,field_value,source_location) VALUES (?,?,?,?,?,?)").bind(id(),contactId,emailId,field,value,"Outlook .msg signature").run();
     }
   }
@@ -602,7 +606,7 @@ export default {
           ["Email Verified", contact.primary_email ? "Email on file" : "Email missing"],
           ["Company Verified", contact.company_name ? "Company on file" : "Company missing"],
           ["Company Basic", contact.company_website || contact.company_name ? "Company detail on file" : "Company detail missing"],
-          ["Contact Title", contact.title ? "Title on file" : "Title missing"],
+          ["Contact Title", validTitle(contact.title) ? "Title on file" : "Title missing"],
           ["Trade Category", contact.company_trade_category ? "Trade: " + String(contact.company_trade_category) : "Trade category missing"],
           ["Member Status", "Member status not reviewed"],
           ["Logo Verified", contact.company_logo_r2_key ? "Source logo on file" : "Logo not provided"],
@@ -625,7 +629,7 @@ export default {
         page = page.replace(/<section class="sub detail-card communication-card">[\s\S]*?<\/section>\n<section class="sub detail-card attachments-card">/, "<section class=\"sub detail-card communication-card\"><h3>Communication History</h3><div class=\"communication-list\">" + communicationRows + "</div></section>\n<section class=\"sub detail-card attachments-card\">");
         const templateTokens = /Avery Walsh|Northstar Climate Systems|avery\.walsh@example\.com|northstar\.example|Demo Contact Record|Mechanical Supplier \/ Vendor|Autograph by Marriott — Jericho, NY|Jericho, NY 11753|Hotel Development|PROJECT IMAGE|View Project|Demo project inquiry — equipment budget help|Received: Jul 30, 2026 · 10:24 AM|From: Avery Walsh &lt;avery\.walsh@example\.com&gt;|Re: Demo project inquiry|RE: Equipment information request|SCHEDULE MEETING|REQUEST REFRIGERATOR SIZES|58%|PARTIAL<br>PROFILE|INCOMPLETE|ACTION REQUIRED|MISSING: COI EXPIRATION|MISSING: COI EMAIL|MISSING: COI DOCUMENT|Not in Master List|Candidate for Review|No Duplicates Found|Checked: Jul 30, 12:10 PM/g;
         page = page.replace(templateTokens, token => replacements.get(token) || token);
-        page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}.malkin{font-size:0!important}.project-photo-frame img{display:none!important}.project-photo-frame{background:#071017!important;display:grid!important;place-items:center!important;color:#8daab8!important;font-size:10px!important}.malkin{background-image:" + (logoUrl ? "url('" + logoUrl + "')" : "none") + "!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important}.malkin:after{content:'" + logoLabel + "';font-size:11px;color:#121518;letter-spacing:.06em;text-align:center;background:rgba(237,240,237,.78);padding:4px}.research .meter i{width:0!important}</style></head>");
+        page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}.malkin{font-size:0!important;color:transparent!important}.malkin>*{display:none!important}.malkin:before{content:none!important}.project-photo-frame img{display:none!important}.project-photo-frame{background:#071017!important;display:grid!important;place-items:center!important;color:#8daab8!important;font-size:10px!important}.malkin{background-image:" + (logoUrl ? "url('" + logoUrl + "')" : "none") + "!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important}.malkin:after{content:'" + logoLabel + "';font-size:11px;color:#121518;letter-spacing:.06em;text-align:center;background:rgba(237,240,237,.78);padding:4px}.research .meter i{width:0!important}</style></head>");
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
       } catch (error) {
         return json({ error: "Saved contact card render failed", detail: error instanceof Error ? error.message : String(error) }, 502);

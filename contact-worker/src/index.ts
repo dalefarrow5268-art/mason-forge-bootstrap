@@ -529,7 +529,7 @@ export default {
         const [projects, tasks, emails] = await env.DB.batch([
           env.DB.prepare("SELECT project_name,project_role,is_current FROM ssx_contact_projects WHERE contact_id=? ORDER BY is_current DESC,linked_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
           env.DB.prepare("SELECT title,status FROM ssx_contact_tasks WHERE contact_id=? ORDER BY created_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
-          env.DB.prepare("SELECT subject,sender_email,original_file_name FROM ssx_contact_emails WHERE contact_id=? ORDER BY received_at DESC LIMIT 20").bind(cardPreviewMatch[1])
+          env.DB.prepare("SELECT subject,sender_name,sender_email,received_at,original_file_name FROM ssx_contact_emails WHERE contact_id=? ORDER BY received_at DESC LIMIT 20").bind(cardPreviewMatch[1])
         ]);
         const detail = { contact, projects: projects.results, tasks: tasks.results, emails: emails.results, cois: [], completeness: completeness(contact) };
         const template = await fetch(masterContactCardTemplateUrl);
@@ -540,7 +540,10 @@ export default {
         const emailRows = emails.results as Array<Record<string, unknown>>;
         const firstProject = projectRows[0]?.project_name || "Project review needed";
         const firstTask = taskRows[0]?.title || "No Dale action found";
-        const latestSubject = emailRows[0]?.subject || emailRows[0]?.original_file_name || "Stored Outlook source email";
+        const latestEmail = emailRows[0] || {};
+        const latestSubject = latestEmail.subject || latestEmail.original_file_name || "Stored Outlook source email";
+        const receivedValue = typeof latestEmail.received_at === "string" ? latestEmail.received_at.replace("T", " ").replace(/\.\d{3}Z$/, " UTC") : "Stored with this contact";
+        const senderLabel = latestEmail.sender_name ? String(latestEmail.sender_name) + (latestEmail.sender_email ? " <" + String(latestEmail.sender_email) + ">" : "") : (latestEmail.sender_email ? String(latestEmail.sender_email) : "Sender not provided");
         const cois = detail.cois as Array<Record<string, unknown>>;
         const hasCoi = cois.length > 0;
         const cardsComplete = Number(detail.completeness.score || 0) >= 75;
@@ -548,8 +551,10 @@ export default {
           ["Avery Walsh", contact.display_name], ["Northstar Climate Systems", contact.company_name],
           ["avery.walsh@example.com", contact.primary_email], ["northstar.example", contact.company_website],
           ["Demo Contact Record", contact.primary_phone], ["Mechanical Supplier / Vendor", contact.title],
-          ["Autograph by Marriott — Jericho, NY", firstProject], ["Re: Demo project inquiry", latestSubject],
-          ["RE: Equipment information request", latestSubject], ["SCHEDULE MEETING", firstTask],
+          ["Autograph by Marriott — Jericho, NY", firstProject], ["Demo project inquiry — equipment budget help", latestSubject],
+          ["Received: Jul 30, 2026 · 10:24 AM", "Received: " + receivedValue],
+          ["From: Avery Walsh &lt;avery.walsh@example.com&gt;", "From: " + senderLabel],
+          ["Re: Demo project inquiry", latestSubject], ["RE: Equipment information request", latestSubject], ["SCHEDULE MEETING", firstTask],
           ["REQUEST REFRIGERATOR SIZES", firstTask],
           ["58%", String(detail.completeness.score || 0) + "%"],
           ["PARTIAL<br>PROFILE", cardsComplete ? "PROFILE<br>ON FILE" : "PROFILE<br>NEEDS REVIEW"],
@@ -581,7 +586,7 @@ export default {
         ];
         for (const [from, to] of profileLabels) page = page.replaceAll(from, escapeCardHtml(to));
         const logoLabel = contact.company_logo_r2_key ? "SOURCE LOGO ON FILE" : "LOGO NOT PROVIDED";
-        const templateTokens = /Avery Walsh|Northstar Climate Systems|avery\.walsh@example\.com|northstar\.example|Demo Contact Record|Mechanical Supplier \/ Vendor|Autograph by Marriott — Jericho, NY|Re: Demo project inquiry|RE: Equipment information request|SCHEDULE MEETING|REQUEST REFRIGERATOR SIZES|58%|PARTIAL<br>PROFILE|INCOMPLETE|ACTION REQUIRED|MISSING: COI EXPIRATION|MISSING: COI EMAIL|MISSING: COI DOCUMENT|Not in Master List|Candidate for Review|No Duplicates Found|Checked: Jul 30, 12:10 PM/g;
+        const templateTokens = /Avery Walsh|Northstar Climate Systems|avery\.walsh@example\.com|northstar\.example|Demo Contact Record|Mechanical Supplier \/ Vendor|Autograph by Marriott — Jericho, NY|Demo project inquiry — equipment budget help|Received: Jul 30, 2026 · 10:24 AM|From: Avery Walsh &lt;avery\.walsh@example\.com&gt;|Re: Demo project inquiry|RE: Equipment information request|SCHEDULE MEETING|REQUEST REFRIGERATOR SIZES|58%|PARTIAL<br>PROFILE|INCOMPLETE|ACTION REQUIRED|MISSING: COI EXPIRATION|MISSING: COI EMAIL|MISSING: COI DOCUMENT|Not in Master List|Candidate for Review|No Duplicates Found|Checked: Jul 30, 12:10 PM/g;
         page = page.replace(templateTokens, token => replacements.get(token) || token);
         page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}.malkin{font-size:0!important}.malkin:after{content:'" + logoLabel + "';font-size:11px;color:#121518;letter-spacing:.06em;text-align:center}.research .meter i{width:0!important}</style></head>");
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });

@@ -289,6 +289,23 @@ function uploadPage() {
     .cardGroup { min-height:205px; padding:16px; border:1px solid #1d4158; border-radius:6px; background:#07111a; }
     .cardGroup b { color:#bfefff; font-size:11px; letter-spacing:.05em; }
     .blankLine { height:34px; margin-top:12px; border-bottom:1px solid #173244; color:#627e8d; font-size:12px; padding-top:12px; }
+    .cardTemplate { min-height:calc(100vh - 96px); }
+    .cardHeader { display:flex; justify-content:space-between; gap:18px; align-items:start; padding:0 0 18px; border-bottom:1px solid #1d4158; }
+    .contactName { margin:2px 0 4px; font-size:34px; line-height:1.08; letter-spacing:.02em; text-transform:uppercase; color:#fff; }
+    .cardKicker { color:#8daab8; font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; }
+    .templateGrid { display:grid; grid-template-columns:1.25fr .85fr; gap:16px; margin-top:16px; }
+    .templatePanel { padding:16px; border:1px solid #1d4158; border-radius:7px; background:#07111a; }
+    .templatePanel h3 { margin:0 0 12px; color:#bfefff; font-size:12px; letter-spacing:.07em; }
+    .infoRows { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .info { min-height:58px; padding:10px; border:1px solid #173244; border-radius:5px; background:#09141e; }
+    .info span { display:block; color:#8daab8; font-size:10px; font-weight:700; letter-spacing:.05em; margin-bottom:4px; }
+    .info strong { display:block; font-size:14px; overflow-wrap:anywhere; }
+    .wide { grid-column:1/-1; }
+    .templateList { list-style:none; padding:0; margin:0; }
+    .templateList li { padding:9px 0; border-top:1px solid #173244; color:#d5e9f2; }
+    .templateList li:first-child { border-top:0; }
+    .alert { color:#ffd37a; }
+    @media (max-width:1100px) { .templateGrid { grid-template-columns:1fr; } .contactName { font-size:27px; } }
   </style>
 </head>
 <body>
@@ -370,7 +387,7 @@ function uploadPage() {
       if (!response.ok) return;
       const data = await response.json();
       const c = data.contact, projects = data.projects || [], tasks = data.tasks || [], emails = data.emails || [];
-      $('cardWindow').innerHTML = '<h2>Saved Contact Card</h2><div class="grid"><div class="field"><b>NAME</b>' + esc(c.display_name) + '</div><div class="field"><b>COMPANY</b>' + esc(c.company_name) + '</div><div class="field"><b>EMAIL</b>' + esc(c.primary_email) + '</div><div class="field"><b>PHONE</b>' + esc(c.primary_phone) + '</div><div class="field"><b>TITLE</b>' + esc(c.title) + '</div><div class="field"><b>COMPLETENESS</b>' + esc(String(data.completeness?.score || 0) + '%') + '</div></div><div class="section"><b>PROJECTS</b><ul>' + (projects.length ? projects.map(p => '<li>' + esc(p.project_name) + '</li>').join('') : '<li>None linked</li>') + '</ul></div><div class="section"><b>DALE TO DO</b><ul>' + (tasks.length ? tasks.map(t => '<li>' + esc(t.title) + ' — ' + esc(t.status) + '</li>').join('') : '<li>No open items</li>') + '</ul></div><div class="section"><b>STORED SOURCE EMAILS</b><ul>' + (emails.length ? emails.map(e => '<li>' + esc(e.subject || e.original_file_name) + '</li>').join('') : '<li>None</li>') + '</ul></div>';
+      $('cardWindow').innerHTML = '<div class="cardTemplate"><header class="cardHeader"><div><div class="cardKicker">SSX Contact Card · Saved from Outlook Email</div><div class="contactName">' + esc(c.display_name) + '</div><div>' + esc(c.company_name) + '</div></div><span class="badge">INSTALLED</span></header><div class="templateGrid"><section class="templatePanel"><h3>CONTACT IDENTITY</h3><div class="infoRows"><div class="info"><span>EMAIL</span><strong>' + esc(c.primary_email) + '</strong></div><div class="info"><span>PHONE</span><strong>' + esc(c.primary_phone) + '</strong></div><div class="info"><span>TITLE</span><strong>' + esc(c.title) + '</strong></div><div class="info"><span>PROFILE COMPLETENESS</span><strong>' + esc(String(data.completeness?.score || 0) + '%') + '</strong></div><div class="info wide"><span>COMPANY WEBSITE</span><strong>' + esc(c.company_website) + '</strong></div><div class="info"><span>EMR RATING</span><strong>' + esc(c.company_emr_rating === null || c.company_emr_rating === undefined ? 'Not provided' : String(c.company_emr_rating)) + '</strong></div><div class="info"><span>EMR EFFECTIVE DATE</span><strong>' + esc(c.company_emr_effective_date) + '</strong></div></div></section><section class="templatePanel"><h3>CURRENT PROJECTS</h3><ul class="templateList">' + (projects.length ? projects.map(p => '<li>' + esc(p.project_name) + '</li>').join('') : '<li class="alert">Project review needed</li>') + '</ul><h3 style="margin-top:18px">DALE TO DO</h3><ul class="templateList">' + (tasks.length ? tasks.map(t => '<li class="alert">' + esc(t.title) + ' — ' + esc(t.status) + '</li>').join('') : '<li>No action found in this email</li>') + '</ul></section><section class="templatePanel wide"><h3>STORED SOURCE EMAILS &amp; EVIDENCE</h3><ul class="templateList">' + (emails.length ? emails.map(e => '<li><strong>' + esc(e.subject || e.original_file_name) + '</strong><br><span class="cardKicker">' + esc(e.sender_email || 'Stored Outlook email') + '</span></li>').join('') : '<li>Original email is being indexed</li>') + '</ul></section></div></div>';
       $('cardWindow').style.display = 'block';
     }
 

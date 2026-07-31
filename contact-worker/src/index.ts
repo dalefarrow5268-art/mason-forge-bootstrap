@@ -56,7 +56,7 @@ function completeness(record: Record<string, unknown>) {
 }
 
 async function getContact(env: Env, contactId: string) {
-  const contact = await env.DB.prepare(`SELECT c.*, co.name AS company_name, co.website AS company_website, co.emr_rating AS company_emr_rating, co.emr_effective_date AS company_emr_effective_date FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?`).bind(contactId).first();
+  const contact = await env.DB.prepare(`SELECT c.*, co.name AS company_name, co.website AS company_website, co.emr_rating AS company_emr_rating, co.emr_effective_date AS company_emr_effective_date, co.logo_r2_key AS company_logo_r2_key FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?`).bind(contactId).first();
   if (!contact) return null;
   const [emails, attachments, tasks, projects, cois, evidence] = await env.DB.batch([
     env.DB.prepare("SELECT id, subject, sender_name, sender_email, received_at, extraction_status, original_file_name, original_size_bytes FROM ssx_contact_emails WHERE contact_id=? ORDER BY received_at DESC").bind(contactId),
@@ -524,7 +524,7 @@ export default {
     const cardPreviewMatch = path.match(/^\/contact-system\/contact-card-preview\/([^/]+)$/);
     if (cardPreviewMatch && request.method === "GET") {
       try {
-        const contact = await env.DB.prepare("SELECT c.*,co.name AS company_name,co.website AS company_website,co.emr_rating AS company_emr_rating,co.emr_effective_date AS company_emr_effective_date FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?").bind(cardPreviewMatch[1]).first<Record<string, unknown>>();
+        const contact = await env.DB.prepare("SELECT c.*,co.name AS company_name,co.website AS company_website,co.emr_rating AS company_emr_rating,co.emr_effective_date AS company_emr_effective_date, co.logo_r2_key AS company_logo_r2_key FROM ssx_contacts c LEFT JOIN ssx_companies co ON co.id=c.company_id WHERE c.id=?").bind(cardPreviewMatch[1]).first<Record<string, unknown>>();
         if (!contact) return json({ error: "Contact not found" }, 404);
         const [projects, tasks, emails] = await env.DB.batch([
           env.DB.prepare("SELECT project_name,project_role,is_current FROM ssx_contact_projects WHERE contact_id=? ORDER BY is_current DESC,linked_at DESC LIMIT 20").bind(cardPreviewMatch[1]),
@@ -564,9 +564,26 @@ export default {
           ["Checked: Jul 30, 12:10 PM", "Saved from Outlook email"]
         ];
         const replacements = new Map(values.map(([from, to]) => [from, escapeCardHtml(to)]));
+        const profileLabels: Array<[string, string]> = [
+          ["Email Verified", contact.primary_email ? "Email on file" : "Email missing"],
+          ["Company Verified", contact.company_name ? "Company on file" : "Company missing"],
+          ["Company Basic", contact.company_website || contact.company_name ? "Company detail on file" : "Company detail missing"],
+          ["Contact Title", contact.title ? "Title on file" : "Title missing"],
+          ["Trade Category", "Trade category not reviewed"],
+          ["Member Status", "Member status not reviewed"],
+          ["Logo Verified", contact.company_logo_r2_key ? "Source logo on file" : "Logo not provided"],
+          ["VERIFIED PROFILE", "RESEARCH NOT RUN"],
+          ["Online Presence Found", "No online research stored"],
+          ["Industry Match", "Email-signature facts only"],
+          ["Confidence Score", "Source-backed score"],
+          ["92%", "—"],
+          ["Contact linked to active project.", projectRows.length ? "Project link saved from this email." : "No project link found in this email."]
+        ];
+        for (const [from, to] of profileLabels) page = page.replaceAll(from, escapeCardHtml(to));
+        const logoLabel = contact.company_logo_r2_key ? "SOURCE LOGO ON FILE" : "LOGO NOT PROVIDED";
         const templateTokens = /Avery Walsh|Northstar Climate Systems|avery\.walsh@example\.com|northstar\.example|Demo Contact Record|Mechanical Supplier \/ Vendor|Autograph by Marriott — Jericho, NY|Re: Demo project inquiry|RE: Equipment information request|SCHEDULE MEETING|REQUEST REFRIGERATOR SIZES|58%|PARTIAL<br>PROFILE|INCOMPLETE|ACTION REQUIRED|MISSING: COI EXPIRATION|MISSING: COI EMAIL|MISSING: COI DOCUMENT|Not in Master List|Candidate for Review|No Duplicates Found|Checked: Jul 30, 12:10 PM/g;
         page = page.replace(templateTokens, token => replacements.get(token) || token);
-        page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}</style></head>");
+        page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}.malkin{font-size:0!important}.malkin:after{content:'\${logoLabel}';font-size:11px;color:#121518;letter-spacing:.06em;text-align:center}.research .meter i{width:0!important}</style></head>");
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
       } catch (error) {
         return json({ error: "Saved contact card render failed", detail: error instanceof Error ? error.message : String(error) }, 502);

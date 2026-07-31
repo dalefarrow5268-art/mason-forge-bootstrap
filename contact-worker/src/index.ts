@@ -211,7 +211,7 @@ function signatureFacts(body?: string, senderName?: string, senderEmail?: string
   const urls = signatureLines.flatMap(line => line.match(/(?:https?:\/\/|www\.)[^\s<>]+/ig) || []).map(value => value.replace(/[),.;]+$/, ""));
   const senderDomain = (senderEmail || "").split("@")[1]?.toLowerCase();
   const domainUrl = senderDomain ? urls.find(value => { try { return new URL(value.startsWith("http") ? value : "https://" + value).hostname.replace(/^www\./,"").endsWith(senderDomain); } catch { return false; } }) : undefined;
-  const website = domainUrl || urls[0] || (senderDomain ? "https://" + senderDomain : undefined);
+  const website = domainUrl || (senderDomain ? "https://" + senderDomain : urls[0]);
   const excluded = /^(thanks|thank you|regards|best|sincerely|sent from|tel|phone|fax|mobile|office|direct|www\.|https?:\/\/|\S+@\S+|\d{1,6}\s+.+|.*\b(?:street|st\.?|avenue|ave\.?|road|rd\.?|suite|floor|ny|tx|mn|ca)\b.*)$/i;
   const companyLine = [...signatureLines].reverse().find(line => {
     const letters = (line.match(/[A-Za-z]/g) || []).length;
@@ -569,7 +569,9 @@ export default {
           env.DB.prepare("SELECT a.id,a.content_type FROM ssx_contact_attachments a JOIN ssx_contact_emails e ON e.id=a.email_id WHERE e.contact_id=? AND a.r2_key=? LIMIT 1").bind(cardPreviewMatch[1], String(contact.company_logo_r2_key || "")),
           env.DB.prepare("SELECT a.id,a.file_name,a.content_type,a.size_bytes FROM ssx_contact_attachments a JOIN ssx_contact_emails e ON e.id=a.email_id WHERE e.contact_id=? ORDER BY a.created_at DESC LIMIT 20").bind(cardPreviewMatch[1])
         ]);
-        const detail = { contact, projects: projects.results, tasks: tasks.results, emails: emails.results, cois: [], completeness: completeness(contact) };
+        const hasRenderableLogo = Boolean((logoAttachments.results as Array<Record<string, unknown>>)[0]?.id && String((logoAttachments.results as Array<Record<string, unknown>>)[0]?.content_type || "").startsWith("image/"));
+        const renderedScore = Math.round(([contact.primary_email, contact.company_name, contact.company_website, validTitle(contact.title), contact.company_trade_category, hasRenderableLogo].filter(Boolean).length / 6) * 100);
+        const detail = { contact, projects: projects.results, tasks: tasks.results, emails: emails.results, cois: [], completeness: { ...completeness(contact), score: renderedScore } };
         const template = await fetch(masterContactCardTemplateUrl);
         if (!template.ok) throw new Error("Approved card template could not be loaded");
         let page = await template.text();
@@ -587,7 +589,7 @@ export default {
         const senderLabel = latestEmail.sender_name ? String(latestEmail.sender_name) + (latestEmail.sender_email ? " <" + String(latestEmail.sender_email) + ">" : "") : (latestEmail.sender_email ? String(latestEmail.sender_email) : "Sender not provided");
         const cois = detail.cois as Array<Record<string, unknown>>;
         const hasCoi = cois.length > 0;
-        const cardsComplete = Number(detail.completeness.score || 0) >= 75;
+        const cardsComplete = renderedScore >= 75;
         const values: Array<[string, unknown]> = [
           ["Avery Walsh", contact.display_name], ["Northstar Climate Systems", contact.company_name],
           ["avery.walsh@example.com", contact.primary_email], ["northstar.example", contact.company_website],
@@ -601,7 +603,7 @@ export default {
           ["From: Avery Walsh &lt;avery.walsh@example.com&gt;", "From: " + senderLabel],
           ["Re: Demo project inquiry", latestSubject], ["RE: Equipment information request", latestSubject], ["SCHEDULE MEETING", firstTask],
           ["REQUEST REFRIGERATOR SIZES", firstTask],
-          ["58%", String(detail.completeness.score || 0) + "%"],
+          ["58%", String(renderedScore) + "%"],
           ["PARTIAL<br>PROFILE", cardsComplete ? "PROFILE<br>ON FILE" : "PROFILE<br>NEEDS REVIEW"],
           ["INCOMPLETE", hasCoi ? "COI ON FILE" : "COI REVIEW"],
           ["ACTION REQUIRED", hasCoi ? "SOURCE-VERIFIED" : "ACTION REQUIRED"],
@@ -664,7 +666,7 @@ export default {
         page = page.replace(/<section class="sub detail-card attachments-card">[\s\S]*?<\/section>\n<\/div><\/article>/, "<section class=\"sub detail-card attachments-card\"><h3>Attachments <em>(" + String((attachments.results as Array<unknown>).length) + ")</em></h3><div class=\"attachment-list\">" + attachmentRows + "</div><span class=\"detail-button\">" + ((attachments.results as Array<unknown>).length ? "Saved from Outlook email" : "No email attachments") + "</span></section>\n</div></article>");
         const templateTokens = /Avery Walsh|Northstar Climate Systems|avery\.walsh@example\.com|northstar\.example|Demo Contact Record|Mechanical Supplier \/ Vendor|Autograph by Marriott — Jericho, NY|Jericho, NY 11753|Hotel Development|PROJECT IMAGE|View Project|Demo project inquiry — equipment budget help|Received: Jul 30, 2026 · 10:24 AM|From: Avery Walsh &lt;avery\.walsh@example\.com&gt;|Re: Demo project inquiry|RE: Equipment information request|SCHEDULE MEETING|REQUEST REFRIGERATOR SIZES|58%|PARTIAL<br>PROFILE|INCOMPLETE|ACTION REQUIRED|MISSING: COI EXPIRATION|MISSING: COI EMAIL|MISSING: COI DOCUMENT|Not in Master List|Candidate for Review|No Duplicates Found|Checked: Jul 30, 12:10 PM/g;
         page = page.replace(templateTokens, token => replacements.get(token) || token);
-        page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}.malkin{font-size:11px!important;color:#121518!important}.malkin>*{display:block!important}.malkin img{width:100%!important;height:100%!important;object-fit:contain!important}.malkin span{display:grid!important;place-items:center!important;width:100%!important;height:100%!important;text-align:center!important;font-weight:700!important}.malkin:before,.malkin:after{content:none!important}.project-photo-frame img{display:none!important}.project-photo-frame{background:#071017!important;display:grid!important;place-items:center!important;color:#8daab8!important;font-size:10px!important}.malkin{background-image:none!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important}.ring{background:conic-gradient(#e4ae24 0 " + String(detail.completeness.score || 0) + "%,#1c2931 " + String(detail.completeness.score || 0) + "% 100%)!important}.research .meter i{width:0!important}</style></head>");
+        page = page.replace("</head>", "<style>body{zoom:1!important;width:100%!important;overflow:hidden!important}.malkin{font-size:11px!important;color:#121518!important}.malkin>*{display:block!important}.malkin img{width:100%!important;height:100%!important;object-fit:contain!important}.malkin span{display:grid!important;place-items:center!important;width:100%!important;height:100%!important;text-align:center!important;font-weight:700!important}.malkin:before,.malkin:after{content:none!important}.project-photo-frame img{display:none!important}.project-photo-frame{background:#071017!important;display:grid!important;place-items:center!important;color:#8daab8!important;font-size:10px!important}.malkin{background-image:none!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important}.ring{background:conic-gradient(#e4ae24 0 " + String(renderedScore) + "%,#1c2931 " + String(renderedScore) + "% 100%)!important}.research .meter i{width:0!important}</style></head>");
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
       } catch (error) {
         return json({ error: "Saved contact card render failed", detail: error instanceof Error ? error.message : String(error) }, 502);

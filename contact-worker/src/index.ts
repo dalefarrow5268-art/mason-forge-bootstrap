@@ -282,7 +282,6 @@ async function importEmail(request: Request, env: Env) {
     const attachmentKey = `contacts/${contactId || "unassigned"}/attachments/${attachmentSha}/${attachmentName}`;
     await env.CONTACT_FILES.put(attachmentKey, attachment.content, { httpMetadata: { contentType: "application/octet-stream" }, customMetadata: { sha256: attachmentSha, emailId } });
     await env.DB.prepare("INSERT INTO ssx_contact_attachments (id,email_id,file_name,content_type,r2_key,sha256,size_bytes) VALUES (?,?,?,?,?,?,?)").bind(id(),emailId,attachmentName,"application/octet-stream",attachmentKey,attachmentSha,attachment.content.byteLength).run();
-  }
     if (!signatureLogoKey && /\.(?:png|jpe?g|gif|webp)$/i.test(attachmentName)) signatureLogoKey = attachmentKey;
   }
   if (contactId && company?.id && signatureLogoKey) {

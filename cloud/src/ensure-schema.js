@@ -254,6 +254,22 @@ export async function ensureRuntimeSchema(env) {
       details_json TEXT NOT NULL DEFAULT '{}',
       created_at TEXT NOT NULL
     )`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS ssx_connected_sources (
+      id TEXT PRIMARY KEY,
+      provider TEXT NOT NULL CHECK(provider IN ('GOOGLE_DRIVE','ONEDRIVE')),
+      account_label TEXT,
+      external_account_id TEXT,
+      status TEXT NOT NULL DEFAULT 'NOT CONNECTED',
+      granted_scopes_json TEXT NOT NULL DEFAULT '[]',
+      connected_at TEXT,
+      last_checked_at TEXT,
+      revoked_at TEXT,
+      created_by TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`),
+    env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS ssx_connected_sources_provider_account
+      ON ssx_connected_sources(provider, external_account_id) WHERE external_account_id IS NOT NULL`),
   ]);
 
   ready = true;

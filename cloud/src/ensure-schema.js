@@ -174,6 +174,86 @@ export async function ensureRuntimeSchema(env) {
         AND instr(review_status, 'EXTRACTION FAILED: OpenAI 400: Mutually exclusive parameters:') = 1
         AND instr(review_status, 'file_id') > 0
         AND instr(review_status, 'filename') > 0`),
+    // SSX Web File System: additive records only. Existing Mason Forge objects
+    // remain the authoritative source for legacy project file bytes and records.
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS ssx_folders (
+      id TEXT PRIMARY KEY,
+      parent_id TEXT REFERENCES ssx_folders(id) ON DELETE RESTRICT,
+      name TEXT NOT NULL,
+      workstream TEXT NOT NULL,
+      project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+      created_by TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT
+    )`),
+    env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS ssx_folders_unique_live
+      ON ssx_folders(COALESCE(parent_id, ''), lower(name)) WHERE deleted_at IS NULL`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS ssx_file_links (
+      id TEXT PRIMARY KEY,
+      folder_id TEXT NOT NULL REFERENCES ssx_folders(id) ON DELETE RESTRICT,
+      project_file_id INTEGER REFERENCES project_files(id) ON DELETE SET NULL,
+      display_name TEXT NOT NULL,
+      category TEXT,
+      tags_json TEXT NOT NULL DEFAULT '[]',
+      owner TEXT,
+      source_kind TEXT NOT NULL DEFAULT 'MASON FORGE PROJECT FILE',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT
+    )`),
+    env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS ssx_file_links_project_file
+      ON ssx_file_links(project_file_id) WHERE project_file_id IS NOT NULL AND deleted_at IS NULL`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS ssx_transfers (
+      id TEXT PRIMARY KEY,
+      direction TEXT NOT NULL CHECK(direction IN ('OUTBOUND','INBOUND')),
+      status TEXT NOT NULL DEFAULT 'DRAFT',
+      folder_id TEXT REFERENCES ssx_folders(id) ON DELETE SET NULL,
+      project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+      company_id INTEGER REFERENCES companies(id) ON DELETE SET NULL,
+      contact_id INTEGER REFERENCES contacts(id) ON DELETE SET NULL,
+      recipient_email TEXT,
+      expires_at TEXT,
+      max_downloads INTEGER,
+      opened_at TEXT,
+      completed_at TEXT,
+      revoked_at TEXT,
+      created_by TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS ssx_transfers_status ON ssx_transfers(status, expires_at)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS ssx_email_attachments (
+      id TEXT PRIMARY KEY,
+      message_id TEXT NOT NULL,
+      subject TEXT,
+      sender_email TEXT,
+      received_at TEXT,
+      original_name TEXT NOT NULL,
+      mime_type TEXT,
+      size_bytes INTEGER,
+      sha256 TEXT,
+      project_file_id INTEGER REFERENCES project_files(id) ON DELETE SET NULL,
+      folder_id TEXT REFERENCES ssx_folders(id) ON DELETE SET NULL,
+      project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+      company_id INTEGER REFERENCES companies(id) ON DELETE SET NULL,
+      contact_id INTEGER REFERENCES contacts(id) ON DELETE SET NULL,
+      transfer_id TEXT REFERENCES ssx_transfers(id) ON DELETE SET NULL,
+      disposition TEXT NOT NULL DEFAULT 'PENDING REVIEW',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`),
+    env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS ssx_email_attachment_message_file
+      ON ssx_email_attachments(message_id, original_name, COALESCE(sha256, ''))`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS ssx_file_audit_events (
+      id TEXT PRIMARY KEY,
+      actor TEXT NOT NULL,
+      action TEXT NOT NULL,
+      target_type TEXT NOT NULL,
+      target_id TEXT NOT NULL,
+      details_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL
+    )`),
   ]);
 
   ready = true;

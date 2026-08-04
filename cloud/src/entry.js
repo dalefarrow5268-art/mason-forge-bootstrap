@@ -7,6 +7,7 @@ import { ensureRuntimeSchema } from "./ensure-schema.js";
 import { recoverQueuedDepartmentTasks } from "./queued-task-recovery.js";
 import { ensureAllProjectContinuity } from "./project-continuity.js";
 import { uploadGrantResponse } from "./upload-grants.js";
+import { webFileSystemRoute } from "./web-file-system.js";
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data, null, 2), {
@@ -63,6 +64,10 @@ export default {
       phase = "upload";
       const upload = await uploadGrantResponse(request, env);
       if (upload) return upload;
+
+      phase = "ssx-web-file-system";
+      const fileSystem = await webFileSystemRoute(request, env);
+      if (fileSystem) return fileSystem;
 
       if (url.pathname === "/health" && request.method === "GET") {
         phase = "read-only-health";

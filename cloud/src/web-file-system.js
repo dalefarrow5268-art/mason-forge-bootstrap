@@ -53,11 +53,33 @@ async function createTransfer(request, env) {
   return json({ id: transferId, direction, status: "DRAFT", message: "Transfer record created. Public links remain disabled until external upload scanning and recipient verification are enabled." }, 201);
 }
 
+async function connectedSources(request, env) {
+  if (request.method === "GET") {
+    const result = await env.DB.prepare(`SELECT id,provider,account_label,status,granted_scopes_json,connected_at,last_checked_at,revoked_at
+      FROM ssx_connected_sources WHERE revoked_at IS NULL ORDER BY provider, created_at DESC`).all();
+    return json({ sources: result.results || [], providers: [
+      { provider: "GOOGLE_DRIVE", label: "Google Drive", state: "OAUTH SETUP REQUIRED" },
+      { provider: "ONEDRIVE", label: "OneDrive", state: "OAUTH SETUP REQUIRED" },
+    ] });
+  }
+  const body = await request.json();
+  const provider = body.provider === "GOOGLE_DRIVE" || body.provider === "ONEDRIVE" ? body.provider : null;
+  if (!provider) return json({ error: "provider must be GOOGLE_DRIVE or ONEDRIVE." }, 400);
+  const timestamp = now();
+  const sourceId = id("source");
+  await env.DB.prepare(`INSERT INTO ssx_connected_sources
+    (id,provider,status,created_by,created_at,updated_at) VALUES (?,?, 'OAUTH SETUP REQUIRED','DALE FARROW',?,?)`)
+    .bind(sourceId, provider, timestamp, timestamp).run();
+  return json({ id: sourceId, provider, status: "OAUTH SETUP REQUIRED",
+    message: "Connection record created. Enable the provider OAuth client and encrypted token storage before redirecting an account to sign in." }, 201);
+}
+
 export async function webFileSystemRoute(request, env) {
   const url = new URL(request.url);
   if (!url.pathname.startsWith("/api/filesystem")) return null;
   if (!authorized(request, env)) return json({ error: "Unauthorized." }, 401);
   if (url.pathname === "/api/filesystem/overview" && request.method === "GET") return overview(env);
   if (url.pathname === "/api/filesystem/transfers" && request.method === "POST") return createTransfer(request, env);
+  if (url.pathname === "/api/filesystem/sources" && (request.method === "GET" || request.method === "POST")) return connectedSources(request, env);
   return json({ error: "Not found." }, 404);
 }

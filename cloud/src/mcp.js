@@ -1,6 +1,7 @@
 import { connectorResponse } from "./connector.js";
 import { authorizeMcpRequest, createDownloadGrant, mcpAuthChallenge } from "./oauth.js";
 import { createProjectUploadGrant } from "./upload-grants.js";
+import { manageProjectFiles } from "./file-manager.js";
 
 const supportedProtocolVersions = ["2025-06-18", "2025-03-26"];
 
@@ -24,6 +25,14 @@ const toolDefinitions = [
   ["get_project_rfis", "Retrieve the project RFI register.", { projectId }, true],
   ["get_project_contacts", "Retrieve project identity, parties, and available contacts.", { projectId }, true],
   ["get_project_continuity", "Retrieve project Continuity Ledger state and history.", { projectId }, true],
+  ["list_project_folders", "List the virtual folder inventory for a project, including archived folders.", { projectId }, true],
+  ["create_project_folder", "Create a recoverable virtual folder inside a project.", { projectId, folderPath: { type: "string", minLength: 1, maxLength: 500 } }, false],
+  ["rename_project_file", "Rename or move a project file by changing its indexed project-relative path; the protected R2 object is not deleted.", { projectId, fileId: { type: "integer", minimum: 1 }, relativePath: { type: "string", minLength: 1, maxLength: 500 } }, false],
+  ["rename_project_folder", "Rename or move a virtual folder and all indexed descendants without deleting stored objects.", { projectId, folderPath: { type: "string", minLength: 1, maxLength: 500 }, newFolderPath: { type: "string", minLength: 1, maxLength: 500 } }, false],
+  ["archive_project_file", "Remove a file from active project views by archiving it; the original R2 object remains recoverable.", { projectId, fileId: { type: "integer", minimum: 1 } }, false],
+  ["restore_project_file", "Restore an archived project file to active project views.", { projectId, fileId: { type: "integer", minimum: 1 } }, false],
+  ["archive_project_folder", "Archive a folder and all indexed descendants; no stored objects are deleted.", { projectId, folderPath: { type: "string", minLength: 1, maxLength: 500 } }, false],
+  ["restore_project_folder", "Restore an archived folder and its indexed descendants.", { projectId, folderPath: { type: "string", minLength: 1, maxLength: 500 } }, false],
   ["create_project_file_upload", "Create a one-time, duplicate-protected upload grant for a verified project file.", {
     projectId,
     fileName: { type: "string", minLength: 1, maxLength: 240 },
@@ -107,6 +116,9 @@ async function callConnectorTool(name, args, request, env) {
   if ("projectId" in (args || {}) && (!Number.isSafeInteger(Number(args.projectId)) || Number(args.projectId) < 1)) {
     throw new Error("projectId must be a positive integer returned by list_projects.");
   }
+  if (["list_project_folders", "create_project_folder", "rename_project_file", "rename_project_folder", "archive_project_file", "restore_project_file", "archive_project_folder", "restore_project_folder"].includes(name)) {
+    return { content: [{ type: "text", text: JSON.stringify(await manageProjectFiles(name, args, env), null, 2) }] };
+  }
   if (name === "create_project_file_upload") {
     const grant = await createProjectUploadGrant(env, new URL(request.url).origin, args);
     return { content: [{ type: "text", text: JSON.stringify(grant, null, 2) }] };
@@ -176,7 +188,7 @@ export async function mcpResponse(request, env) {
       protocolVersion: negotiateProtocolVersion(params?.protocolVersion),
       capabilities: { tools: { listChanged: false } },
       serverInfo: { name: "Mason Forge", version: "1.0.0" },
-      instructions: "Authenticated access to Mason Forge projects, R2-backed files, continuity, and evidence. Discover project IDs first. File writes require a one-time size/hash-verified upload grant and never overwrite an existing path or SHA-256.",
+      instructions: "Authenticated access to Mason Forge projects, R2-backed files, continuity, and evidence. Discover project IDs first. File writes require mason.write. Uploads are size/hash verified. Folder, rename, move, archive, and restore operations are audited and never permanently delete R2 objects.",
     });
   }
   if (method === "notifications/initialized") return new Response(null, { status: 202 });

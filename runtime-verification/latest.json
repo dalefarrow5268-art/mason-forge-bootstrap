@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-08-13T19:20:53.929Z",
-  "completedAt": "2026-08-13T19:25:57.066Z",
+  "startedAt": "2026-08-13T19:44:51.990Z",
+  "completedAt": "2026-08-13T19:49:59.904Z",
   "success": false,
   "worker": {
     "attempt": 30,
@@ -24,10 +24,10 @@
       "totalTasks": 510,
       "outputCount": 510,
       "continuity": {
-        "checkpoint_id": "checkpoint_69054a85-aceb-46a3-9b72-54a725f3bc89",
-        "version": 2002,
+        "checkpoint_id": "checkpoint_d21e4f11-41e6-47b3-8aaf-1e5e455b2f1b",
+        "version": 2004,
         "verification_status": "VERIFIED",
-        "updated_at": "2026-08-13T19:23:43.476Z"
+        "updated_at": "2026-08-13T19:44:58.486Z"
       },
       "extraction": {
         "extracted": 627,
@@ -204,7 +204,7 @@
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-08-13T19:25:54.325Z"
+      "checkedAt": "2026-08-13T19:49:56.658Z"
     },
     "errors": [
       "Health HTTP 503",
@@ -214,7 +214,7 @@
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-08-13T19:25:54.701Z",
+      "capturedAt": "2026-08-13T19:49:57.163Z",
       "httpStatus": 401,
       "data": {
         "error": "Unauthorized."
@@ -238,7 +238,7 @@
       "projectFiles": 0
     },
     {
-      "capturedAt": "2026-08-13T19:25:56.799Z",
+      "capturedAt": "2026-08-13T19:49:59.384Z",
       "httpStatus": 401,
       "data": {
         "error": "Unauthorized."
@@ -296,6 +296,6 @@
     "Dashboard has no department outputs.",
     "Dashboard responses did not provide distinct fresh timestamps."
   ],
-  "sourceCommit": "00aaf99baab51428b0d772af7fa6f416c4fdc1f6",
-  "workflowRunId": "31735340838"
+  "sourceCommit": "1a2edece1240a4d50118f918e0a2dbfb3afe13db",
+  "workflowRunId": "31737347243"
 }

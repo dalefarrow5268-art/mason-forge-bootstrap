@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-08-04T17:38:29.729Z",
-  "completedAt": "2026-08-04T17:43:32.269Z",
+  "startedAt": "2026-08-13T18:52:34.042Z",
+  "completedAt": "2026-08-13T18:57:39.692Z",
   "success": false,
   "worker": {
     "attempt": 30,
@@ -17,31 +17,31 @@
       "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
       "openai": "CONFIGURED",
       "projects": 13,
-      "files": 642,
+      "files": 689,
       "taskTotals": {
-        "COMPLETED": 455
+        "COMPLETED": 510
       },
-      "totalTasks": 455,
-      "outputCount": 455,
+      "totalTasks": 510,
+      "outputCount": 510,
       "continuity": {
-        "checkpoint_id": "checkpoint_ed6e149f-a14b-49d0-b76b-d700d3a12ee4",
-        "version": 1864,
+        "checkpoint_id": "checkpoint_d2d000fc-613c-48dd-8dbd-7c0e7e586cc7",
+        "version": 1998,
         "verification_status": "VERIFIED",
-        "updated_at": "2026-08-04T17:34:06.830Z"
+        "updated_at": "2026-08-07T17:22:14.176Z"
       },
       "extraction": {
-        "extracted": 592,
+        "extracted": 627,
         "queued": 0,
         "retrying": 0,
         "failed": 0,
-        "pending": 50
+        "pending": 62
       },
       "staleRunningTasks": 0,
       "completedTasksWithoutOutput": 0,
       "duplicateOutputTasks": 0,
       "countsReconcile": true,
-      "projectFileTotal": 642,
-      "projectTaskTotal": 455,
+      "projectFileTotal": 689,
+      "projectTaskTotal": 510,
       "r2Samples": [
         {
           "fileId": 478,
@@ -100,7 +100,7 @@
           "queued_tasks": 0,
           "running_tasks": 0,
           "blocked_tasks": 0,
-          "completed_tasks": 95,
+          "completed_tasks": 105,
           "failed_tasks": 0,
           "canceled_tasks": 0
         },
@@ -162,11 +162,11 @@
         {
           "id": 10,
           "name": "TMC Helix Park Autograph Hotel by Marriott",
-          "file_count": 10,
+          "file_count": 11,
           "queued_tasks": 0,
           "running_tasks": 0,
           "blocked_tasks": 0,
-          "completed_tasks": 45,
+          "completed_tasks": 50,
           "failed_tasks": 0,
           "canceled_tasks": 0
         },
@@ -195,16 +195,16 @@
         {
           "id": 13,
           "name": "SSX",
-          "file_count": 107,
+          "file_count": 153,
           "queued_tasks": 0,
           "running_tasks": 0,
           "blocked_tasks": 0,
-          "completed_tasks": 155,
+          "completed_tasks": 195,
           "failed_tasks": 0,
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-08-04T17:43:29.419Z"
+      "checkedAt": "2026-08-13T18:57:36.710Z"
     },
     "errors": [
       "Health HTTP 503",
@@ -214,7 +214,7 @@
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-08-04T17:43:29.846Z",
+      "capturedAt": "2026-08-13T18:57:37.217Z",
       "httpStatus": 401,
       "data": {
         "error": "Unauthorized."
@@ -223,7 +223,7 @@
         "Dashboard HTTP 401",
         "Dashboard retrievedAt is missing or stale.",
         "Dashboard continuity is null.",
-        "Project files 0 do not match health files 642.",
+        "Project files 0 do not match health files 689.",
         "Dashboard has no department outputs."
       ],
       "globalTasks": {},
@@ -238,7 +238,7 @@
       "projectFiles": 0
     },
     {
-      "capturedAt": "2026-08-04T17:43:31.934Z",
+      "capturedAt": "2026-08-13T18:57:39.378Z",
       "httpStatus": 401,
       "data": {
         "error": "Unauthorized."
@@ -247,7 +247,7 @@
         "Dashboard HTTP 401",
         "Dashboard retrievedAt is missing or stale.",
         "Dashboard continuity is null.",
-        "Project files 0 do not match health files 642.",
+        "Project files 0 do not match health files 689.",
         "Dashboard has no department outputs."
       ],
       "globalTasks": {},
@@ -292,10 +292,10 @@
     "Dashboard HTTP 401",
     "Dashboard retrievedAt is missing or stale.",
     "Dashboard continuity is null.",
-    "Project files 0 do not match health files 642.",
+    "Project files 0 do not match health files 689.",
     "Dashboard has no department outputs.",
     "Dashboard responses did not provide distinct fresh timestamps."
   ],
-  "sourceCommit": "3f4c510f37a43cf9895a73ff64dc8b32938c1ce4",
-  "workflowRunId": "30934813354"
+  "sourceCommit": "6e7294271c15c7bcb1270a6e35d8a546af43c922",
+  "workflowRunId": "31732955270"
 }

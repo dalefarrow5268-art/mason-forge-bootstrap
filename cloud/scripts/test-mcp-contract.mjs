@@ -72,8 +72,12 @@ database.exec(`
     review_status TEXT,
     source_class TEXT,
     uploaded_at TEXT,
-    updated_at TEXT
+    updated_at TEXT,
+    archived_at TEXT,
+    archived_from_status TEXT
   );
+  CREATE TABLE project_folders (id TEXT PRIMARY KEY, project_id INTEGER NOT NULL, folder_path TEXT NOT NULL, archived_at TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, UNIQUE(project_id, folder_path));
+  CREATE TABLE audit_log (id TEXT PRIMARY KEY, actor TEXT, action TEXT, entity_type TEXT, entity_id TEXT, before_json TEXT, after_json TEXT, created_at TEXT);
   CREATE TABLE mcp_oauth_clients (
     client_id TEXT PRIMARY KEY,
     client_name TEXT NOT NULL,
@@ -296,10 +300,13 @@ assert.equal((await initialize.json()).result.serverInfo.name, "Mason Forge");
 
 const listed = await rpc({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} });
 const listedTools = (await listed.json()).result.tools;
-assert.equal(listedTools.length, 15);
+assert.equal(listedTools.length, 23);
 assert.ok(listedTools.some((tool) => tool.name === "list_projects"));
 assert.ok(listedTools.some((tool) => tool.name === "get_project_file_source"));
 assert.ok(listedTools.some((tool) => tool.name === "reconcile_project_files"));
+assert.ok(listedTools.some((tool) => tool.name === "create_project_folder"));
+assert.ok(listedTools.some((tool) => tool.name === "archive_project_file"));
+assert.ok(listedTools.some((tool) => tool.name === "restore_project_file"));
 const uploadTool = listedTools.find((tool) => tool.name === "create_project_file_upload");
 assert.ok(uploadTool);
 assert.deepEqual(uploadTool.securitySchemes[0].scopes, ["mason.read", "mason.write"]);

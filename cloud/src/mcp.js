@@ -2,6 +2,7 @@ import { connectorResponse } from "./connector.js";
 import { authorizeMcpRequest, createDownloadGrant, mcpAuthChallenge } from "./oauth.js";
 import { createProjectUploadGrant } from "./upload-grants.js";
 import { manageProjectFiles } from "./file-manager.js";
+import { manageFulfillmentInventory } from "./fulfillment-inventory.js";
 
 const supportedProtocolVersions = ["2025-06-18", "2025-03-26"];
 
@@ -33,6 +34,26 @@ const toolDefinitions = [
   ["restore_project_file", "Restore an archived project file to active project views.", { projectId, fileId: { type: "integer", minimum: 1 } }, false],
   ["archive_project_folder", "Archive a folder and all indexed descendants; no stored objects are deleted.", { projectId, folderPath: { type: "string", minLength: 1, maxLength: 500 } }, false],
   ["restore_project_folder", "Restore an archived folder and its indexed descendants.", { projectId, folderPath: { type: "string", minLength: 1, maxLength: 500 } }, false],
+  ["list_fulfillment_inventory", "List permanent SSX Fulfillment Center inventory records and their SFC numbers.", {
+    projectId,
+    itemType: { type: "string", enum: ["FDR", "DIV", "SEC", "ACT", "EST", "ASM", "CAL", "HOL", "WTH", "HAZ", "INS", "TST", "SAF", "TRN", "DLV", "LAB", "EQP", "MAT", "MUN", "HRS", "DOC", "TMP", "WRK"] },
+    status: { type: "string", enum: ["ACTIVE", "ARCHIVED", "ALL"] },
+  }, true, ["projectId"]],
+  ["get_fulfillment_item", "Retrieve one SSX Fulfillment Center inventory record by permanent SFC number.", {
+    projectId,
+    inventoryNumber: { type: "string", pattern: "^SFC-[A-Z]{3}-[0-9]{6}$" },
+  }, true, ["projectId", "inventoryNumber"]],
+  ["register_fulfillment_item", "Register an item and automatically issue its permanent, never-reused SFC inventory number.", {
+    projectId,
+    itemType: { type: "string", enum: ["FDR", "DIV", "SEC", "ACT", "EST", "ASM", "CAL", "HOL", "WTH", "HAZ", "INS", "TST", "SAF", "TRN", "DLV", "LAB", "EQP", "MAT", "MUN", "HRS", "DOC", "TMP", "WRK"] },
+    itemName: { type: "string", minLength: 1, maxLength: 240 },
+    parentInventoryNumber: { type: "string", pattern: "^SFC-[A-Z]{3}-[0-9]{6}$" },
+    csiCode: { type: "string", minLength: 1, maxLength: 40 },
+    folderPath: { type: "string", minLength: 1, maxLength: 500 },
+    sourceFileId: { type: "integer", minimum: 1 },
+    description: { type: "string", minLength: 1, maxLength: 4000 },
+    metadata: { type: "object", additionalProperties: true },
+  }, false, ["projectId", "itemType", "itemName"]],
   ["create_project_file_upload", "Create a one-time, duplicate-protected upload grant for a verified project file.", {
     projectId,
     fileName: { type: "string", minLength: 1, maxLength: 240 },
@@ -43,7 +64,7 @@ const toolDefinitions = [
   }, false],
 ];
 
-const tools = toolDefinitions.map(([name, description, properties, readOnly]) => {
+const tools = toolDefinitions.map(([name, description, properties, readOnly, required = Object.keys(properties)]) => {
   const scopes = readOnly ? ["mason.read"] : ["mason.read", "mason.write"];
   return {
     name,
@@ -52,7 +73,7 @@ const tools = toolDefinitions.map(([name, description, properties, readOnly]) =>
   inputSchema: {
     type: "object",
     properties,
-    required: Object.keys(properties),
+    required,
     additionalProperties: false,
   },
     annotations: {
@@ -118,6 +139,9 @@ async function callConnectorTool(name, args, request, env) {
   }
   if (["list_project_folders", "create_project_folder", "rename_project_file", "rename_project_folder", "archive_project_file", "restore_project_file", "archive_project_folder", "restore_project_folder"].includes(name)) {
     return { content: [{ type: "text", text: JSON.stringify(await manageProjectFiles(name, args, env), null, 2) }] };
+  }
+  if (["list_fulfillment_inventory", "get_fulfillment_item", "register_fulfillment_item"].includes(name)) {
+    return { content: [{ type: "text", text: JSON.stringify(await manageFulfillmentInventory(name, args, env), null, 2) }] };
   }
   if (name === "create_project_file_upload") {
     const grant = await createProjectUploadGrant(env, new URL(request.url).origin, args);
@@ -188,7 +212,7 @@ export async function mcpResponse(request, env) {
       protocolVersion: negotiateProtocolVersion(params?.protocolVersion),
       capabilities: { tools: { listChanged: false } },
       serverInfo: { name: "Mason Forge", version: "1.0.0" },
-      instructions: "Authenticated access to Mason Forge projects, R2-backed files, continuity, and evidence. Discover project IDs first. File writes require mason.write. Uploads are size/hash verified. Folder, rename, move, archive, and restore operations are audited and never permanently delete R2 objects.",
+      instructions: "Authenticated access to Mason Forge projects, R2-backed files, continuity, evidence, and the SSX Fulfillment Center. Discover project IDs first. File writes require mason.write. SFC inventory numbers are permanent and never reused. Uploads are size/hash verified. Folder, rename, move, archive, and restore operations are audited and never permanently delete R2 objects.",
     });
   }
   if (method === "notifications/initialized") return new Response(null, { status: 202 });

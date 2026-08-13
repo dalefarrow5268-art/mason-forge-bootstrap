@@ -77,6 +77,23 @@ database.exec(`
     archived_from_status TEXT
   );
   CREATE TABLE project_folders (id TEXT PRIMARY KEY, project_id INTEGER NOT NULL, folder_path TEXT NOT NULL, archived_at TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, UNIQUE(project_id, folder_path));
+  CREATE TABLE fulfillment_inventory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    inventory_number TEXT UNIQUE,
+    project_id INTEGER NOT NULL,
+    item_type TEXT NOT NULL,
+    item_name TEXT NOT NULL,
+    parent_inventory_number TEXT,
+    csi_code TEXT,
+    folder_path TEXT,
+    source_file_id INTEGER,
+    description TEXT,
+    metadata_json TEXT,
+    status TEXT NOT NULL DEFAULT 'ACTIVE',
+    archived_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
   CREATE TABLE audit_log (id TEXT PRIMARY KEY, actor TEXT, action TEXT, entity_type TEXT, entity_id TEXT, before_json TEXT, after_json TEXT, created_at TEXT);
   CREATE TABLE mcp_oauth_clients (
     client_id TEXT PRIMARY KEY,
@@ -300,13 +317,19 @@ assert.equal((await initialize.json()).result.serverInfo.name, "Mason Forge");
 
 const listed = await rpc({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} });
 const listedTools = (await listed.json()).result.tools;
-assert.equal(listedTools.length, 23);
+assert.equal(listedTools.length, 26);
 assert.ok(listedTools.some((tool) => tool.name === "list_projects"));
 assert.ok(listedTools.some((tool) => tool.name === "get_project_file_source"));
 assert.ok(listedTools.some((tool) => tool.name === "reconcile_project_files"));
 assert.ok(listedTools.some((tool) => tool.name === "create_project_folder"));
 assert.ok(listedTools.some((tool) => tool.name === "archive_project_file"));
 assert.ok(listedTools.some((tool) => tool.name === "restore_project_file"));
+assert.ok(listedTools.some((tool) => tool.name === "list_fulfillment_inventory"));
+assert.ok(listedTools.some((tool) => tool.name === "get_fulfillment_item"));
+assert.ok(listedTools.some((tool) => tool.name === "register_fulfillment_item"));
+const registerInventoryTool = listedTools.find((tool) => tool.name === "register_fulfillment_item");
+assert.deepEqual(registerInventoryTool.inputSchema.required, ["projectId", "itemType", "itemName"]);
+assert.equal(registerInventoryTool.annotations.readOnlyHint, false);
 const uploadTool = listedTools.find((tool) => tool.name === "create_project_file_upload");
 assert.ok(uploadTool);
 assert.deepEqual(uploadTool.securitySchemes[0].scopes, ["mason.read", "mason.write"]);
@@ -386,6 +409,58 @@ const duplicateRpc = await rpc({
 const duplicateResult = JSON.parse((await duplicateRpc.json()).result.content[0].text);
 assert.equal(duplicateResult.duplicate, true);
 
+const inventoryRpc = await rpc({
+  jsonrpc: "2.0",
+  id: 7,
+  method: "tools/call",
+  params: {
+    name: "register_fulfillment_item",
+    arguments: {
+      projectId: 4,
+      itemType: "ACT",
+      itemName: "Place slab-on-grade concrete",
+      csiCode: "03 30 00",
+      sourceFileId: 10,
+      metadata: { duration: 1, durationUnit: "day" },
+    },
+  },
+}, "test-secret");
+const inventoryResult = (await inventoryRpc.json()).result;
+assert.equal(inventoryResult.isError, false);
+const registeredInventory = JSON.parse(inventoryResult.content[0].text);
+assert.match(registeredInventory.item.inventoryNumber, /^SFC-ACT-[0-9]{6}$/);
+assert.equal(registeredInventory.item.csiCode, "03 30 00");
+assert.equal(registeredInventory.item.sourceFileId, 10);
+
+const duplicateInventoryRpc = await rpc({
+  jsonrpc: "2.0",
+  id: 8,
+  method: "tools/call",
+  params: {
+    name: "register_fulfillment_item",
+    arguments: {
+      projectId: 4,
+      itemType: "ACT",
+      itemName: "Place slab-on-grade concrete",
+      csiCode: "03 30 00",
+      sourceFileId: 10,
+    },
+  },
+}, "test-secret");
+const duplicateInventory = JSON.parse((await duplicateInventoryRpc.json()).result.content[0].text);
+assert.equal(duplicateInventory.duplicate, true);
+assert.equal(duplicateInventory.item.inventoryNumber, registeredInventory.item.inventoryNumber);
+
+const listInventoryRpc = await rpc({
+  jsonrpc: "2.0",
+  id: 9,
+  method: "tools/call",
+  params: { name: "list_fulfillment_inventory", arguments: { projectId: 4, itemType: "ACT" } },
+}, refreshedTokens.access_token);
+const listedInventory = JSON.parse((await listInventoryRpc.json()).result.content[0].text);
+assert.equal(listedInventory.count, 1);
+assert.equal(listedInventory.items[0].inventoryNumber, registeredInventory.item.inventoryNumber);
+
 console.log(JSON.stringify({
   success: true,
   oauth: "authorization_code_pkce_and_refresh",
@@ -395,4 +470,6 @@ console.log(JSON.stringify({
   controlledUploadGrant: true,
   uploadVerified: true,
   duplicateProtection: true,
+  fulfillmentInventory: true,
+  permanentSfcNumbers: true,
 }, null, 2));

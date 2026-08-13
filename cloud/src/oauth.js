@@ -78,8 +78,8 @@ function normalizeClientMetadata(value) {
   if (!value || !Array.isArray(value.redirect_uris) || !value.redirect_uris.length) return null;
   const redirectUris = [...new Set(value.redirect_uris.map(String))];
   if (!redirectUris.every(validateRedirectUri)) return null;
-  const tokenMethod = value.token_endpoint_auth_method
-    || value.token_endpoint_auth_methods_supported?.find((method) => method === "none")
+  const tokenMethod = value.token_endpoint_auth_methods_supported?.find((method) => method === "none")
+    || value.token_endpoint_auth_method
     || "none";
   if (tokenMethod !== "none") return null;
   return {

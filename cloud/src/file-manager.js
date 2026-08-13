@@ -35,6 +35,9 @@ async function listFolders(env, projectId) {
     folderPath: row.folder_path, explicit: true, archivedAt: row.archived_at || null, fileCount: 0,
   }]));
   for (const file of files.results || []) {
+    // Archived files must not synthesize active implicit folders. Explicit V2
+    // folders remain visible through project_folders with their archive state.
+    if (file.archived_at) continue;
     const parts = String(file.relative_path || "").replaceAll("\\", "/").split("/");
     parts.pop();
     let path = "";

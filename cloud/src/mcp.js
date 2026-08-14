@@ -54,6 +54,24 @@ const toolDefinitions = [
     description: { type: "string", minLength: 1, maxLength: 4000 },
     metadata: { type: "object", additionalProperties: true },
   }, false, ["projectId", "itemType", "itemName"]],
+  ["reclassify_fulfillment_item", "Move a stocked SSX Fulfillment Center item to its correct classification and aisle while preserving its permanent SFC number and evidence.", {
+    projectId,
+    inventoryNumber: { type: "string", pattern: "^SFC-[A-Z]{3}-[0-9]{6}$" },
+    itemType: { type: "string", enum: ["FDR", "DIV", "SEC", "ACT", "EST", "ASM", "CAL", "HOL", "WTH", "HAZ", "INS", "TST", "SAF", "TRN", "DLV", "LAB", "EQP", "MAT", "MUN", "HRS", "DOC", "TMP", "WRK"] },
+    parentInventoryNumber: { type: "string", pattern: "^SFC-[A-Z]{3}-[0-9]{6}$" },
+    folderPath: { type: "string", minLength: 1, maxLength: 500 },
+    csiCode: { type: "string", minLength: 1, maxLength: 40 },
+    clearCsiCode: { type: "boolean" },
+    metadataPatch: { type: "object", additionalProperties: true },
+  }, false, ["projectId", "inventoryNumber", "itemType", "parentInventoryNumber", "folderPath"]],
+  ["archive_fulfillment_item", "Archive one stocked Fulfillment Center item without deleting its permanent number, evidence, or history.", {
+    projectId,
+    inventoryNumber: { type: "string", pattern: "^SFC-[A-Z]{3}-[0-9]{6}$" },
+  }, false, ["projectId", "inventoryNumber"]],
+  ["restore_fulfillment_item", "Restore one archived Fulfillment Center item after validating its aisle, parent, and duplicate constraints.", {
+    projectId,
+    inventoryNumber: { type: "string", pattern: "^SFC-[A-Z]{3}-[0-9]{6}$" },
+  }, false, ["projectId", "inventoryNumber"]],
   ["create_project_file_upload", "Create a one-time, duplicate-protected upload grant for a verified project file.", {
     projectId,
     fileName: { type: "string", minLength: 1, maxLength: 240 },
@@ -79,7 +97,7 @@ const tools = toolDefinitions.map(([name, description, properties, readOnly, req
     annotations: {
       readOnlyHint: readOnly,
       destructiveHint: false,
-      idempotentHint: readOnly,
+      idempotentHint: readOnly || ["reclassify_fulfillment_item", "archive_fulfillment_item", "restore_fulfillment_item"].includes(name),
       openWorldHint: false,
     },
     securitySchemes: [{ type: "oauth2", scopes }],
@@ -140,7 +158,8 @@ async function callConnectorTool(name, args, request, env) {
   if (["list_project_folders", "create_project_folder", "rename_project_file", "rename_project_folder", "archive_project_file", "restore_project_file", "archive_project_folder", "restore_project_folder"].includes(name)) {
     return { content: [{ type: "text", text: JSON.stringify(await manageProjectFiles(name, args, env), null, 2) }] };
   }
-  if (["list_fulfillment_inventory", "get_fulfillment_item", "register_fulfillment_item"].includes(name)) {
+  if (["list_fulfillment_inventory", "get_fulfillment_item", "register_fulfillment_item",
+    "reclassify_fulfillment_item", "archive_fulfillment_item", "restore_fulfillment_item"].includes(name)) {
     return { content: [{ type: "text", text: JSON.stringify(await manageFulfillmentInventory(name, args, env), null, 2) }] };
   }
   if (name === "create_project_file_upload") {

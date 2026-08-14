@@ -342,8 +342,10 @@ assert.ok(listedTools.some((tool) => tool.name === "archive_fulfillment_item"));
 assert.ok(listedTools.some((tool) => tool.name === "restore_fulfillment_item"));
 const registerInventoryTool = listedTools.find((tool) => tool.name === "register_fulfillment_item");
 assert.deepEqual(registerInventoryTool.inputSchema.required, ["projectId", "itemType", "itemName"]);
+assert.ok(registerInventoryTool.inputSchema.properties.itemType.enum.includes("SYS"));
 assert.equal(registerInventoryTool.annotations.readOnlyHint, false);
 const reclassifyInventoryTool = listedTools.find((tool) => tool.name === "reclassify_fulfillment_item");
+assert.ok(reclassifyInventoryTool.inputSchema.properties.itemType.enum.includes("SYS"));
 assert.deepEqual(reclassifyInventoryTool.inputSchema.required,
   ["projectId", "inventoryNumber", "itemType", "parentInventoryNumber", "folderPath"]);
 assert.equal(reclassifyInventoryTool.annotations.idempotentHint, true);

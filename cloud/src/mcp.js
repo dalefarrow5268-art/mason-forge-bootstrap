@@ -36,7 +36,7 @@ const toolDefinitions = [
   ["restore_project_folder", "Restore an archived folder and its indexed descendants.", { projectId, folderPath: { type: "string", minLength: 1, maxLength: 500 } }, false],
   ["list_fulfillment_inventory", "List permanent SSX Fulfillment Center inventory records and their SFC numbers.", {
     projectId,
-    itemType: { type: "string", enum: ["FDR", "DIV", "SEC", "ACT", "EST", "ASM", "CAL", "HOL", "WTH", "HAZ", "INS", "TST", "SAF", "TRN", "DLV", "LAB", "EQP", "MAT", "MUN", "HRS", "DOC", "TMP", "WRK"] },
+    itemType: { type: "string", enum: ["FDR", "DIV", "SEC", "ACT", "EST", "ASM", "CAL", "HOL", "WTH", "HAZ", "INS", "TST", "SAF", "TRN", "DLV", "LAB", "EQP", "MAT", "MUN", "HRS", "DOC", "TMP", "WRK", "SYS"] },
     status: { type: "string", enum: ["ACTIVE", "ARCHIVED", "ALL"] },
   }, true, ["projectId"]],
   ["get_fulfillment_item", "Retrieve one SSX Fulfillment Center inventory record by permanent SFC number.", {
@@ -45,7 +45,7 @@ const toolDefinitions = [
   }, true, ["projectId", "inventoryNumber"]],
   ["register_fulfillment_item", "Register an item and automatically issue its permanent, never-reused SFC inventory number.", {
     projectId,
-    itemType: { type: "string", enum: ["FDR", "DIV", "SEC", "ACT", "EST", "ASM", "CAL", "HOL", "WTH", "HAZ", "INS", "TST", "SAF", "TRN", "DLV", "LAB", "EQP", "MAT", "MUN", "HRS", "DOC", "TMP", "WRK"] },
+    itemType: { type: "string", enum: ["FDR", "DIV", "SEC", "ACT", "EST", "ASM", "CAL", "HOL", "WTH", "HAZ", "INS", "TST", "SAF", "TRN", "DLV", "LAB", "EQP", "MAT", "MUN", "HRS", "DOC", "TMP", "WRK", "SYS"] },
     itemName: { type: "string", minLength: 1, maxLength: 240 },
     parentInventoryNumber: { type: "string", pattern: "^SFC-[A-Z]{3}-[0-9]{6}$" },
     csiCode: { type: "string", minLength: 1, maxLength: 40 },
@@ -57,7 +57,7 @@ const toolDefinitions = [
   ["reclassify_fulfillment_item", "Move a stocked SSX Fulfillment Center item to its correct classification and aisle while preserving its permanent SFC number and evidence.", {
     projectId,
     inventoryNumber: { type: "string", pattern: "^SFC-[A-Z]{3}-[0-9]{6}$" },
-    itemType: { type: "string", enum: ["FDR", "DIV", "SEC", "ACT", "EST", "ASM", "CAL", "HOL", "WTH", "HAZ", "INS", "TST", "SAF", "TRN", "DLV", "LAB", "EQP", "MAT", "MUN", "HRS", "DOC", "TMP", "WRK"] },
+    itemType: { type: "string", enum: ["FDR", "DIV", "SEC", "ACT", "EST", "ASM", "CAL", "HOL", "WTH", "HAZ", "INS", "TST", "SAF", "TRN", "DLV", "LAB", "EQP", "MAT", "MUN", "HRS", "DOC", "TMP", "WRK", "SYS"] },
     parentInventoryNumber: { type: "string", pattern: "^SFC-[A-Z]{3}-[0-9]{6}$" },
     folderPath: { type: "string", minLength: 1, maxLength: 500 },
     csiCode: { type: "string", minLength: 1, maxLength: 40 },

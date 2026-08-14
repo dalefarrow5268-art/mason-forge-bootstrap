@@ -42,6 +42,69 @@ async function inventoryRow(env, inventoryNumber) {
     .bind(inventoryNumber).first();
 }
 
+function metadataObject(row) {
+  if (!row?.metadata_json) return {};
+  try {
+    const parsed = JSON.parse(row.metadata_json);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function metadataJson(value) {
+  const serialized = JSON.stringify(value);
+  if (serialized.length > 20000) throw new Error("metadata is too large.");
+  return serialized;
+}
+
+function inventoryNumber(value) {
+  const normalized = text(value, 32, "inventoryNumber", true).toUpperCase();
+  if (!/^SFC-[A-Z]{3}-[0-9]{6}$/.test(normalized)) throw new Error("inventoryNumber is invalid.");
+  return normalized;
+}
+
+async function activeParent(env, projectId, parentNumber, currentNumber = null) {
+  if (!parentNumber) return null;
+  const normalized = parentNumber.toUpperCase();
+  if (normalized === currentNumber) throw new Error("An inventory item cannot be its own parent.");
+  const parent = await inventoryRow(env, normalized);
+  if (!parent || Number(parent.project_id) !== projectId || parent.status !== "ACTIVE" || parent.archived_at) {
+    throw new Error("Active parent inventory item not found in this project.");
+  }
+  return normalized;
+}
+
+async function activeDuplicate(env, values, excludeInventoryNumber = null) {
+  const clauses = [`project_id=?`, `item_type=?`, `lower(item_name)=lower(?)`,
+    `coalesce(parent_inventory_number,'')=coalesce(?,'')`,
+    `coalesce(folder_path,'')=coalesce(?,'')`, `archived_at IS NULL`];
+  const bindings = [values.projectId, values.itemType, values.itemName,
+    values.parentInventoryNumber, values.folderPath];
+  if (excludeInventoryNumber) {
+    clauses.push("inventory_number<>?");
+    bindings.push(excludeInventoryNumber);
+  }
+  return env.DB.prepare(`SELECT * FROM fulfillment_inventory WHERE ${clauses.join(" AND ")}`)
+    .bind(...bindings).first();
+}
+
+function lifecycleStatements(env, action, before, after, timestamp) {
+  const historyId = uid("fih");
+  const auditId = uid("audit");
+  return [
+    env.DB.prepare(`INSERT INTO fulfillment_inventory_history
+      (id, inventory_number, project_id, action, before_json, after_json, actor, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, 'SSX CLOUD CONNECTOR', ?)`)
+      .bind(historyId, before.inventory_number, Number(before.project_id), action,
+        JSON.stringify(before), JSON.stringify(after), timestamp),
+    env.DB.prepare(`INSERT INTO audit_log
+      (id, actor, action, entity_type, entity_id, before_json, after_json, created_at)
+      VALUES (?, 'SSX CLOUD CONNECTOR', ?, 'fulfillment_inventory', ?, ?, ?, ?)`)
+      .bind(auditId, action, before.inventory_number, JSON.stringify(before), JSON.stringify(after), timestamp),
+  ];
+}
+
 function present(row) {
   if (!row) return null;
   let metadata = null;
@@ -71,8 +134,8 @@ export async function manageFulfillmentInventory(name, args, env) {
   }
 
   if (name === "get_fulfillment_item") {
-    const inventoryNumber = text(args.inventoryNumber, 32, "inventoryNumber", true).toUpperCase();
-    const row = await inventoryRow(env, inventoryNumber);
+    const number = inventoryNumber(args.inventoryNumber);
+    const row = await inventoryRow(env, number);
     if (!row || Number(row.project_id) !== projectId) throw new Error("Fulfillment inventory item not found.");
     return { item: present(row) };
   }
@@ -137,6 +200,101 @@ export async function manageFulfillmentInventory(name, args, env) {
     const after = await inventoryRow(env, inventoryNumber);
     await audit(env, "REGISTER", inventoryNumber, null, after);
     return { registered: true, duplicate: false, item: present(after) };
+  }
+
+  if (name === "reclassify_fulfillment_item") {
+    const number = inventoryNumber(args.inventoryNumber);
+    const before = await inventoryRow(env, number);
+    if (!before || Number(before.project_id) !== projectId) throw new Error("Fulfillment inventory item not found.");
+    if (before.status !== "ACTIVE" || before.archived_at) throw new Error("Archived inventory items must be restored before reclassification.");
+
+    const type = itemType(args.itemType);
+    const parentInventoryNumber = await activeParent(env, projectId,
+      text(args.parentInventoryNumber, 32, "parentInventoryNumber", true), number);
+    const folderPath = text(args.folderPath, 500, "folderPath", true);
+    const csiCode = args.clearCsiCode ? null
+      : (args.csiCode === undefined ? before.csi_code : text(args.csiCode, 40, "csiCode"));
+    const patch = args.metadataPatch === undefined || args.metadataPatch === null ? {} : args.metadataPatch;
+    if (!patch || typeof patch !== "object" || Array.isArray(patch)) throw new Error("metadataPatch must be an object.");
+    const oldMetadata = metadataObject(before);
+    const patchAlreadyApplied = Object.entries(patch)
+      .every(([key, value]) => JSON.stringify(oldMetadata[key]) === JSON.stringify(value));
+    if (before.item_type === type && before.parent_inventory_number === parentInventoryNumber
+      && before.folder_path === folderPath && (before.csi_code || null) === csiCode
+      && oldMetadata.current_classification === type && patchAlreadyApplied) {
+      return { reclassified: true, changed: false, permanentNumberPreserved: true, item: present(before) };
+    }
+    const timestamp = now();
+    const metadata = {
+      ...oldMetadata,
+      ...patch,
+      original_item_type: oldMetadata.original_item_type || before.item_type,
+      current_classification: type,
+      reclassified_at: timestamp,
+    };
+    const metadataSerialized = metadataJson(metadata);
+    const duplicate = await activeDuplicate(env, {
+      projectId, itemType: type, itemName: before.item_name,
+      parentInventoryNumber, folderPath,
+    }, number);
+    if (duplicate) throw new Error(`Reclassification would duplicate ${duplicate.inventory_number}.`);
+
+    const afterSnapshot = { ...before, item_type: type, parent_inventory_number: parentInventoryNumber,
+      csi_code: csiCode, folder_path: folderPath, metadata_json: metadataSerialized, updated_at: timestamp };
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE fulfillment_inventory SET item_type=?, parent_inventory_number=?, csi_code=?,
+        folder_path=?, metadata_json=?, updated_at=? WHERE inventory_number=? AND project_id=? AND archived_at IS NULL`)
+        .bind(type, parentInventoryNumber, csiCode, folderPath, metadataSerialized, timestamp, number, projectId),
+      ...lifecycleStatements(env, "RECLASSIFY", before, afterSnapshot, timestamp),
+    ]);
+    const after = await inventoryRow(env, number);
+    return { reclassified: true, changed: true, permanentNumberPreserved: true, item: present(after) };
+  }
+
+  if (name === "archive_fulfillment_item") {
+    const number = inventoryNumber(args.inventoryNumber);
+    const before = await inventoryRow(env, number);
+    if (!before || Number(before.project_id) !== projectId) throw new Error("Fulfillment inventory item not found.");
+    if (before.status === "ARCHIVED" || before.archived_at) {
+      return { archived: true, changed: false, item: present(before) };
+    }
+    const child = await env.DB.prepare(`SELECT inventory_number FROM fulfillment_inventory
+      WHERE project_id=? AND parent_inventory_number=? AND archived_at IS NULL LIMIT 1`)
+      .bind(projectId, number).first();
+    if (child) throw new Error(`Archive blocked: active child ${child.inventory_number} depends on this item.`);
+    const timestamp = now();
+    const afterSnapshot = { ...before, status: "ARCHIVED", archived_at: timestamp, updated_at: timestamp };
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE fulfillment_inventory SET status='ARCHIVED', archived_at=?, updated_at=?
+        WHERE inventory_number=? AND project_id=? AND archived_at IS NULL`)
+        .bind(timestamp, timestamp, number, projectId),
+      ...lifecycleStatements(env, "ARCHIVE", before, afterSnapshot, timestamp),
+    ]);
+    return { archived: true, changed: true, item: present(await inventoryRow(env, number)) };
+  }
+
+  if (name === "restore_fulfillment_item") {
+    const number = inventoryNumber(args.inventoryNumber);
+    const before = await inventoryRow(env, number);
+    if (!before || Number(before.project_id) !== projectId) throw new Error("Fulfillment inventory item not found.");
+    if (before.status === "ACTIVE" && !before.archived_at) {
+      return { restored: true, changed: false, item: present(before) };
+    }
+    await activeParent(env, projectId, before.parent_inventory_number, number);
+    const duplicate = await activeDuplicate(env, {
+      projectId, itemType: before.item_type, itemName: before.item_name,
+      parentInventoryNumber: before.parent_inventory_number, folderPath: before.folder_path,
+    }, number);
+    if (duplicate) throw new Error(`Restore would duplicate ${duplicate.inventory_number}.`);
+    const timestamp = now();
+    const afterSnapshot = { ...before, status: "ACTIVE", archived_at: null, updated_at: timestamp };
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE fulfillment_inventory SET status='ACTIVE', archived_at=NULL, updated_at=?
+        WHERE inventory_number=? AND project_id=? AND archived_at IS NOT NULL`)
+        .bind(timestamp, number, projectId),
+      ...lifecycleStatements(env, "RESTORE", before, afterSnapshot, timestamp),
+    ]);
+    return { restored: true, changed: true, item: present(await inventoryRow(env, number)) };
   }
 
   throw new Error("Unsupported fulfillment inventory operation.");

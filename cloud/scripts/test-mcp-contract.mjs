@@ -94,6 +94,16 @@ database.exec(`
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
+  CREATE TABLE fulfillment_inventory_history (
+    id TEXT PRIMARY KEY,
+    inventory_number TEXT NOT NULL,
+    project_id INTEGER NOT NULL,
+    action TEXT NOT NULL,
+    before_json TEXT NOT NULL,
+    after_json TEXT NOT NULL,
+    actor TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
   CREATE TABLE audit_log (id TEXT PRIMARY KEY, actor TEXT, action TEXT, entity_type TEXT, entity_id TEXT, before_json TEXT, after_json TEXT, created_at TEXT);
   CREATE TABLE mcp_oauth_clients (
     client_id TEXT PRIMARY KEY,
@@ -317,7 +327,7 @@ assert.equal((await initialize.json()).result.serverInfo.name, "Mason Forge");
 
 const listed = await rpc({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} });
 const listedTools = (await listed.json()).result.tools;
-assert.equal(listedTools.length, 26);
+assert.equal(listedTools.length, 29);
 assert.ok(listedTools.some((tool) => tool.name === "list_projects"));
 assert.ok(listedTools.some((tool) => tool.name === "get_project_file_source"));
 assert.ok(listedTools.some((tool) => tool.name === "reconcile_project_files"));
@@ -327,9 +337,16 @@ assert.ok(listedTools.some((tool) => tool.name === "restore_project_file"));
 assert.ok(listedTools.some((tool) => tool.name === "list_fulfillment_inventory"));
 assert.ok(listedTools.some((tool) => tool.name === "get_fulfillment_item"));
 assert.ok(listedTools.some((tool) => tool.name === "register_fulfillment_item"));
+assert.ok(listedTools.some((tool) => tool.name === "reclassify_fulfillment_item"));
+assert.ok(listedTools.some((tool) => tool.name === "archive_fulfillment_item"));
+assert.ok(listedTools.some((tool) => tool.name === "restore_fulfillment_item"));
 const registerInventoryTool = listedTools.find((tool) => tool.name === "register_fulfillment_item");
 assert.deepEqual(registerInventoryTool.inputSchema.required, ["projectId", "itemType", "itemName"]);
 assert.equal(registerInventoryTool.annotations.readOnlyHint, false);
+const reclassifyInventoryTool = listedTools.find((tool) => tool.name === "reclassify_fulfillment_item");
+assert.deepEqual(reclassifyInventoryTool.inputSchema.required,
+  ["projectId", "inventoryNumber", "itemType", "parentInventoryNumber", "folderPath"]);
+assert.equal(reclassifyInventoryTool.annotations.idempotentHint, true);
 const uploadTool = listedTools.find((tool) => tool.name === "create_project_file_upload");
 assert.ok(uploadTool);
 assert.deepEqual(uploadTool.securitySchemes[0].scopes, ["mason.read", "mason.write"]);
@@ -461,6 +478,114 @@ const listedInventory = JSON.parse((await listInventoryRpc.json()).result.conten
 assert.equal(listedInventory.count, 1);
 assert.equal(listedInventory.items[0].inventoryNumber, registeredInventory.item.inventoryNumber);
 
+const aisleRpc = await rpc({
+  jsonrpc: "2.0",
+  id: 10,
+  method: "tools/call",
+  params: {
+    name: "register_fulfillment_item",
+    arguments: { projectId: 4, itemType: "FDR", itemName: "09 Labor Crews and Manpower" },
+  },
+}, "test-secret");
+const aisle = JSON.parse((await aisleRpc.json()).result.content[0].text).item;
+
+const reclassifyRpc = await rpc({
+  jsonrpc: "2.0",
+  id: 11,
+  method: "tools/call",
+  params: {
+    name: "reclassify_fulfillment_item",
+    arguments: {
+      projectId: 4,
+      inventoryNumber: registeredInventory.item.inventoryNumber,
+      itemType: "LAB",
+      parentInventoryNumber: aisle.inventoryNumber,
+      folderPath: "SSX Fulfillment Center/09 Labor Crews and Manpower/Place slab-on-grade concrete",
+      clearCsiCode: true,
+      metadataPatch: { recovery_status: "VERIFIED" },
+    },
+  },
+}, "test-secret");
+const reclassified = JSON.parse((await reclassifyRpc.json()).result.content[0].text);
+assert.equal(reclassified.changed, true);
+assert.equal(reclassified.permanentNumberPreserved, true);
+assert.equal(reclassified.item.inventoryNumber, registeredInventory.item.inventoryNumber);
+assert.equal(reclassified.item.itemType, "LAB");
+assert.equal(reclassified.item.csiCode, null);
+assert.equal(reclassified.item.metadata.original_item_type, "ACT");
+assert.equal(reclassified.item.metadata.current_classification, "LAB");
+
+const idempotentReclassifyRpc = await rpc({
+  jsonrpc: "2.0", id: 111, method: "tools/call",
+  params: { name: "reclassify_fulfillment_item", arguments: {
+    projectId: 4,
+    inventoryNumber: registeredInventory.item.inventoryNumber,
+    itemType: "LAB",
+    parentInventoryNumber: aisle.inventoryNumber,
+    folderPath: "SSX Fulfillment Center/09 Labor Crews and Manpower/Place slab-on-grade concrete",
+    clearCsiCode: true,
+    metadataPatch: { recovery_status: "VERIFIED" },
+  } },
+}, "test-secret");
+const idempotentReclassification = JSON.parse((await idempotentReclassifyRpc.json()).result.content[0].text);
+assert.equal(idempotentReclassification.changed, false);
+assert.equal(database.prepare("SELECT count(*) AS count FROM fulfillment_inventory_history WHERE inventory_number=?")
+  .get(registeredInventory.item.inventoryNumber).count, 1);
+
+const blockedParentArchiveRpc = await rpc({
+  jsonrpc: "2.0", id: 112, method: "tools/call",
+  params: { name: "archive_fulfillment_item", arguments: {
+    projectId: 4, inventoryNumber: aisle.inventoryNumber,
+  } },
+}, "test-secret");
+assert.equal((await blockedParentArchiveRpc.json()).result.isError, true);
+
+const archiveRpc = await rpc({
+  jsonrpc: "2.0",
+  id: 12,
+  method: "tools/call",
+  params: { name: "archive_fulfillment_item", arguments: {
+    projectId: 4, inventoryNumber: registeredInventory.item.inventoryNumber,
+  } },
+}, "test-secret");
+const archivedInventory = JSON.parse((await archiveRpc.json()).result.content[0].text);
+assert.equal(archivedInventory.changed, true);
+assert.equal(archivedInventory.item.status, "ARCHIVED");
+assert.ok(archivedInventory.item.archivedAt);
+
+const idempotentArchiveRpc = await rpc({
+  jsonrpc: "2.0", id: 121, method: "tools/call",
+  params: { name: "archive_fulfillment_item", arguments: {
+    projectId: 4, inventoryNumber: registeredInventory.item.inventoryNumber,
+  } },
+}, "test-secret");
+assert.equal(JSON.parse((await idempotentArchiveRpc.json()).result.content[0].text).changed, false);
+
+const restoreRpc = await rpc({
+  jsonrpc: "2.0",
+  id: 13,
+  method: "tools/call",
+  params: { name: "restore_fulfillment_item", arguments: {
+    projectId: 4, inventoryNumber: registeredInventory.item.inventoryNumber,
+  } },
+}, "test-secret");
+const restoredInventory = JSON.parse((await restoreRpc.json()).result.content[0].text);
+assert.equal(restoredInventory.changed, true);
+assert.equal(restoredInventory.item.status, "ACTIVE");
+assert.equal(restoredInventory.item.archivedAt, null);
+
+const idempotentRestoreRpc = await rpc({
+  jsonrpc: "2.0", id: 131, method: "tools/call",
+  params: { name: "restore_fulfillment_item", arguments: {
+    projectId: 4, inventoryNumber: registeredInventory.item.inventoryNumber,
+  } },
+}, "test-secret");
+assert.equal(JSON.parse((await idempotentRestoreRpc.json()).result.content[0].text).changed, false);
+assert.equal(database.prepare("SELECT count(*) AS count FROM fulfillment_inventory_history WHERE inventory_number=?")
+  .get(registeredInventory.item.inventoryNumber).count, 3);
+assert.equal(database.prepare("SELECT count(*) AS count FROM audit_log WHERE entity_id=? AND action IN ('RECLASSIFY','ARCHIVE','RESTORE')")
+  .get(registeredInventory.item.inventoryNumber).count, 3);
+
 console.log(JSON.stringify({
   success: true,
   oauth: "authorization_code_pkce_and_refresh",
@@ -472,4 +597,6 @@ console.log(JSON.stringify({
   duplicateProtection: true,
   fulfillmentInventory: true,
   permanentSfcNumbers: true,
+  fulfillmentInventoryLifecycle: true,
+  fulfillmentInventoryAuditHistory: true,
 }, null, 2));

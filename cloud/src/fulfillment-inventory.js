@@ -4,7 +4,7 @@ const uid = (prefix) => `${prefix}_${crypto.randomUUID()}`;
 const ITEM_TYPES = new Set([
   "FDR", "DIV", "SEC", "ACT", "EST", "ASM", "CAL", "HOL", "WTH", "HAZ",
   "INS", "TST", "SAF", "TRN", "DLV", "LAB", "EQP", "MAT", "MUN", "HRS",
-  "DOC", "TMP", "WRK"
+  "DOC", "TMP", "WRK", "SYS"
 ]);
 
 function itemType(value) {

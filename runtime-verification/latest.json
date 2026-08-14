@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-08-13T20:06:27.369Z",
-  "completedAt": "2026-08-13T20:11:32.384Z",
+  "startedAt": "2026-08-14T09:54:16.385Z",
+  "completedAt": "2026-08-14T09:59:17.104Z",
   "success": false,
   "worker": {
     "attempt": 30,
@@ -204,7 +204,7 @@
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-08-13T20:11:29.330Z"
+      "checkedAt": "2026-08-14T09:59:14.341Z"
     },
     "errors": [
       "Health HTTP 503",
@@ -214,7 +214,7 @@
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-08-13T20:11:29.930Z",
+      "capturedAt": "2026-08-14T09:59:14.696Z",
       "httpStatus": 401,
       "data": {
         "error": "Unauthorized."
@@ -238,7 +238,7 @@
       "projectFiles": 0
     },
     {
-      "capturedAt": "2026-08-13T20:11:32.023Z",
+      "capturedAt": "2026-08-14T09:59:16.920Z",
       "httpStatus": 401,
       "data": {
         "error": "Unauthorized."
@@ -296,6 +296,6 @@
     "Dashboard has no department outputs.",
     "Dashboard responses did not provide distinct fresh timestamps."
   ],
-  "sourceCommit": "a8d97340139b8895858d372d33d46e60c97e9a4f",
-  "workflowRunId": "31739137506"
+  "sourceCommit": "7d63164b653c324723761d596106d44cd3fa6e31",
+  "workflowRunId": "31789997168"
 }

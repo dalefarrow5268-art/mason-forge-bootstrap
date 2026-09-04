@@ -111,7 +111,7 @@ async function uploadOpenAIFile(env, file, bytes) {
   return payload.id;
 }
 
-async function deleteOpenAIFile(env, fileId) {
+export async function deleteOpenAIFile(env, fileId) {
   if (!fileId) return;
   try {
     await fetch(`https://api.openai.com/v1/files/${encodeURIComponent(fileId)}`, {
@@ -124,7 +124,7 @@ async function deleteOpenAIFile(env, fileId) {
   }
 }
 
-async function fileInputContent(env, file, bytes) {
+export async function fileInputContent(env, file, bytes) {
   const ext = extension(file.file_name);
   if (directlyReadableExtensions.has(ext)) {
     const maxTextBytes = 2 * 1024 * 1024;
@@ -150,7 +150,7 @@ async function fileInputContent(env, file, bytes) {
   };
 }
 
-function extractOutputText(response) {
+export function extractOutputText(response) {
   if (typeof response?.output_text === "string" && response.output_text.trim()) return response.output_text.trim();
   const parts = [];
   for (const item of response?.output || []) {

@@ -1,3 +1,4 @@
+import { handleBrainAction } from "./brain-records.js";
 import { connectorResponse } from "./connector.js";
 import { authorizeMcpRequest, createDownloadGrant, mcpAuthChallenge } from "./oauth.js";
 import { createProjectUploadGrant } from "./upload-grants.js";
@@ -12,6 +13,14 @@ function negotiateProtocolVersion(requested) {
 
 const projectId = { type: "integer", minimum: 1, description: "Mason Forge project ID returned by list_projects." };
 const toolDefinitions = [
+  ["get_project_brain", "Read the controlling Cloudflare worker roster, assignments and takeoff status. Configured roles are not running processors; department summaries are not verified takeoffs.", { projectId }, true],
+  ["get_brain_assignment", "Retrieve one supervised worker assignment and its immutable progress and output history.", { projectId, assignmentId: { type: "string", minLength: 1 } }, true],
+  ["get_brain_record", "Retrieve one versioned Mason Brain record and its immutable audit history, verification and Mason approval.", { projectId, recordId: { type: "string", minLength: 1 } }, true],
+  ["manage_project_brain", "Manage supervised workers and durable Mason Brain records. Authenticated orchestrator attests worker/verifier run provenance; role names are not separate login identities. Read get_project_brain for the record contract before writing. Never approve without an independent source check. mark_entered records an already verified estimate save; it does not write the live estimate.", {
+    projectId,
+    action: { type: "string", enum: ["setup", "save", "verify", "approve", "approve_allowance", "mark_entered", "assign", "start_assignment", "block_assignment", "complete_assignment"] },
+    payload: { type: "object", additionalProperties: true, description: "Action-specific fields from the get_project_brain contract; projectId is fixed by the top-level argument." },
+  }, false],
   ["get_system_state", "Retrieve the verified Mason Forge system state and project summaries.", {}, true],
   ["list_projects", "List every Mason Forge project and its current file/task counts.", {}, true],
   ["list_project_files", "List every registered file in a project.", { projectId }, true],
@@ -152,6 +161,14 @@ function routeForTool(name, args = {}) {
 }
 
 async function callConnectorTool(name, args, request, env) {
+  if (["get_project_brain", "get_brain_record", "get_brain_assignment", "manage_project_brain"].includes(name)) {
+    const action = name === "get_project_brain" ? "list" : name === "get_brain_record" ? "get" : name === "get_brain_assignment" ? "get_assignment" : args.action;
+    const input = name === "manage_project_brain" ? { ...args.payload, projectId: args.projectId } : { ...args, id: args.recordId || args.assignmentId };
+    const result = await handleBrainAction(env, action, input, {
+      principalId: "authenticated-mason-connector", role: "orchestrator", authenticated: true,
+    });
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
   if ("projectId" in (args || {}) && (!Number.isSafeInteger(Number(args.projectId)) || Number(args.projectId) < 1)) {
     throw new Error("projectId must be a positive integer returned by list_projects.");
   }

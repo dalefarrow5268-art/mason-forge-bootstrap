@@ -49,6 +49,9 @@ jobs:
       - name: Test MCP and OAuth contract
         run: npm run test:connector
 
+      - name: Test project brain lifecycle
+        run: npm run test:brain
+
       - name: Read release marker
         id: release
         run: |
@@ -72,6 +75,20 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Verify durable brain lifecycle in production D1
+        run: node scripts/verify-brain-storage.mjs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Upload brain verification receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brain-storage-verification
+          path: runtime-verification/brain-storage.json
+          if-no-files-found: warn
 
       - name: Verify live production end to end
         id: live_verify

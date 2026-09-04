@@ -77,7 +77,7 @@ function validateHealth(result) {
   if (Number(health.outputCount || 0) < 1) errors.push("Health has no outputs.");
   if (EXPECTED_RELEASE && health.releaseId !== EXPECTED_RELEASE) errors.push(`Release ${health.releaseId} does not match ${EXPECTED_RELEASE}.`);
   const extraction = health.extraction || {};
-  const extractionTotal = sum([extraction.extracted, extraction.queued, extraction.extracting, extraction.retrying, extraction.failed, extraction.pending]);
+  const extractionTotal = sum([extraction.extracted, extraction.queued, extraction.extracting, extraction.retrying, extraction.failed, extraction.pending, extraction.routedReview]);
   if (extractionTotal !== Number(health.files || 0)) errors.push(`Extraction accounting ${extractionTotal} does not match ${Number(health.files || 0)} files.`);
   if (Number(health.files || 0) > 0 && Number(extraction.extracted || 0) < 1) errors.push("No project file has completed extraction.");
   return errors;

@@ -1,9 +1,11 @@
+import { BRAIN_SCHEMA_STATEMENTS } from "./brain-records.js";
 let ready = false;
 
 export async function ensureRuntimeSchema(env) {
   if (ready) return;
 
   await env.DB.batch([
+    ...BRAIN_SCHEMA_STATEMENTS.map(sql => env.DB.prepare(sql)),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS continuity_heads (
       scope_type TEXT NOT NULL,
       scope_id TEXT NOT NULL,

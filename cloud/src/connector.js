@@ -1,3 +1,4 @@
+import { handleBrainAction } from "./brain-records.js";
 const json = (data, status = 200) => new Response(JSON.stringify(data, null, 2), {
   status,
   headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
@@ -353,6 +354,9 @@ async function completeStatus(projectId, env) {
     findingCount: Number(findings?.count || 0),
     rfiCount: Number(rfis?.count || 0),
     takeoffSummary: takeoff.results || [],
+    projectBrain: await handleBrainAction(env, "list", { projectId }, {
+      principalId: "authenticated-mason-connector", role: "orchestrator", authenticated: true,
+    }),
     partyCount: Number(parties?.count || 0),
     continuity: continuity ? { ...continuity, state: parseJson(continuity.state_json, {}) } : null,
   });

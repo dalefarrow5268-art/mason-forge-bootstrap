@@ -1,3 +1,4 @@
+import { handleBrainAction } from "./brain-records.js";
 const json = (data, status = 200) => new Response(JSON.stringify(data, null, 2), {
   status,
   headers: {
@@ -39,6 +40,9 @@ async function createProject(request, env) {
     VALUES (?, ?, ?, ?, 'INTAKE', 'NEEDS REVIEW', 'CLOUD INTAKE', ?, ?)
   `).bind(body.name.trim(), body.projectNumber || null, body.location || null, body.client || null, timestamp, timestamp).run();
   const projectId = result.meta.last_row_id;
+  await handleBrainAction(env, "setup", { projectId }, {
+    principalId: "authenticated-project-intake", role: "orchestrator", authenticated: true,
+  });
 
   await env.DB.batch([
     env.DB.prepare(`INSERT INTO project_identity_cards

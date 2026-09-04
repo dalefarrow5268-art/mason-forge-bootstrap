@@ -10,7 +10,8 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:local": "wrangler d1 execute mason-forge-cloud --local --file schema/0001_initial.sql",
-    "db:remote": "wrangler d1 execute mason-forge-cloud --remote --file schema/0001_initial.sql"
+    "db:remote": "wrangler d1 execute mason-forge-cloud --remote --file schema/0001_initial.sql",
+    "test:brain": "node scripts/test-brain-records.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.27.0"

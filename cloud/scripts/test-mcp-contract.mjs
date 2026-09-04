@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { mcpResponse } from "../src/mcp.js";
+import { BRAIN_SCHEMA_STATEMENTS } from "../src/brain-records.js";
+import { testRecord } from "./brain-lifecycle.mjs";
 import {
   authorizeMcpRequest,
   createDownloadGrant,
@@ -327,7 +329,24 @@ assert.equal((await initialize.json()).result.serverInfo.name, "Mason Forge");
 
 const listed = await rpc({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} });
 const listedTools = (await listed.json()).result.tools;
-assert.equal(listedTools.length, 29);
+assert.equal(listedTools.length, 33);
+for (const sql of BRAIN_SCHEMA_STATEMENTS) database.exec(sql);
+const brainRpc = async (name, args, token) => (await (await rpc({
+  jsonrpc: "2.0", id: 900, method: "tools/call", params: { name, arguments: args },
+}, token)).json()).result;
+const deniedBrain = await brainRpc("manage_project_brain", { projectId: 4, action: "setup", payload: {} });
+assert.equal(deniedBrain.isError, true);
+const configuredBrain = await brainRpc("manage_project_brain", { projectId: 4, action: "setup", payload: {} }, "test-secret");
+assert.equal(configuredBrain.isError, false);
+const brainSaved = await brainRpc("manage_project_brain", { projectId: 4, action: "save", payload: { id: "mcp-test", expectedVersion: 0, record: testRecord() } }, "test-secret");
+assert.equal(brainSaved.isError, false);
+const brainRead = await brainRpc("get_brain_record", { projectId: 4, recordId: "mcp-test" }, "test-secret");
+assert.equal(brainRead.isError, false);
+assert.equal(JSON.parse(brainRead.content[0].text).record.id, "mcp-test");
+for (const name of ["get_project_brain", "get_brain_record", "manage_project_brain"]) {
+  assert.ok(listedTools.some(tool => tool.name === name));
+}
+assert.equal(listedTools.find(tool => tool.name === "manage_project_brain").annotations.readOnlyHint, false);
 assert.ok(listedTools.some((tool) => tool.name === "list_projects"));
 assert.ok(listedTools.some((tool) => tool.name === "get_project_file_source"));
 assert.ok(listedTools.some((tool) => tool.name === "reconcile_project_files"));

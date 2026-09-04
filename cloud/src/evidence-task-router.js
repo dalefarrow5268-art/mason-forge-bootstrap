@@ -183,6 +183,7 @@ export async function routeReadyEvidenceBatches(projectId, env) {
         LEFT JOIN evidence_batch_files routed ON routed.file_id = f.id
         WHERE f.project_id = ?
           AND f.extracted_text_key IS NOT NULL
+          AND f.relative_path NOT LIKE 'SSX Project Holding Folder/Phase One Project Review/%'
           AND routed.file_id IS NULL
         ORDER BY f.id
         LIMIT ?

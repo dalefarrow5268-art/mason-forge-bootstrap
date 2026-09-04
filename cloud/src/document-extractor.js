@@ -233,7 +233,7 @@ export async function extractProjectFile(message, env) {
   if (!env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not configured.");
 
   const file = await env.DB.prepare("SELECT * FROM project_files WHERE id = ?").bind(message.fileId).first();
-  if (!file || file.extracted_text_key) return { skipped: true };
+  if (!file || file.archived_at || file.relative_path?.startsWith("SSX Project Holding Folder/Phase One Project Review/") || file.extracted_text_key) return { skipped: true };
 
   const claim = await env.DB.prepare(`
     UPDATE project_files

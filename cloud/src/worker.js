@@ -1,3 +1,4 @@
+import { queuePhaseOne, processPhaseOne } from './phase-one-review.js';
 import foundation from "./index.js";
 import { failDepartmentTask, processDepartmentTask } from "./department-processor.js";
 import {
@@ -111,6 +112,7 @@ async function queuePendingDocumentExtractions(env) {
     SELECT id, project_id, review_status, updated_at
     FROM project_files
     WHERE extracted_text_key IS NULL
+      AND relative_path NOT LIKE 'SSX Project Holding Folder/Phase One Project Review/%'
       AND review_status NOT LIKE 'EXTRACTION FAILED:%'
       AND review_status NOT LIKE '%REVIEW REQUIRED:%'
       AND (
@@ -294,11 +296,13 @@ export default {
 
     const url = new URL(request.url);
     if (url.pathname === "/health" && request.method === "GET") {
-      await kickOperations(env);
+      await queuePhaseOne(env);
+    await kickOperations(env);
       await ensureSystemContinuity(env);
     }
     if (url.pathname === "/api/connector/bootstrap" && request.method === "GET" && authorized(request, env)) {
-      await kickOperations(env);
+      await queuePhaseOne(env);
+    await kickOperations(env);
       await ensureSystemContinuity(env);
     }
 
@@ -313,6 +317,11 @@ export default {
     await ensureRuntimeSchema(env);
     for (const message of batch.messages) {
       const body = message.body || {};
+      if(body.kind === 'PHASE_ONE') {
+        try { await processPhaseOne(body,env,Number(message.attempts||1)); message.ack(); }
+        catch(error) { console.error('Phase One retry',body.id,String(error)); message.retry({delaySeconds:120}); }
+        continue;
+      }
       if (body.kind === "EXTRACT_PROJECT_FILE") {
         try {
           const result = await extractProjectFile(body, env);
@@ -337,12 +346,14 @@ export default {
       }
     }
 
+    await queuePhaseOne(env);
     await kickOperations(env);
     await ensureSystemContinuity(env);
   },
 
   async scheduled(_event, env) {
     await ensureRuntimeSchema(env);
+    await queuePhaseOne(env);
     await kickOperations(env);
     await ensureSystemContinuity(env);
   },

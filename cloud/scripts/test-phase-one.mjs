@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {readFileSync} from 'node:fs';
+import {ZipWriter,Uint8ArrayWriter,TextReader} from '@zip.js/zip.js';
+import {processPhaseOne,queuePhaseOne,safe,normalizeReview,storeStream} from '../src/phase-one-review.js';
+const sql=new DatabaseSync(':memory:');
+sql.exec(`CREATE TABLE project_files(id INTEGER PRIMARY KEY,project_id INTEGER,r2_key TEXT UNIQUE,file_name TEXT,relative_path TEXT,file_type TEXT,size_bytes INTEGER,review_status TEXT,source_class TEXT,uploaded_at TEXT,updated_at TEXT,archived_at TEXT); CREATE TABLE project_folders(id TEXT,project_id INTEGER,folder_path TEXT UNIQUE,created_at TEXT,updated_at TEXT);`);
+sql.exec(readFileSync(new URL('../schema/0007_phase_one_review.sql',import.meta.url),'utf8'));
+const DB={async batch(statements){return Promise.all(statements.map(s=>s.run()));},prepare(s){return {bind(...p){return {
+ async run(){return {meta:{changes:sql.prepare(s).run(...p).changes}};},
+ async first(){return sql.prepare(s).get(...p);},
+ async all(){return {results:sql.prepare(s).all(...p)};}
+ };},async all(){return {results:sql.prepare(s).all()};}};}};
+const objects=new Map(),sent=[];
+const bucket={async head(k){return objects.has(k)?{size:objects.get(k).length}:null},async get(k,o){let b=objects.get(k);if(!b)return null;if(o?.range)b=b.slice(o.range.offset,o.range.offset+o.range.length);return{size:b.length,body:new Blob([b]).stream(),async arrayBuffer(){return b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength)}}},async put(k,v){objects.set(k,typeof v==='string'?new TextEncoder().encode(v):v);},async delete(k){objects.delete(k)},async createMultipartUpload(k){const parts=[];return{async uploadPart(n,b){parts[n-1]=b.slice();return{partNumber:n,etag:String(n)}},async complete(){const out=new Uint8Array(parts.reduce((n,p)=>n+p.length,0));let pos=0;for(const p of parts){out.set(p,pos);pos+=p.length;}objects.set(k,out)},async abort(){objects.delete(k)}}}};
+const env={DB,PROJECT_FILES:bucket,DEPARTMENT_QUEUE:{async send(b){sent.push(b)}}};
+assert(!safe('../escape'));assert(!safe('/abs'));assert(!safe('C:/bad'));assert(safe('nested/plans.pdf'));
+assert.equal(normalizeReview({category:'Plans',confidence:'LOW',reason:'uncertain'}).category,'Needs Review');
+const zip=new ZipWriter(new Uint8ArrayWriter(),{useWebWorkers:false});await zip.add('nested/model.dwg',new TextReader('exact original bytes'));const bytes=await zip.close();objects.set('original',bytes);
+sql.prepare('INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes) VALUES(1,13,?,?,?,?)').run('original','submission.zip','SSX Project Holding Folder/Phase One Project Review/Test/submission.zip',bytes.length);
+sql.prepare('INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes) VALUES(2,13,?,?,?,?)').run('untouched','other.zip','SSX Project Holding Folder/other.zip',10);
+await queuePhaseOne(env);assert.equal(sent.length,1);await queuePhaseOne(env);assert.equal(sent.length,1,'queued jobs not duplicated');
+await processPhaseOne(sent.shift(),env);await queuePhaseOne(env);assert.equal(sent.length,1);await processPhaseOne(sent.shift(),env);await queuePhaseOne(env);
+const item=sql.prepare('SELECT * FROM phase_one_items').get();assert.equal(item.status,'NEEDS_REVIEW');assert.equal(new TextDecoder().decode(objects.get('projects/13/phase-one/'+item.id)),'exact original bytes');assert.deepEqual(objects.get('original'),bytes);
+assert.equal(sql.prepare('SELECT status FROM phase_one_jobs').get().status,'COMPLETE');assert.equal(sql.prepare('SELECT count(*) n FROM phase_one_jobs').get().n,1,'holding untouched');
+const large=new Uint8Array(9*1024**2+13).fill(91);await storeStream(env,'large',new Blob([large]).stream(),large.length);assert.deepEqual(objects.get('large'),large);
+await assert.rejects(()=>storeStream(env,'bad',new Blob([large]).stream(),2));assert(!objects.has('bad'));
+console.log('PASS: Phase One trigger isolation, durable queue, ZIP extraction, original preservation, uncertain review, report, multipart integrity and size checks');
+const bulk=new ZipWriter(new Uint8ArrayWriter(),{useWebWorkers:false,level:0});for(let i=0;i<5000;i++)await bulk.add(`project/folder-${i%30}/file-${i}.bin`,new TextReader('x'));const bulkBytes=await bulk.close();objects.set('bulk',bulkBytes);
+sql.prepare('INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes) VALUES(100,13,?,?,?,?)').run('bulk','bulk.zip','SSX Project Holding Folder/Phase One Project Review/Bulk/bulk.zip',bulkBytes.length);
+await queuePhaseOne(env);await processPhaseOne(sent.shift(),env);
+assert.equal(sql.prepare("SELECT count(*) n FROM phase_one_items WHERE job_id='intake-100'").get().n,5000);
+console.log('PASS: 5,000 nested archive files inventoried in bounded database batches');

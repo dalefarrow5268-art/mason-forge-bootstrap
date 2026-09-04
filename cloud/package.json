@@ -14,5 +14,8 @@
   },
   "devDependencies": {
     "wrangler": "^4.27.0"
+  },
+  "dependencies": {
+    "@zip.js/zip.js": "^2.10.0"
   }
 }

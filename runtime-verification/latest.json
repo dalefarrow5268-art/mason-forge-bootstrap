@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-09-04T22:50:03.908Z",
-  "completedAt": "2026-09-04T22:55:13.910Z",
+  "startedAt": "2026-09-04T23:37:11.667Z",
+  "completedAt": "2026-09-04T23:42:16.789Z",
   "success": false,
   "worker": {
     "attempt": 30,
@@ -17,30 +17,30 @@
       "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
       "openai": "CONFIGURED",
       "projects": 13,
-      "files": 2512,
+      "files": 2513,
       "taskTotals": {
         "COMPLETED": 1845
       },
       "totalTasks": 1845,
       "outputCount": 1845,
       "continuity": {
-        "checkpoint_id": "checkpoint_41fafb66-df12-425f-a716-e95603ebcd1a",
-        "version": 5626,
+        "checkpoint_id": "checkpoint_bf35671f-9b1a-4964-a848-0c9605ebc6ab",
+        "version": 5627,
         "verification_status": "VERIFIED",
-        "updated_at": "2026-09-04T22:53:56.795Z"
+        "updated_at": "2026-09-04T23:30:26.394Z"
       },
       "extraction": {
         "extracted": 2148,
         "queued": 0,
         "retrying": 0,
         "failed": 0,
-        "pending": 364
+        "pending": 365
       },
       "staleRunningTasks": 0,
       "completedTasksWithoutOutput": 0,
       "duplicateOutputTasks": 0,
       "countsReconcile": true,
-      "projectFileTotal": 2512,
+      "projectFileTotal": 2513,
       "projectTaskTotal": 1845,
       "r2Samples": [
         {
@@ -195,7 +195,7 @@
         {
           "id": 13,
           "name": "SSX",
-          "file_count": 261,
+          "file_count": 262,
           "queued_tasks": 0,
           "running_tasks": 0,
           "blocked_tasks": 0,
@@ -204,7 +204,7 @@
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-09-04T22:55:10.609Z"
+      "checkedAt": "2026-09-04T23:42:13.757Z"
     },
     "errors": [
       "Health HTTP 503",
@@ -214,7 +214,7 @@
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-09-04T22:55:11.252Z",
+      "capturedAt": "2026-09-04T23:42:14.254Z",
       "httpStatus": 401,
       "data": {
         "error": "Unauthorized."
@@ -223,7 +223,7 @@
         "Dashboard HTTP 401",
         "Dashboard retrievedAt is missing or stale.",
         "Dashboard continuity is null.",
-        "Project files 0 do not match health files 2512.",
+        "Project files 0 do not match health files 2513.",
         "Dashboard has no department outputs."
       ],
       "globalTasks": {},
@@ -238,7 +238,7 @@
       "projectFiles": 0
     },
     {
-      "capturedAt": "2026-09-04T22:55:13.399Z",
+      "capturedAt": "2026-09-04T23:42:16.502Z",
       "httpStatus": 401,
       "data": {
         "error": "Unauthorized."
@@ -247,7 +247,7 @@
         "Dashboard HTTP 401",
         "Dashboard retrievedAt is missing or stale.",
         "Dashboard continuity is null.",
-        "Project files 0 do not match health files 2512.",
+        "Project files 0 do not match health files 2513.",
         "Dashboard has no department outputs."
       ],
       "globalTasks": {},
@@ -292,10 +292,10 @@
     "Dashboard HTTP 401",
     "Dashboard retrievedAt is missing or stale.",
     "Dashboard continuity is null.",
-    "Project files 0 do not match health files 2512.",
+    "Project files 0 do not match health files 2513.",
     "Dashboard has no department outputs.",
     "Dashboard responses did not provide distinct fresh timestamps."
   ],
-  "sourceCommit": "20187598e30b480fc8de6911778003a7e53534c2",
-  "workflowRunId": "33927108255"
+  "sourceCommit": "4bb6c4e84ea8a15ef8dc84b1ba42aedc5dd9d3fa",
+  "workflowRunId": "33930161176"
 }

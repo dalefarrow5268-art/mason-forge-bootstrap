@@ -8,6 +8,7 @@ import { recoverQueuedDepartmentTasks } from "./queued-task-recovery.js";
 import { ensureAllProjectContinuity } from "./project-continuity.js";
 import { uploadGrantResponse } from "./upload-grants.js";
 import { webFileSystemRoute } from "./web-file-system.js";
+import { projectCenterIntake } from "./project-center-intake.js";
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data, null, 2), {
@@ -38,6 +39,7 @@ export default {
     let phase = "runtime-schema";
 
     try {
+      if (url.pathname === '/api/project-center/intake') return await projectCenterIntake(request, env);
       if (isOAuthDiscoveryPath(url.pathname)) {
         phase = "oauth-discovery";
         return await oauthResponse(request, env);

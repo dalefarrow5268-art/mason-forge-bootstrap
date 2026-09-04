@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {readFileSync} from 'node:fs';
+import {projectCenterIntake,validIntakePath} from '../src/project-center-intake.js';
+const sql=new DatabaseSync(':memory:');
+sql.exec(readFileSync(new URL('../schema/0001_initial.sql',import.meta.url),'utf8'));
+sql.exec(readFileSync(new URL('../schema/0003_file_management.sql',import.meta.url),'utf8'));
+sql.exec(readFileSync(new URL('../schema/0006_project_center_intake.sql',import.meta.url),'utf8'));
+sql.exec("INSERT INTO projects(id,name,created_at,updated_at) VALUES(13,'SSX','now','now'); INSERT INTO project_folders(id,project_id,folder_path,created_at,updated_at) VALUES('root',13,'SSX Project Holding Folder','now','now');");
+const DB={prepare(text){const stmt=sql.prepare(text);return {bind(...args){return {first:async()=>stmt.get(...args),all:async()=>({results:stmt.all(...args)}),run:async()=>stmt.run(...args)};}};}};
+const objects=new Map(),sessions=new Map();
+const PROJECT_FILES={async createMultipartUpload(key){const uploadId=crypto.randomUUID();sessions.set(uploadId,new Map());return {uploadId,abort:async()=>sessions.delete(uploadId)};},resumeMultipartUpload(key,id){return {uploadPart:async(n,body)=>{sessions.get(id).set(n,new Uint8Array(await new Response(body).arrayBuffer()));return {partNumber:n,etag:'part-'+n};},complete:async(parts)=>{objects.set(key,Buffer.concat(parts.map(p=>sessions.get(id).get(p.partNumber))));}};},async head(key){const b=objects.get(key);return b?{size:b.length}:null;},async put(key,b){objects.set(key,b);},async get(key){const b=objects.get(key);return b?{size:b.length,body:b}:null;}};
+const env={DB,PROJECT_FILES};
+const key=await crypto.subtle.importKey('jwk',JSON.parse(process.env.INTAKE_TEST_KEY),{name:'ECDSA',namedCurve:'P-256'},false,['sign']);
+async function token(owner,exp=Math.floor(Date.now()/1000)+60){const h=Buffer.from(JSON.stringify({alg:'ES256'})).toString('base64url'),b=Buffer.from(JSON.stringify({iss:'ssx-project-center',aud:'ssx-project-holding',sub:owner,exp})).toString('base64url');const s=await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},key,new TextEncoder().encode(h+'.'+b));return h+'.'+b+'.'+Buffer.from(s).toString('base64url');}
+async function call(params,method='GET',body,owner='alice'){const headers={authorization:'Bearer '+await token(owner)};if(body!==undefined)headers['content-length']=String(Buffer.byteLength(body));return projectCenterIntake(new Request('https://example.com/api/project-center/intake?'+new URLSearchParams(params),{method,headers,body}),env);}
+assert.equal((await projectCenterIntake(new Request('https://example.com/api/project-center/intake'),env)).status,401);
+const project=crypto.randomUUID(),batch=crypto.randomUUID(),id=crypto.randomUUID(),meta={project,batch,name:'Plans/Nested/plan.pdf',size:5};
+assert(validIntakePath(meta.name));assert(!validIntakePath('../bad'));assert(!validIntakePath('A\\B'));
+assert.equal((await call({id,action:'start'},'POST',JSON.stringify(meta))).status,200);
+assert.equal((await call({id,action:'start'},'POST',JSON.stringify(meta),'bob')).status,404);
+assert.equal((await call({id,part:'1'},'PUT','bad')).status,400);
+const part=await(await call({id,part:'1'},'PUT','hello')).json();
+assert.equal((await call({id,action:'complete'},'POST',JSON.stringify({parts:[]}))).status,400);
+assert.equal((await call({id,action:'complete'},'POST',JSON.stringify({parts:[part]}))).status,200);
+assert.equal((await call({id,action:'complete'},'POST',JSON.stringify({parts:[part]}))).status,200);
+assert.equal((await(await call({id,action:'download'})).text()),'hello');
+assert.equal((await call({id,action:'download'},'GET',undefined,'bob')).status,404);
+assert.equal((await(await call({action:'list',project})).json()).length,1);
+assert.equal(sql.prepare('SELECT COUNT(*) n FROM project_files').get().n,1);
+const row=sql.prepare('SELECT * FROM project_files').get();assert.equal(row.relative_path,`SSX Project Holding Folder/${project}/${batch}/${meta.name}`);assert.match(row.review_status,/REVIEW REQUIRED:/);
+const zero=crypto.randomUUID();await call({id:zero,action:'start'},'POST',JSON.stringify({...meta,size:0,name:'empty.txt'}));assert.equal((await call({id:zero,action:'complete'},'POST','{"parts":[]}')).status,200);
+console.log('PASS: signed access, ownership isolation, folder paths, part validation, retry idempotency, original bytes, zero-byte files, holding status.');

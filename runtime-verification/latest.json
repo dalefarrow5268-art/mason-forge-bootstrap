@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-08-14T10:13:50.405Z",
-  "completedAt": "2026-08-14T10:18:50.806Z",
+  "startedAt": "2026-09-04T22:50:03.908Z",
+  "completedAt": "2026-09-04T22:55:13.910Z",
   "success": false,
   "worker": {
     "attempt": 30,
@@ -17,31 +17,31 @@
       "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
       "openai": "CONFIGURED",
       "projects": 13,
-      "files": 690,
+      "files": 2512,
       "taskTotals": {
-        "COMPLETED": 510
+        "COMPLETED": 1845
       },
-      "totalTasks": 510,
-      "outputCount": 510,
+      "totalTasks": 1845,
+      "outputCount": 1845,
       "continuity": {
-        "checkpoint_id": "checkpoint_d21e4f11-41e6-47b3-8aaf-1e5e455b2f1b",
-        "version": 2004,
+        "checkpoint_id": "checkpoint_41fafb66-df12-425f-a716-e95603ebcd1a",
+        "version": 5626,
         "verification_status": "VERIFIED",
-        "updated_at": "2026-08-13T19:44:58.486Z"
+        "updated_at": "2026-09-04T22:53:56.795Z"
       },
       "extraction": {
-        "extracted": 627,
+        "extracted": 2148,
         "queued": 0,
         "retrying": 0,
         "failed": 0,
-        "pending": 63
+        "pending": 364
       },
       "staleRunningTasks": 0,
       "completedTasksWithoutOutput": 0,
       "duplicateOutputTasks": 0,
       "countsReconcile": true,
-      "projectFileTotal": 690,
-      "projectTaskTotal": 510,
+      "projectFileTotal": 2512,
+      "projectTaskTotal": 1845,
       "r2Samples": [
         {
           "fileId": 478,
@@ -85,22 +85,22 @@
         {
           "id": 3,
           "name": "Bask Development",
-          "file_count": 2,
+          "file_count": 97,
           "queued_tasks": 0,
           "running_tasks": 0,
           "blocked_tasks": 0,
-          "completed_tasks": 15,
+          "completed_tasks": 160,
           "failed_tasks": 0,
           "canceled_tasks": 0
         },
         {
           "id": 4,
           "name": "Bask Fairfield Inn Tampa",
-          "file_count": 343,
+          "file_count": 1963,
           "queued_tasks": 0,
           "running_tasks": 0,
           "blocked_tasks": 0,
-          "completed_tasks": 105,
+          "completed_tasks": 1165,
           "failed_tasks": 0,
           "canceled_tasks": 0
         },
@@ -195,16 +195,16 @@
         {
           "id": 13,
           "name": "SSX",
-          "file_count": 154,
+          "file_count": 261,
           "queued_tasks": 0,
           "running_tasks": 0,
           "blocked_tasks": 0,
-          "completed_tasks": 195,
+          "completed_tasks": 325,
           "failed_tasks": 0,
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-08-14T10:18:47.688Z"
+      "checkedAt": "2026-09-04T22:55:10.609Z"
     },
     "errors": [
       "Health HTTP 503",
@@ -214,7 +214,7 @@
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-08-14T10:18:48.167Z",
+      "capturedAt": "2026-09-04T22:55:11.252Z",
       "httpStatus": 401,
       "data": {
         "error": "Unauthorized."
@@ -223,7 +223,7 @@
         "Dashboard HTTP 401",
         "Dashboard retrievedAt is missing or stale.",
         "Dashboard continuity is null.",
-        "Project files 0 do not match health files 690.",
+        "Project files 0 do not match health files 2512.",
         "Dashboard has no department outputs."
       ],
       "globalTasks": {},
@@ -238,7 +238,7 @@
       "projectFiles": 0
     },
     {
-      "capturedAt": "2026-08-14T10:18:50.550Z",
+      "capturedAt": "2026-09-04T22:55:13.399Z",
       "httpStatus": 401,
       "data": {
         "error": "Unauthorized."
@@ -247,7 +247,7 @@
         "Dashboard HTTP 401",
         "Dashboard retrievedAt is missing or stale.",
         "Dashboard continuity is null.",
-        "Project files 0 do not match health files 690.",
+        "Project files 0 do not match health files 2512.",
         "Dashboard has no department outputs."
       ],
       "globalTasks": {},
@@ -292,10 +292,10 @@
     "Dashboard HTTP 401",
     "Dashboard retrievedAt is missing or stale.",
     "Dashboard continuity is null.",
-    "Project files 0 do not match health files 690.",
+    "Project files 0 do not match health files 2512.",
     "Dashboard has no department outputs.",
     "Dashboard responses did not provide distinct fresh timestamps."
   ],
-  "sourceCommit": "8b2a22ae5d7cc554f0c6574f2fe67da53821144d",
-  "workflowRunId": "31791340579"
+  "sourceCommit": "20187598e30b480fc8de6911778003a7e53534c2",
+  "workflowRunId": "33927108255"
 }

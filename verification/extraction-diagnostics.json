@@ -1,12 +1,12 @@
 {
-  "capturedAt": "2026-09-05T13:25:17.123Z",
-  "sourceCommit": "04471a176a49774ac902f9f93c71b3e54d4478e0",
+  "capturedAt": "2026-09-05T13:46:50.155Z",
+  "sourceCommit": "46d9f4260aca113546d9651d806d3057565bd26f",
   "health": {
     "status": "online",
     "operationalReady": true,
     "service": "Mason Forge Cloud",
     "environment": "production",
-    "releaseId": "2026-09-05-phases-7-through-13",
+    "releaseId": "2026-09-05-bradenton-intake",
     "database": "D1 VERIFIED",
     "projectFileStorage": "R2 VERIFIED",
     "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-05T13:25:17.842Z"
+    "checkedAt": "2026-09-05T13:46:50.912Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-05T13:25:18.314Z",
+    "retrievedAt": "2026-09-05T13:46:51.381Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",

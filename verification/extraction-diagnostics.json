@@ -1,12 +1,12 @@
 {
-  "capturedAt": "2026-09-05T23:01:03.567Z",
-  "sourceCommit": "42c099dc5536292e4dbe3706b64d3b13c1b0710b",
+  "capturedAt": "2026-09-05T23:03:08.047Z",
+  "sourceCommit": "3a5ac85fd5e77a3b29af8704540a2814e59078ec",
   "health": {
     "status": "online",
     "operationalReady": true,
     "service": "Mason Forge Cloud",
     "environment": "production",
-    "releaseId": "2026-09-05-takeoff-crew-v1",
+    "releaseId": "2026-09-05-native-capture-v2",
     "database": "D1 VERIFIED",
     "projectFileStorage": "R2 VERIFIED",
     "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-05T23:01:04.431Z"
+    "checkedAt": "2026-09-05T23:03:08.503Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-05T23:01:04.889Z",
+    "retrievedAt": "2026-09-05T23:03:09.037Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",

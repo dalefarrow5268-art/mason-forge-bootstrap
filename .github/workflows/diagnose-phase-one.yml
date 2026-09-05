@@ -29,3 +29,15 @@ jobs:
           ]) console.log(name,JSON.stringify(await query(sql)));
           const qs=await api('/queues');for(const q of qs.filter(q=>q.queue_name.includes('department'))){console.log('queue',JSON.stringify(q));try{console.log('consumers',JSON.stringify(await api('/queues/'+q.queue_id+'/consumers')));}catch(e){console.log('consumer read',e.message);}}
           JS
+      - name: Capture worker exception during scheduler wakeup
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node --input-type=module <<'JS'
+          import {spawn} from 'node:child_process';
+          const child=spawn('npx',['--yes','wrangler@4.92.0','tail','mason-forge-cloud','--format','json'],{stdio:['ignore','pipe','pipe'],env:process.env});
+          child.stdout.pipe(process.stdout);child.stderr.pipe(process.stderr);
+          const timer=setInterval(async()=>{try{await fetch('https://mason-forge-cloud.mason-forge-ssx.workers.dev/health',{signal:AbortSignal.timeout(15000)});}catch{}},8000);
+          await new Promise(r=>setTimeout(r,55000));clearInterval(timer);child.kill('SIGTERM');
+          JS

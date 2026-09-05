@@ -234,7 +234,8 @@ async function getFile(projectId, fileId, env, source = false) {
       extraction = parseJson(text, { text });
     }
   }
-  return json({ file, extraction, sourceAvailable: true, extractionAvailable: Boolean(extraction) });
+  const sourceAvailable = Boolean(await env.PROJECT_FILES.head(file.r2_key));
+  return json({ file, extraction, sourceAvailable, extractionAvailable: Boolean(extraction) });
 }
 
 async function listTasks(projectId, env) {

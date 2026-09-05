@@ -1,0 +1,32 @@
+{
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "issueId": "bradenton-native-scan-queue-starvation",
+  "investigatedAt": "2026-09-05T23:44:01Z",
+  "diagnosis": {
+    "holdingScanItems": 169,
+    "holdingScanAttempts": 0,
+    "sharedQueueBacklog": 2783,
+    "sharedQueueBacklogBytes": 136047,
+    "sharedQueueMaxConcurrency": 5,
+    "deliveryPaused": false,
+    "producer": "mason-forge-cloud",
+    "consumer": "mason-forge-cloud",
+    "cause": "Holding scans shared the general department queue and were starved behind its existing backlog."
+  },
+  "repair": "Route HOLDING_SCAN messages to the dedicated mason-forge-holding-scan queue with bounded concurrency 5. Preserve the general queue and use it only as a compatibility fallback when the dedicated binding is absent.",
+  "safety": [
+    "No queued message was purged.",
+    "No completed scan or prepared file was reset.",
+    "Original project uploads were not changed."
+  ],
+  "verificationRequired": [
+    "Production deployment succeeds with both queue bindings.",
+    "Bradenton holding_scan_items show attempts greater than zero.",
+    "At least one item reaches COMPLETE or a saved NEEDS_REVIEW state."
+  ],
+  "remainingBlockers": [
+    "Verified CSI 2026 catalog is required before divisions and sections can complete.",
+    "BASK estimate delivery connection has not been verified."
+  ]
+}

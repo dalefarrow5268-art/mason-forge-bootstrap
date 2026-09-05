@@ -29,6 +29,11 @@ jobs:
           python-version: '3.12'
       - run: npm ci
       - run: pip install PyMuPDF==1.26.6 pypdf==6.0.0
+      - name: Prepare a bounded high-resolution scanner retry
+        run: python scripts/run_scan_highres.py
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Prepare scanned plans and publish Brain handoffs
         run: python scripts/run_plan_layers.py
         env:

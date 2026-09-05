@@ -2,6 +2,7 @@ import pathlib,tempfile,zipfile,unittest
 import fitz
 import tomllib
 from prepare_holding import prepare,sha
+from scan_highres import render_retry,tile_clip
 class HoldingTests(unittest.TestCase):
  def test_runner_release_gate_follows_wrangler_configuration(self):
   root=pathlib.Path(__file__).resolve().parents[1]
@@ -10,7 +11,23 @@ class HoldingTests(unittest.TestCase):
   self.assertIn("EXPECTED_RELEASE=CONFIG['vars']['RELEASE_ID']",runner)
   self.assertIn("x.get('text')==EXPECTED_RELEASE",runner)
   self.assertNotIn("x.get('text')=='2026-09-05-holding-detail-tiles-v2'",runner)
-  self.assertEqual(expected,'2026-09-05-brain-lobe-routing-v1')
+  self.assertEqual(expected,'2026-09-05-holding-highres-retry-v1')
+
+ def test_high_resolution_retry_preserves_package_and_exact_region(self):
+  with tempfile.TemporaryDirectory() as td:
+   d=pathlib.Path(td);page=d/'page.pdf'
+   with fitz.open() as doc:
+    p=doc.new_page(width=612,height=792)
+    p.insert_text((20,760),'WALDORF ASTORIA  LXR  CONRAD  CANOPY  SIGNIA HILTON  HILTON',fontsize=5)
+    doc.save(page)
+   prepared=d/'prepared.zip'
+   with zipfile.ZipFile(prepared,'w',compression=zipfile.ZIP_DEFLATED) as archive:archive.write(page,'plans/page-00001.pdf')
+   before=sha(prepared);out=d/'retry.png'
+   result=render_retry(prepared,'plans/page-00001.pdf','plans/page-00001.pdf.brain-scan/tile-r3-c1.jpg',out)
+   self.assertEqual(sha(prepared),before);self.assertEqual(result['preparedSha256'],before)
+   self.assertGreaterEqual(result['width'],1100);self.assertGreater(result['renderDpi'],300)
+   with fitz.open(page) as doc:self.assertEqual(result['clip'],list(tile_clip(doc[0].rect,'x.brain-scan/tile-r3-c1.jpg')))
+   self.assertLess(out.stat().st_size,20*1024**2)
 
  def test_all_pages_and_originals(self):
   with tempfile.TemporaryDirectory() as td:

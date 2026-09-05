@@ -1,0 +1,42 @@
+name: Report Native Scanner Benchmark
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/report-native-benchmark.yml']
+permissions:
+  contents: read
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: cloud/package-lock.json
+      - run: npm ci
+        working-directory: cloud
+      - name: Close expired benchmark leases and read saved coverage evidence
+        working-directory: cloud
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          python <<'PY'
+          import sys,tempfile,pathlib,json,datetime
+          sys.path.insert(0,'scripts')
+          from run_holding import query,r2,now
+          cutoff=(datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(minutes=3)).isoformat().replace('+00:00','Z')
+          query("UPDATE native_page_scan_trials SET status='TIMED_OUT',error='Benchmark lease expired without a result; production scan items unchanged',updated_at=? WHERE id IN ('benchmark-a21-native-v1','benchmark-a21-inline-v2') AND status='RUNNING' AND updated_at<?",[now(),cutoff])
+          rows=query("SELECT id,status,processing_ms,brain_key,error FROM native_page_scan_trials WHERE id LIKE 'benchmark-a21-%'")
+          for row in rows:
+              result={k:v for k,v in row.items() if k!='brain_key'}
+              if row['brain_key']:
+                  with tempfile.TemporaryDirectory() as td:
+                      p=pathlib.Path(td)/'review.json';r2('get',row['brain_key'],p);d=json.loads(p.read_text());r=d.get('review',{})
+                      result.update(coverage=r.get('coverage'),sheetId=r.get('sheetId'),findingsCount=len(r.get('findings',[])),unreadableRegions=r.get('unreadableRegions'),scaleVerified=d.get('scaleVerified'),productionScanItemsChanged=d.get('productionScanItemsChanged'))
+              print(json.dumps(result),flush=True)
+          PY

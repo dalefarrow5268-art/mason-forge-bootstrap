@@ -67,6 +67,13 @@
     "verification": "Local worker syntax, connector, dashboard authentication, Holding preparation, Phase One and full 13-phase pipeline tests passed. The new test proves a terminal raster tile uses VECTOR_REGION_RETRY, reaches attempt four, leaves its completed neighbor unchanged, and still passes through the conservative unreadable-content validator. Production deployment and live clearance of the flagged Bradenton region are pending.",
     "phaseGate": "No logical page or Phase One release is claimed yet; all nine regions for a page must pass. Phase One remains PREPARING at 33 percent."
   },
+  "deploymentFollowUp": {
+    "observedAt": "2026-09-05T19:18:01.471Z",
+    "issueId": "holding-runner-release-id-drift",
+    "diagnosis": "The vector-region Worker deployment and all required checks passed in GitHub Actions run 33986614877. Its automatic Prepare Holding Files follow-up then stopped before querying or changing project files because run_holding.py still required the previous release ID as a hardcoded literal.",
+    "repair": "Read EXPECTED_RELEASE directly from cloud/wrangler.toml with Python tomllib and compare the deployed Worker binding against that single configuration source. Add a regression test that rejects the prior hardcoded release literal.",
+    "verification": "Local Python compilation and four Holding tests passed, followed by Worker syntax, Phase One and full 13-phase pipeline tests. Production workflow verification and live Bradenton retry remain pending."
+  },
   "remainingBlockers": [
     "Verified CSI 2026 catalog is still required before divisions and sections can complete.",
     "BASK estimate delivery connection is still unverified.",

@@ -1,7 +1,17 @@
 import pathlib,tempfile,zipfile,unittest
 import fitz
+import tomllib
 from prepare_holding import prepare,sha
 class HoldingTests(unittest.TestCase):
+ def test_runner_release_gate_follows_wrangler_configuration(self):
+  root=pathlib.Path(__file__).resolve().parents[1]
+  expected=tomllib.loads((root/'wrangler.toml').read_text())['vars']['RELEASE_ID']
+  runner=(root/'scripts'/'run_holding.py').read_text()
+  self.assertIn("EXPECTED_RELEASE=CONFIG['vars']['RELEASE_ID']",runner)
+  self.assertIn("x.get('text')==EXPECTED_RELEASE",runner)
+  self.assertNotIn("x.get('text')=='2026-09-05-holding-detail-tiles-v2'",runner)
+  self.assertEqual(expected,'2026-09-05-holding-vector-region-retry')
+
  def test_all_pages_and_originals(self):
   with tempfile.TemporaryDirectory() as td:
    d=pathlib.Path(td);pdf=d/'plan.pdf'

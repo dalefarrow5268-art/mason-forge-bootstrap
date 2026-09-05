@@ -62,7 +62,7 @@ def prepare(source, name, output, manifest_path, progress=lambda m: None):
                             if a.samples!=b.samples: raise ValueError('PDF page appearance changed')
                         arc=prefix+f'/page-{n+1:05d}.pdf'
                         write(out,arc)
-                        row['outputs'].append({'path':arc,'originalPage':n+1,'sha256':sha(out),'sizeBytes':out.stat().st_size,'mediaBox':list(page.mediabox),'cropBox':list(page.cropbox),'rotation':page.rotation,'scaleVerified':False})
+                        row['outputs'].append({'path':arc,'originalPage':n+1,'sha256':sha(out),'sizeBytes':out.stat().st_size,'mediaBox':list(page.mediabox),'cropBox':list(page.cropbox),'rotation':page.rotation,'scaleVerified':False,'textBlocks':page.get_text('blocks'),'links':page.get_links()})
                         manifest['unitsDone']+=1;progress(manifest)
             else:
                 if row['sizeBytes']>LIMIT: raise ValueError('Non-PDF exceeds review size; original requires review')
@@ -80,5 +80,5 @@ def prepare(source, name, output, manifest_path, progress=lambda m: None):
                 for chunk in iter(lambda:f.read(1024*1024),b''):h.update(chunk)
                 if h.hexdigest()!=o['sha256']:raise ValueError('Prepared checksum mismatch')
     manifest['preparedSha256']=sha(output)
-    pathlib.Path(manifest_path).write_text(json.dumps(manifest,indent=2))
+    pathlib.Path(manifest_path).write_text(json.dumps(manifest,indent=2,default=str))
     return manifest

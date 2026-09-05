@@ -18,7 +18,7 @@ export function assignWorker(path){
 const ROOT='SSX Project Holding Folder/Phase One Project Review';
 const now=()=>new Date().toISOString();
 export const safe=p=>typeof p==='string'&&p.length<1200&&!/[\\\x00-\x1f]/.test(p)&&!p.startsWith('/')&&!/^[a-z]:/i.test(p)&&p.split('/').every(s=>s&&s!=='.'&&s!=='..');
-class R2Reader extends Reader {
+export class R2Reader extends Reader {
  constructor(bucket,key,size){super();this.bucket=bucket;this.key=key;this.size=size;}
  async readUint8Array(offset,length){if(length>16*1024*1024)throw new Error('Archive directory exceeds automated review limit');const o=await this.bucket.get(this.key,{range:{offset,length}});if(!o)throw new Error('Source missing');return new Uint8Array(await o.arrayBuffer());}
 }
@@ -26,12 +26,12 @@ export async function queuePhaseOne(env){
  const intakePrefix=ROOT+'/';
  await env.DB.prepare(`INSERT OR IGNORE INTO phase_one_jobs(id,source_file_id,created_at,updated_at) SELECT 'intake-'||id,id,?,? FROM project_files WHERE project_id=13 AND archived_at IS NULL AND substr(relative_path,1,?)=? AND COALESCE(source_class,'') NOT IN ('PHASE ONE WORKING COPY','PHASE ONE REVIEW REPORT')`).bind(now(),now(),intakePrefix.length,intakePrefix).run();
  await env.DB.prepare("INSERT OR IGNORE INTO holding_preparations(source_file_id,updated_at) SELECT j.source_file_id,? FROM phase_one_jobs j JOIN project_files f ON f.id=j.source_file_id WHERE f.source_class='PHASE ONE INTAKE' AND j.status='PENDING'").bind(now()).run();
- const ready=(await env.DB.prepare("SELECT p.* FROM holding_preparations p JOIN phase_one_jobs j ON j.source_file_id=p.source_file_id WHERE p.status='READY' AND j.status!='RUNNING' AND NOT EXISTS(SELECT 1 FROM phase_one_items i WHERE i.job_id=j.id AND i.status='RUNNING')").all()).results||[];
+ const ready=(await env.DB.prepare("SELECT p.* FROM holding_preparations p JOIN phase_one_jobs j ON j.source_file_id=p.source_file_id WHERE p.status='SCANNED' AND j.status!='RUNNING' AND NOT EXISTS(SELECT 1 FROM phase_one_items i WHERE i.job_id=j.id AND i.status='RUNNING')").all()).results||[];
  for(const p of ready){await env.DB.batch([
  env.DB.prepare("INSERT OR IGNORE INTO holding_superseded_items(item_id,source_file_id,record_json,archived_at) SELECT i.id,?,json_object('id',i.id,'job_id',i.job_id,'entry_index',i.entry_index,'original_path',i.original_path,'size_bytes',i.size_bytes,'status',i.status,'worker',i.worker,'category',i.category,'reason',i.reason,'output_file_id',i.output_file_id,'updated_at',i.updated_at),? FROM phase_one_items i JOIN phase_one_jobs j ON j.id=i.job_id WHERE j.source_file_id=?").bind(p.source_file_id,now(),p.source_file_id),
  env.DB.prepare('DELETE FROM phase_one_items WHERE job_id IN (SELECT id FROM phase_one_jobs WHERE source_file_id=?)').bind(p.source_file_id),
  env.DB.prepare("UPDATE phase_one_jobs SET status='PENDING',error=NULL,updated_at=? WHERE source_file_id=?").bind(now(),p.source_file_id),
- env.DB.prepare("UPDATE holding_preparations SET status='COMPLETE',updated_at=? WHERE source_file_id=? AND status='READY'").bind(now(),p.source_file_id)
+ env.DB.prepare("UPDATE holding_preparations SET status='COMPLETE',updated_at=? WHERE source_file_id=? AND status='SCANNED'").bind(now(),p.source_file_id)
  ]);}
  await finishReports(env);
  for(const table of ['phase_one_jobs','phase_one_items']){
@@ -44,7 +44,7 @@ export async function queuePhaseOne(env){
  }
  }
 }
-async function register(env,source,key,path,size,category){
+export async function register(env,source,key,path,size,category){
  const folder=path.slice(0,path.lastIndexOf('/')),time=now();
  await env.DB.prepare('INSERT OR IGNORE INTO project_folders(id,project_id,folder_path,created_at,updated_at) VALUES(?,?,?,?,?)').bind(crypto.randomUUID(),source.project_id,folder,time,time).run();
  await env.DB.prepare(`INSERT OR IGNORE INTO project_files(project_id,r2_key,file_name,relative_path,file_type,size_bytes,review_status,source_class,uploaded_at,updated_at) VALUES(?,?,?,?,?,? ,?,'PHASE ONE WORKING COPY',?,?)`).bind(source.project_id,key,path.split('/').pop(),path,'application/octet-stream',size,`PHASE ONE REVIEW REQUIRED: ${category}`,time,time).run();
@@ -105,7 +105,7 @@ async function finishReports(env){
  await env.DB.prepare("UPDATE phase_one_jobs SET status='COMPLETE',updated_at=? WHERE id=?").bind(now(),job.id).run();
  }
 }
-async function unpack(env,source,item,key){
+export async function unpack(env,source,item,key){
  if(await env.PROJECT_FILES.head(key))return;
  const pipe=new TransformStream();const upload=storeStream(env,key,pipe.readable,item.size_bytes);upload.catch(()=>{});
  // R2 put accepts streams; ZIP decoding is streamed rather than loading the archive into memory.
@@ -121,7 +121,8 @@ async function processItem(env,item){
  if(!safe(item.original_path))throw new Error('Unsafe path');
  const key=`projects/${source.project_id}/phase-one/${item.id}`;
  await unpack(env,source,item,key);
- const result=await review(env,key,item);
+ const scanned=source.source_class==='HOLDING PREPARED PACKAGE'?await env.DB.prepare("SELECT i.category,i.brain_key FROM holding_scan_items i JOIN holding_preparations p ON p.source_file_id=i.source_file_id WHERE p.prepared_file_id=? AND i.original_path=? AND i.status='COMPLETE'").bind(source.id,item.original_path).first():null;
+ const result=scanned?{category:scanned.category,reason:'Detailed intake review saved in Mason Project Brain: '+scanned.brain_key}:await review(env,key,item);
  const path=`${ROOT}/${source.id} - ${source.file_name.replace(/[^\w .()-]/g,'_')}/${result.category}/${item.original_path}`;
  const fileId=await register(env,source,key,path,item.size_bytes,result.category);
  await env.DB.prepare("UPDATE phase_one_items SET status=?,category=?,reason=?,output_file_id=?,updated_at=? WHERE id=?").bind(result.category==='Needs Review'?'NEEDS_REVIEW':'SORTED',result.category,result.reason,fileId,now(),item.id).run();

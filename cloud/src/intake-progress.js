@@ -10,7 +10,7 @@ export function summarize(jobs,items,phase){
 export async function intakeProgress(env,projectId=null){
  const projects=[];const submissions=await rows(env,'SELECT * FROM phase_project_submissions WHERE (? IS NULL OR project_id=?) ORDER BY sealed_at DESC LIMIT 20',projectId,projectId);
  for(const s of submissions){
- const preparation=await rows(env,`SELECT p.* FROM holding_preparations p WHERE p.source_file_id IN (SELECT value FROM json_each(?))`,s.source_file_ids_json);
+ const preparation=await rows(env,`SELECT p.*,(SELECT COUNT(*) FROM holding_scan_items i WHERE i.source_file_id=p.source_file_id) scan_total,(SELECT COUNT(*) FROM holding_scan_items i WHERE i.source_file_id=p.source_file_id AND i.status='COMPLETE') scan_done FROM holding_preparations p WHERE p.source_file_id IN (SELECT value FROM json_each(?))`,s.source_file_ids_json);
  const phases=[];
  for(let phase=1;phase<=13;phase++){
  let jobs=[],items=[];

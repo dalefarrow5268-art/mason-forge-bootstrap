@@ -16,8 +16,10 @@ def r2(action,key,path):
     if p.returncode:raise RuntimeError('R2 '+action+' failed: '+p.stderr[-300:])
 def main():
     # The deployment applies this migration. Do not release work to an old Worker.
-    with urllib.request.urlopen('https://mason-forge-cloud.mason-forge-ssx.workers.dev/health',timeout=60) as r:h=json.load(r)
-    if h.get('releaseId')!='2026-09-05-holding-preparation':raise RuntimeError('Holding-enabled Worker deployment is not live')
+    req=urllib.request.Request(BASE+'/workers/scripts/mason-forge-cloud/settings',headers={'Authorization':'Bearer '+TOKEN})
+    with urllib.request.urlopen(req,timeout=60) as r:settings=json.load(r)
+    bindings=settings.get('result',{}).get('bindings',[])
+    if not any(x.get('name')=='RELEASE_ID' and x.get('text')=='2026-09-05-holding-brain-scan' for x in bindings):raise RuntimeError('Holding scanner deployment not live')
     query("INSERT OR IGNORE INTO holding_preparations(source_file_id,updated_at) SELECT j.source_file_id,? FROM phase_one_jobs j JOIN project_files f ON f.id=j.source_file_id WHERE f.source_class='PHASE ONE INTAKE' AND j.status='PENDING'",[now()])
     jobs=query("SELECT p.*,f.r2_key,f.file_name,f.size_bytes,f.project_id FROM holding_preparations p JOIN project_files f ON f.id=p.source_file_id WHERE f.archived_at IS NULL AND (p.status='PENDING' OR (p.status='RUNNING' AND p.updated_at<?)) AND p.attempts<5 ORDER BY p.source_file_id LIMIT 3",[(datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(minutes=40)).isoformat()])
     for job in jobs:
@@ -34,7 +36,7 @@ def main():
                     if time.monotonic()-last[0]>10:
                         query('UPDATE holding_preparations SET pages_total=?,units_done=?,files_total=?,updated_at=? WHERE source_file_id=?',[m['pagesTotal'],m['unitsDone'],len(m['files']),now(),sid]);last[0]=time.monotonic()
                 m=prepare(src,job['file_name'],out,mp,progress)
-                key=f"projects/{job['project_id']}/holding-prepared/{sid}/{m['sourceSha256']}/prepared.zip";mk=key+'.manifest.json'
+                key=f"projects/{job['project_id']}/Mason Project Brain/Intake/{sid}/{m['sourceSha256']}/prepared.zip";mk=key+'.manifest.json'
                 r2('put',key,out);r2('put',mk,mp)
                 # Download and hash the stored package before releasing Phase One.
                 check=root/'verify.zip';r2('get',key,check)
@@ -50,6 +52,6 @@ def main():
             print(json.dumps({'sourceFileId':sid,'preparation':'NEEDS_REVIEW' if terminal else 'RETRY_PENDING','error':str(e)[:300]}),flush=True)
             raise
     # Wake the existing authenticated-by-internal-binding scheduler via its health hook.
-    with urllib.request.urlopen('https://mason-forge-cloud.mason-forge-ssx.workers.dev/health',timeout=60) as r:r.read()
+    # The two-minute Worker cron now starts scanner jobs without an HTTP wakeup.
     print(json.dumps(query("SELECT j.id,j.status,COUNT(i.id) inventoried FROM phase_one_jobs j LEFT JOIN phase_one_items i ON i.job_id=j.id WHERE j.source_file_id IN (SELECT source_file_id FROM holding_preparations) GROUP BY j.id")),flush=True)
 if __name__=='__main__':main()

@@ -1,3 +1,4 @@
+import {queueHoldingScan,processHoldingScan} from './holding-brain-scan.js';
 import {intakeProgress} from './intake-progress.js';
 import {queuePhaseIntake,processPhaseIntake} from './phase-intake.js';
 import { queuePhaseSeven, processPhaseSeven } from './phase-seven-reports.js';
@@ -306,6 +307,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/health" && request.method === "GET") {
       await queuePhaseIntake(env);
+    await queueHoldingScan(env);
     await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
@@ -320,6 +322,7 @@ export default {
     }
     if (url.pathname === "/api/connector/bootstrap" && request.method === "GET" && authorized(request, env)) {
       await queuePhaseIntake(env);
+    await queueHoldingScan(env);
     await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
@@ -344,6 +347,9 @@ export default {
     await ensureRuntimeSchema(env);
     for (const message of batch.messages) {
       const body = message.body || {};
+      if(body.kind === 'HOLDING_SCAN') {
+        try {await processHoldingScan(body,env);message.ack();}catch(error){console.error('Holding scan retry',body.id,String(error));message.retry({delaySeconds:120});}continue;
+      }
       if(body.kind === 'PHASE_INTAKE') {
         try { await processPhaseIntake(body,env); message.ack(); }
         catch(error) { console.error('Phase intake retry',body.id,String(error)); message.retry({delaySeconds:120}); }
@@ -414,6 +420,7 @@ export default {
     }
 
     await queuePhaseIntake(env);
+    await queueHoldingScan(env);
     await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
@@ -430,6 +437,7 @@ export default {
   async scheduled(_event, env) {
     await ensureRuntimeSchema(env);
     await queuePhaseIntake(env);
+    await queueHoldingScan(env);
     await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
@@ -443,3 +451,4 @@ export default {
     await intakeProgress(env);
   },
 };
+

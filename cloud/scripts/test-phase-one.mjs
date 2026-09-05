@@ -8,6 +8,7 @@ sql.exec(`CREATE TABLE project_files(id INTEGER PRIMARY KEY,project_id INTEGER,r
 sql.exec(readFileSync(new URL('../schema/0007_phase_one_review.sql',import.meta.url),'utf8'));
 sql.exec(readFileSync(new URL('../schema/0008_phase_two.sql',import.meta.url),'utf8'));
 sql.exec(readFileSync(new URL('../schema/0017_holding_preparation.sql',import.meta.url),'utf8')); 
+sql.exec(readFileSync(new URL('../schema/0018_holding_brain_scan.sql',import.meta.url),'utf8'));
 const DB={async batch(statements){return Promise.all(statements.map(s=>s.run()));},prepare(s){return {bind(...p){return {
  async run(){return {meta:{changes:sql.prepare(s).run(...p).changes}};},
  async first(){return sql.prepare(s).get(...p);},
@@ -43,8 +44,27 @@ await processPhaseOne({table:'phase_one_jobs',id:'intake-200'},env);
 assert.equal(sql.prepare("SELECT status FROM phase_one_jobs WHERE id='intake-200'").get().status,'PENDING');
 objects.set('prepared200',bytes);
 sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(201,3,'prepared200','prepared.zip','Prepared/200.zip',?,'HOLDING PREPARED PACKAGE')").run(bytes.length);
-sql.prepare("UPDATE holding_preparations SET status='READY',prepared_file_id=201,updated_at='now' WHERE source_file_id=200").run();
+sql.prepare("UPDATE holding_preparations SET status='SCANNED',prepared_file_id=201,updated_at='now' WHERE source_file_id=200").run();
 await queuePhaseOne(env);assert(sent.some(x=>x.id==='intake-200'));
 await processPhaseOne({table:'phase_one_jobs',id:'intake-200'},env);
 assert.equal(sql.prepare("SELECT COUNT(*) n FROM phase_one_items WHERE job_id='intake-200'").get().n,1);
 console.log('PASS: preparation gate, stale-message gate and verified-package inventory');
+// Brain scan must precede Phase One. Use real ZIP handling and mocked model evidence.
+const {queueHoldingScan,processHoldingScan,validScan}=await import('../src/holding-brain-scan.js');
+sql.exec(readFileSync(new URL('../schema/0018_holding_brain_scan.sql',import.meta.url),'utf8'));
+assert(!validScan({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[]}));
+assert(!validScan({coverage:'PARTIAL',category:'Plans',unreadableRegions:[],findings:[{location:'top',content:'note'}]}));
+const scanZip=new ZipWriter(new Uint8ArrayWriter(),{useWebWorkers:false});await scanZip.add('source/notes.txt',new TextReader('Project note: retain original.'));const scanBytes=await scanZip.close();objects.set('scan300',scanBytes);
+sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(300,3,'source300','original.zip','Holding/original.zip',100,'PHASE ONE INTAKE')").run();
+sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(301,3,'scan300','prepared.zip','Prepared/300.zip',?,'HOLDING PREPARED PACKAGE')").run(scanBytes.length);
+sql.prepare("INSERT INTO phase_one_jobs(id,source_file_id,created_at,updated_at) VALUES('intake-300',300,'now','now')").run();
+sql.prepare("INSERT INTO holding_preparations(source_file_id,status,prepared_file_id,units_done,updated_at) VALUES(300,'READY',301,1,'now')").run();
+await queuePhaseOne(env);assert(!sent.some(x=>x.id==='intake-300'),'preparation alone cannot start phases');
+await queueHoldingScan(env);const task=sent.find(x=>x.kind==='HOLDING_SCAN');assert(task);
+const originalFetch=globalThis.fetch;env.OPENAI_API_KEY='fixture-only';
+globalThis.fetch=async()=>Response.json({output:[{content:[{type:'output_text',text:JSON.stringify({coverage:'COMPLETE',category:'Documents',unreadableRegions:[],findings:[{kind:'note',location:'line 1',content:'Project note: retain original.'}],scaleVerified:false})}]}]});
+await processHoldingScan(task,env);globalThis.fetch=originalFetch;
+await queueHoldingScan(env);assert.equal(sql.prepare('SELECT status FROM holding_preparations WHERE source_file_id=300').get().status,'SCANNED');
+const scanned=sql.prepare('SELECT * FROM holding_scan_items WHERE source_file_id=300').get();assert.equal(scanned.status,'COMPLETE');assert(objects.has(scanned.brain_key));
+await queuePhaseOne(env);assert(sent.some(x=>x.id==='intake-300'),'only saved Brain scan releases Phase One');
+console.log('PASS: preparation is not review; complete saved Brain scan required before Phase One');

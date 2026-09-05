@@ -1,0 +1,64 @@
+{
+  "observedAt": "2026-09-05T16:37:05.884Z",
+  "submissionId": "bask-bradenton-2513-v1",
+  "projectId": 3,
+  "holdingSourceFileId": 2514,
+  "issueId": "bradenton-whole-sheet-review-resolution",
+  "priorContinuity": {
+    "preparedPages": 169,
+    "sourceFiles": 3,
+    "priorRepairCommit": "85cf5d0f75e71bcc1c511486fd01fc9cb44ecb17",
+    "priorRepair": "Removed unused shared PDF resources while preserving page geometry and rendered appearance."
+  },
+  "diagnosticEvidence": {
+    "scannerState": {
+      "NEEDS_REVIEW": 50,
+      "COMPLETE": 9,
+      "QUEUED": 109,
+      "RUNNING": 1
+    },
+    "reviewRecordsInspected": 50,
+    "missingReviewRecords": 0,
+    "partialCoverageRecords": 50,
+    "unreadableRegions": 198,
+    "emptyFindingRecords": 0,
+    "dominantFailure": "Whole-sheet rendering made dense dimensions, notes, schedules, symbols and callouts too small for reliable transcription.",
+    "diagnosticWorkflowRun": "https://github.com/dalefarrow5268-art/mason-forge-bootstrap/actions/runs/33978365084"
+  },
+  "diagnosis": "The queue was active and not stale. The scanner's single whole-page input was an inadequate review unit for dense construction sheets. The conservative COMPLETE gate correctly rejected those results.",
+  "repair": {
+    "status": "IMPLEMENTED_AWAITING_PRODUCTION_VERIFICATION",
+    "changes": [
+      "Preserve each original single-page PDF as the Phase One source.",
+      "Create a 3-by-3 grid of overlapping, vector-preserving detail-region PDFs for every source page.",
+      "Require all nine detail regions to pass before the logical source page can be released.",
+      "Exclude detail-region files from Phase One inventory so they cannot duplicate or replace the original page.",
+      "Archive all first-pass scanner rows and Brain pointers before the controlled Bradenton retry.",
+      "Report logical page totals and completed logical pages separately from scan-unit totals.",
+      "Extend Holding preparation workflow timeout to 120 minutes for the larger verified package."
+    ],
+    "safety": [
+      "Original upload is unchanged.",
+      "Prior first-pass results are archived, not destroyed.",
+      "No CSI codes, measurements, prices or invitations were created.",
+      "Printed drawing scales remain unverified."
+    ]
+  },
+  "verification": {
+    "local": [
+      "Python Holding preparation tests passed, including 9 detail regions per PDF page.",
+      "Worker syntax validation passed.",
+      "Connector and dashboard authentication tests passed.",
+      "Phase One and complete 13-phase pipeline tests passed.",
+      "Phase One test confirms detail regions are excluded and linked to the preserved source page.",
+      "Dashboard tests and production build passed.",
+      "Actual Bradenton sample page produced one lossless page plus nine detail regions deterministically."
+    ],
+    "production": "Pending GitHub Actions validation, Cloudflare migration/deployment, new Bradenton preparation and live detail-region scanner evidence."
+  },
+  "remainingBlockers": [
+    "Verified CSI 2026 catalog is still required before divisions and sections can complete.",
+    "BASK estimate delivery connection is still unverified.",
+    "Detail-region production results must be observed before Phase One is released."
+  ]
+}

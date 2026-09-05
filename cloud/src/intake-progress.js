@@ -10,7 +10,13 @@ export function summarize(jobs,items,phase){
 export async function intakeProgress(env,projectId=null){
  const projects=[];const submissions=await rows(env,'SELECT * FROM phase_project_submissions WHERE (? IS NULL OR project_id=?) ORDER BY sealed_at DESC LIMIT 20',projectId,projectId);
  for(const s of submissions){
- const preparation=await rows(env,`SELECT p.*,(SELECT COUNT(*) FROM holding_scan_items i WHERE i.source_file_id=p.source_file_id) scan_total,(SELECT COUNT(*) FROM holding_scan_items i WHERE i.source_file_id=p.source_file_id AND i.status='COMPLETE') scan_done FROM holding_preparations p WHERE p.source_file_id IN (SELECT value FROM json_each(?))`,s.source_file_ids_json);
+ const preparation=await rows(env,`SELECT p.*,
+ (SELECT COUNT(*) FROM holding_scan_items i WHERE i.source_file_id=p.source_file_id) scan_total,
+ (SELECT COUNT(*) FROM holding_scan_items i WHERE i.source_file_id=p.source_file_id AND i.status='COMPLETE') scan_done,
+ (SELECT COUNT(*) FROM holding_scan_items i WHERE i.source_file_id=p.source_file_id AND i.status='NEEDS_REVIEW') scan_needs_review,
+ (SELECT COUNT(DISTINCT COALESCE(i.source_path,i.original_path)) FROM holding_scan_items i WHERE i.source_file_id=p.source_file_id) scan_pages_total,
+ (SELECT COUNT(*) FROM (SELECT COALESCE(i.source_path,i.original_path) path FROM holding_scan_items i WHERE i.source_file_id=p.source_file_id GROUP BY path HAVING SUM(CASE WHEN i.status='COMPLETE' THEN 0 ELSE 1 END)=0)) scan_pages_done
+ FROM holding_preparations p WHERE p.source_file_id IN (SELECT value FROM json_each(?))`,s.source_file_ids_json);
  const phases=[];
  for(let phase=1;phase<=13;phase++){
  let jobs=[],items=[];
@@ -58,4 +64,3 @@ export async function intakeDashboardRoute(request,env){
  }
  return Response.json(await intakeProgress(env),{headers:{'cache-control':'no-store'}});
 }
-

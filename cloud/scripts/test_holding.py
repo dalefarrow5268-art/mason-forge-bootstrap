@@ -12,8 +12,8 @@ class HoldingTests(unittest.TestCase):
    source=d/'source.zip'
    with zipfile.ZipFile(source,'w') as z:z.write(pdf,'plans/set.pdf');z.writestr('notes.txt','Original note')
    before=sha(source);m=prepare(source,'source.zip',d/'out.zip',d/'manifest.json')
-   self.assertEqual(sha(source),before);self.assertEqual(m['pagesTotal'],3);self.assertEqual(m['unitsDone'],4)
-   self.assertEqual([x['originalPage'] for x in m['files'][0]['outputs']],[1,2,3]);self.assertFalse(m['scaleVerified'])
+   self.assertEqual(sha(source),before);self.assertEqual(m['pagesTotal'],3);self.assertEqual(m['unitsDone'],4);self.assertEqual(m['scanUnitsTotal'],28)
+   self.assertEqual([x['originalPage'] for x in m['files'][0]['outputs']],[1,2,3]);self.assertTrue(all(len(x['scanAssets'])==9 for x in m['files'][0]['outputs']));self.assertFalse(m['scaleVerified'])
    prepare(source,'source.zip',d/'retry.zip',d/'retry.json')
    self.assertEqual(sha(d/'out.zip'),sha(d/'retry.zip'))
  def test_reject_unsafe(self):

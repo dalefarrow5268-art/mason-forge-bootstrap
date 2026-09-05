@@ -139,7 +139,7 @@ export async function fileInputContent(env, file, bytes) {
   }
   if (imageExtensions.has(ext)) {
     return {
-      content: [{ type: "input_image", image_url: `data:${mimeType(file)};base64,${bytesToBase64(bytes)}`, detail: "auto" }],
+      content: [{ type: "input_image", image_url: `data:${mimeType(file)};base64,${bytesToBase64(bytes)}`, detail: "high" }],
       uploadedFileId: null,
     };
   }

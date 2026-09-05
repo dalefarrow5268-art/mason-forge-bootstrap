@@ -9,6 +9,7 @@ sql.exec(readFileSync(new URL('../schema/0007_phase_one_review.sql',import.meta.
 sql.exec(readFileSync(new URL('../schema/0008_phase_two.sql',import.meta.url),'utf8'));
 sql.exec(readFileSync(new URL('../schema/0017_holding_preparation.sql',import.meta.url),'utf8')); 
 sql.exec(readFileSync(new URL('../schema/0018_holding_brain_scan.sql',import.meta.url),'utf8'));
+sql.exec(readFileSync(new URL('../schema/0020_holding_detail_tiles.sql',import.meta.url),'utf8'));
 const DB={async batch(statements){return Promise.all(statements.map(s=>s.run()));},prepare(s){return {bind(...p){return {
  async run(){return {meta:{changes:sql.prepare(s).run(...p).changes}};},
  async first(){return sql.prepare(s).get(...p);},
@@ -53,6 +54,7 @@ console.log('PASS: preparation gate, stale-message gate and verified-package inv
 const {queueHoldingScan,processHoldingScan,validScan}=await import('../src/holding-brain-scan.js');
 sql.exec(readFileSync(new URL('../schema/0018_holding_brain_scan.sql',import.meta.url),'utf8'));
 assert(!validScan({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[]}));
+assert(validScan({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[],blank:true}));
 assert(!validScan({coverage:'PARTIAL',category:'Plans',unreadableRegions:[],findings:[{location:'top',content:'note'}]}));
 const scanZip=new ZipWriter(new Uint8ArrayWriter(),{useWebWorkers:false});await scanZip.add('source/notes.txt',new TextReader('Project note: retain original.'));const scanBytes=await scanZip.close();objects.set('scan300',scanBytes);
 sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(300,3,'source300','original.zip','Holding/original.zip',100,'PHASE ONE INTAKE')").run();
@@ -68,3 +70,22 @@ await queueHoldingScan(env);assert.equal(sql.prepare('SELECT status FROM holding
 const scanned=sql.prepare('SELECT * FROM holding_scan_items WHERE source_file_id=300').get();assert.equal(scanned.status,'COMPLETE');assert(objects.has(scanned.brain_key));
 await queuePhaseOne(env);assert(sent.some(x=>x.id==='intake-300'),'only saved Brain scan releases Phase One');
 console.log('PASS: preparation is not review; complete saved Brain scan required before Phase One');
+
+// Detail tiles are scanner evidence, not duplicate Phase One source files.
+sent.length=0;
+const tiledZip=new ZipWriter(new Uint8ArrayWriter(),{useWebWorkers:false});
+await tiledZip.add('plans/page-00001.pdf',new TextReader('lossless page source'));
+await tiledZip.add('plans/page-00001.pdf.brain-scan/tile-r1-c1.pdf',new TextReader('tile one'));
+await tiledZip.add('plans/page-00001.pdf.brain-scan/tile-r1-c2.pdf',new TextReader('tile two'));
+const tiledBytes=await tiledZip.close();objects.set('prepared400',tiledBytes);
+sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(400,3,'source400','original.zip','Holding/original.zip',100,'PHASE ONE INTAKE')").run();
+sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(401,3,'prepared400','prepared.zip','Prepared/400.zip',?,'HOLDING PREPARED PACKAGE')").run(tiledBytes.length);
+sql.prepare("INSERT INTO phase_one_jobs(id,source_file_id,created_at,updated_at) VALUES('intake-400',400,'now','now')").run();
+sql.prepare("INSERT INTO holding_preparations(source_file_id,status,prepared_file_id,units_done,scan_units_total,updated_at) VALUES(400,'SCANNED',401,1,2,'now')").run();
+sql.prepare("INSERT INTO holding_scan_items(id,source_file_id,entry_index,original_path,source_path,asset_role,size_bytes,status,brain_key,category,updated_at) VALUES('scan-400-1',400,1,'plans/page-00001.pdf.brain-scan/tile-r1-c1.pdf','plans/page-00001.pdf','DETAIL_TILE',8,'COMPLETE','brain/1','Plans','now'),('scan-400-2',400,2,'plans/page-00001.pdf.brain-scan/tile-r1-c2.pdf','plans/page-00001.pdf','DETAIL_TILE',8,'COMPLETE','brain/2','Plans','now')").run();
+await queuePhaseOne(env);await processPhaseOne(sent.find(x=>x.id==='intake-400'),env);await queuePhaseOne(env);
+assert.equal(sql.prepare("SELECT COUNT(*) n FROM phase_one_items WHERE job_id='intake-400'").get().n,1);
+const tiledTask={table:'phase_one_items',id:sql.prepare("SELECT id FROM phase_one_items WHERE job_id='intake-400'").get().id};
+await processPhaseOne(tiledTask,env);
+assert.equal(sql.prepare("SELECT category FROM phase_one_items WHERE job_id='intake-400'").get().category,'Plans');
+console.log('PASS: overlapping detail assets are excluded from Phase One inventory and linked to the preserved page');

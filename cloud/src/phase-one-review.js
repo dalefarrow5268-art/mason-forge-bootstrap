@@ -46,8 +46,10 @@ export async function queuePhaseOne(env){
 }
 export async function register(env,source,key,path,size,category){
  const folder=path.slice(0,path.lastIndexOf('/')),time=now();
+ const ext=path.split('.').pop().toLowerCase();
+ const types={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',json:'application/json',txt:'text/plain',csv:'text/csv',md:'text/markdown',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'};
  await env.DB.prepare('INSERT OR IGNORE INTO project_folders(id,project_id,folder_path,created_at,updated_at) VALUES(?,?,?,?,?)').bind(crypto.randomUUID(),source.project_id,folder,time,time).run();
- await env.DB.prepare(`INSERT OR IGNORE INTO project_files(project_id,r2_key,file_name,relative_path,file_type,size_bytes,review_status,source_class,uploaded_at,updated_at) VALUES(?,?,?,?,?,? ,?,'PHASE ONE WORKING COPY',?,?)`).bind(source.project_id,key,path.split('/').pop(),path,'application/octet-stream',size,`PHASE ONE REVIEW REQUIRED: ${category}`,time,time).run();
+ await env.DB.prepare(`INSERT OR IGNORE INTO project_files(project_id,r2_key,file_name,relative_path,file_type,size_bytes,review_status,source_class,uploaded_at,updated_at) VALUES(?,?,?,?,?,? ,?,'PHASE ONE WORKING COPY',?,?)`).bind(source.project_id,key,path.split('/').pop(),path,types[ext]||'application/octet-stream',size,`PHASE ONE REVIEW REQUIRED: ${category}`,time,time).run();
  return (await env.DB.prepare('SELECT id FROM project_files WHERE r2_key=?').bind(key).first()).id;
 }
 async function sourceFor(env,jobId){return env.DB.prepare(`SELECT f.* FROM phase_one_jobs j LEFT JOIN holding_preparations p ON p.source_file_id=j.source_file_id AND p.status='COMPLETE' JOIN project_files f ON f.id=COALESCE(p.prepared_file_id,j.source_file_id) WHERE j.id=?`).bind(jobId).first();}
@@ -60,6 +62,7 @@ async function inventory(env,job){
  const reader=new ZipReader(new R2Reader(env.PROJECT_FILES,source.r2_key,source.size_bytes));let index=0,total=0;
  try{for await(const e of reader.getEntriesGenerator()){
  const i=index++;if(index>50000)throw new Error('More than 50,000 archive entries; staff review needed');if(e.directory)continue;
+ if(e.filename.includes('.brain-scan/'))continue;
  total+=e.uncompressedSize;if(total>1024**4)throw new Error('Expanded archive exceeds 1 TiB review limit');
  const reason=!safe(e.filename)?'Unsafe archive path':e.encrypted?'Password-protected entry':e.symlink?'Symbolic link':e.uncompressedSize>64*1024**3?'Entry exceeds 64 GiB automated unpack limit':e.uncompressedSize>Math.max(1024**3,e.compressedSize*1000)?'Extreme compression ratio':null;
  await add(i,e.filename,e.uncompressedSize,reason);
@@ -121,8 +124,11 @@ async function processItem(env,item){
  if(!safe(item.original_path))throw new Error('Unsafe path');
  const key=`projects/${source.project_id}/phase-one/${item.id}`;
  await unpack(env,source,item,key);
- const scanned=source.source_class==='HOLDING PREPARED PACKAGE'?await env.DB.prepare("SELECT i.category,i.brain_key FROM holding_scan_items i JOIN holding_preparations p ON p.source_file_id=i.source_file_id WHERE p.prepared_file_id=? AND i.original_path=? AND i.status='COMPLETE'").bind(source.id,item.original_path).first():null;
- const result=scanned?{category:scanned.category,reason:'Detailed intake review saved in Mason Project Brain: '+scanned.brain_key}:await review(env,key,item);
+ const scans=source.source_class==='HOLDING PREPARED PACKAGE'?(await env.DB.prepare("SELECT i.category,i.brain_key,i.status FROM holding_scan_items i JOIN holding_preparations p ON p.source_file_id=i.source_file_id WHERE p.prepared_file_id=? AND COALESCE(i.source_path,i.original_path)=?").bind(source.id,item.original_path).all()).results||[]:[];
+ const scanned=scans.length&&scans.every(x=>x.status==='COMPLETE');
+ const categoryCounts=Object.fromEntries(CATEGORIES.map(category=>[category,scans.filter(x=>x.category===category).length]));
+ const category=Object.entries(categoryCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||assignWorker(item.original_path);
+ const result=scanned?{category:category==='Needs Review'?assignWorker(item.original_path):category,reason:`Detailed intake review saved in Mason Project Brain (${scans.length} overlapping regions).`}:await review(env,key,item);
  const path=`${ROOT}/${source.id} - ${source.file_name.replace(/[^\w .()-]/g,'_')}/${result.category}/${item.original_path}`;
  const fileId=await register(env,source,key,path,item.size_bytes,result.category);
  await env.DB.prepare("UPDATE phase_one_items SET status=?,category=?,reason=?,output_file_id=?,updated_at=? WHERE id=?").bind(result.category==='Needs Review'?'NEEDS_REVIEW':'SORTED',result.category,result.reason,fileId,now(),item.id).run();
@@ -146,4 +152,3 @@ export async function processPhaseOne(body,env,attempt=1){
  }
  await env.DB.prepare(`UPDATE ${table} SET status=?,${table==='phase_one_jobs'?'error':'reason'}=?,updated_at=? WHERE id=?`).bind(attempt>=5?'NEEDS_REVIEW':'PENDING',error,now(),row.id).run();if(attempt<5)throw e;}
 }
-

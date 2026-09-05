@@ -32,14 +32,21 @@ jobs:
           node --input-type=module <<'NODE'
           import fs from 'node:fs/promises';
           const proxy = 'https://mason-forge-live.vercel.app/api/mason';
+          const errors = [];
           const fetchJson = async (url) => {
+            try {
             const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}_diagnostic=${Date.now()}-${Math.random()}`, {
               cache: 'no-store',
+              signal: AbortSignal.timeout(30000),
               headers: { 'cache-control': 'no-store, no-cache, max-age=0', pragma: 'no-cache' },
             });
             const text = await response.text();
             if (!response.ok) throw new Error(`${url} HTTP ${response.status}: ${text.slice(0, 2000)}`);
             return JSON.parse(text);
+            } catch (error) {
+              errors.push({ url, error: String(error.message) });
+              return {};
+            }
           };
           const viaProxy = (path) => `${proxy}?path=${encodeURIComponent(path)}`;
           const extension = (name = '') => name.includes('.') ? name.toLowerCase().split('.').pop() : '(none)';
@@ -85,7 +92,9 @@ jobs:
               if (failedSamples.length < 30) failedSamples.push({ projectId: file.project_id, fileId: file.id, extension: ext, sizeBytes: Number(file.size_bytes || 0), reason });
             }
           }
-          report.totalFiles = files.length;
+          report.errors = errors;
+          report.collectionComplete = errors.length === 0;
+          report.totalFiles = errors.length ? null : files.length;
           report.byStatus = byStatus;
           report.failedCount = Object.values(failedReasons).reduce((a, b) => a + b, 0);
           report.failedReasons = failedReasons;
@@ -99,11 +108,12 @@ jobs:
             evidenceBatchCount: projectValues.reduce((sum, project) => sum + Number(project.evidenceBatchCount || 0), 0),
             evidenceTasksCreated: projectValues.some((project) => Number(project.taskCount || 0) > 5),
             evidenceOutputsCreated: projectValues.some((project) => Number(project.outputCount || 0) > 5),
-            noExtractionFailures: Object.keys(failedReasons).length === 0,
+            noExtractionFailures: errors.length === 0 && Object.keys(failedReasons).length === 0,
           };
           await fs.mkdir('verification', { recursive: true });
           await fs.writeFile('verification/extraction-diagnostics.json', JSON.stringify(report, null, 2));
           console.log(JSON.stringify(report, null, 2));
+          if (errors.length) process.exitCode = 1;
           NODE
 
       - name: Publish extraction diagnostics

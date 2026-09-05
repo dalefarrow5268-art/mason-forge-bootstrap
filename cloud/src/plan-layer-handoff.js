@@ -35,6 +35,15 @@ export async function queueSheetRouting(env){
   if(changed.meta.changes)try{await env.DEPARTMENT_QUEUE.send({kind:'PLAN_SHEET_ROUTE',id:row.id});}catch(e){await env.DB.prepare("UPDATE plan_layer_jobs SET status='ROUTING_PENDING' WHERE id=? AND status='ROUTING_QUEUED'").bind(row.id).run();throw e;}
  }
 }
+// The shared queue remains the primary route. Cron also consumes a tiny bounded
+// batch directly so sheet preparation cannot stall behind unrelated workloads.
+// processSheetRouting owns the atomic claim, so a simultaneous queue delivery
+// becomes a harmless no-op instead of duplicate model work.
+export async function processSheetRoutingFallback(env){
+ const rows=(await env.DB.prepare("SELECT id FROM plan_layer_jobs WHERE status IN ('ROUTING_PENDING','ROUTING_QUEUED') ORDER BY updated_at LIMIT 2").all()).results||[];
+ for(const row of rows)await processSheetRouting({id:row.id},env);
+ return rows.length;
+}
 export async function processSheetRouting(body,env){
  const job=await env.DB.prepare('SELECT * FROM plan_layer_jobs WHERE id=?').bind(body.id).first();
  if(!job||!['ROUTING_QUEUED','ROUTING_PENDING'].includes(job.status))return;

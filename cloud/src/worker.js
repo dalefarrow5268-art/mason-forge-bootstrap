@@ -1,4 +1,4 @@
-import {processSheetRouting} from './plan-layer-handoff.js';
+import {processSheetRouting,processSheetRoutingFallback} from './plan-layer-handoff.js';
 import {queueTakeoffCrew,processTakeoffWorker} from './takeoff-crew.js';
 import { routePendingBrainFiles } from "./brain-lobe-router.js";
 import {queueHoldingScan,processHoldingScan,releaseCompletedPlanPages,trialNativePageScan,benchmarkA21NativePage} from './holding-brain-scan.js';
@@ -450,6 +450,7 @@ export default {
     await queuePhaseIntake(env);
     await queueHoldingScan(env);
     await releaseCompletedPlanPages(env);
+    if(_event.cron==='*/2 * * * *')await processSheetRoutingFallback(env);
     // HTTP health self-heal has a short background lifetime; only the real cron
     // may run this bounded API benchmark.
     if(_event.cron==='*/2 * * * *')await benchmarkA21NativePage(env);

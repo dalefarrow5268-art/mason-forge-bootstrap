@@ -27,7 +27,7 @@
   },
   "diagnosis": "The queue was active and not stale. The scanner's single whole-page input was an inadequate review unit for dense construction sheets. The conservative COMPLETE gate correctly rejected those results.",
   "repair": {
-    "status": "DEPLOYED_PREPARATION_VERIFIED_TILE_CONTRACT_REPAIR_PENDING",
+    "status": "DEPLOYED_AND_TILE_CONTRACT_REPAIR_VERIFIED",
     "changes": [
       "Preserve each original single-page PDF as the Phase One source.",
       "Create a 3-by-3 grid of overlapping detail regions for every source page.",
@@ -56,7 +56,7 @@
       "Dashboard tests and production build passed.",
       "Actual Bradenton sample page produced one lossless page plus nine detail regions deterministically."
     ],
-    "production": "Release 2026-09-05-holding-detail-tiles-v2 and repair commit 2bb54ee41d9ad3c61a2be39807e472fc54a79731 deployed successfully. The first vector-tile rebuild reached 135 pages and 1,215 detail units, then correctly failed before release because its 1.68-GiB review package exceeded Wrangler's 300-MiB single-object upload limit. The compact retry retained every lossless source page and completed preparation in GitHub Actions run 33979944032: prepared file 2599, 169 pages, 1,521 overlapping review regions, prepared SHA-256 d824cb1aa455dcf3751b87434fbb5f1be3de7f7627320853fdd9dc427db402c8. At 2026-09-05T17:22:34.470Z the queue was active. Five early tile reviews were PARTIAL only because the model treated the expected tile boundary as missing sheet coverage; all contained findings and none lacked a review record. The tile-specific coverage contract was corrected and those first-attempt records are eligible for one controlled retry."
+    "production": "Release 2026-09-05-holding-detail-tiles-v2 and repair commit 2bb54ee41d9ad3c61a2be39807e472fc54a79731 deployed successfully. The first vector-tile rebuild reached 135 pages and 1,215 detail units, then correctly failed before release because its 1.68-GiB review package exceeded Wrangler's 300-MiB single-object upload limit. The compact retry retained every lossless source page and completed preparation in GitHub Actions run 33979944032: prepared file 2599, 169 pages, 1,521 overlapping review regions, prepared SHA-256 d824cb1aa455dcf3751b87434fbb5f1be3de7f7627320853fdd9dc427db402c8. At 2026-09-05T17:22:34.470Z the queue was active. Early tile reviews were PARTIAL only because the model treated the expected tile boundary as missing sheet coverage; all contained findings and none lacked a review record. Commits 0dfeb7c1b8381cf2016bdd3887a7bf2e258fbf4f and c3e1a3beb6052314eb2ac2459e90c37f9d55479d corrected the tile-specific coverage contract and prioritized one controlled retry. CI, verification and production deploy run 33981274222 passed. At 2026-09-05T17:35:10.359Z all twelve false NEEDS_REVIEW flags had cleared, nine detail regions were COMPLETE, no scanner errors were reported, and the remaining regions were actively queued or pending."
   },
   "remainingBlockers": [
     "Verified CSI 2026 catalog is still required before divisions and sections can complete.",

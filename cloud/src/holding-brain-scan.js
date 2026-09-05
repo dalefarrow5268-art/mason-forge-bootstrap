@@ -8,6 +8,24 @@ const structuredText=value=>{if(typeof value==='string')return value;if(value&&t
 export function normalizeScan(r){if(!r||!Array.isArray(r.findings))return r;return {...r,findings:r.findings.map(f=>f&&typeof f==='object'?{...f,content:structuredText(f.content)}:f)};}
 export function validScan(r){return r&&r.coverage==='COMPLETE'&&Array.isArray(r.unreadableRegions)&&r.unreadableRegions.length===0&&categories.includes(r.category)&&Array.isArray(r.findings)&&(r.blank===true||r.findings.length>0)&&r.findings.every(f=>typeof f.content==='string'&&f.content.trim()&&typeof f.location==='string'&&f.location.trim());}
 export function scanPrompt(detail=false){return `${detail?'Review the ENTIRE supplied overlapping detail tile from one construction sheet':'Review the ENTIRE supplied page or file'} before project phases begin. This is a detailed source record, not a summary. ${detail?'Judge coverage only for the pixels visible inside this supplied tile. The tile edges and the absence of the rest of the sheet are expected: do not mark coverage PARTIAL, and do not create an unreadable region, merely because this asset is a tile or because content continues beyond a tile edge. Adjacent overlapping tiles are reviewed separately and the system requires all tiles before releasing the logical page. Mark PARTIAL only when visible content inside this tile is actually illegible, obscured, uninspected, or cannot fit in the response.':'Judge coverage for the complete supplied page or file.'} Read all visible titles, sheet IDs, notes, dimensions and units, legends, schedules and tables (including every readable row), symbols, details, keynotes, callouts, revisions, cross references and drawing scale labels. Describe photos. Record every observed item with its location and exact text where legible. Do not infer obscured text, dimensions or measurements. A printed scale is not verified. Return JSON {category:Plans|Documents|Photos|Geotech,coverage:COMPLETE|PARTIAL,blank:boolean,unreadableRegions:[{location,reason}],findings:[{kind,location,content}],sheetId:string,scaleVerified:false}. Set blank true only after inspecting the entire supplied ${detail?'tile':'region'} and confirming it contains no project content. If visible content is unreadable, review cannot fit within the response, or any part inside the supplied ${detail?'tile':'region'} was not inspected, return PARTIAL and identify each real gap. Do not claim complete coverage from a summary.`;}
+export function vectorRegionPrompt(path){
+ const match=/\.brain-scan\/tile-r([1-3])-c([1-3])\.(?:jpe?g|png|webp)$/i.exec(path||'');
+ if(!match)throw new Error('Detail tile path does not identify a 3-by-3 review region');
+ const row=Number(match[1]),column=Number(match[2]),overlap=.08/3;
+ const left=Math.max(0,(column-1)/3-overlap),right=Math.min(1,column/3+overlap);
+ const top=Math.max(0,(row-1)/3-overlap),bottom=Math.min(1,row/3+overlap);
+ const percent=value=>(value*100).toFixed(1)+'%';
+ return `Review only the target region of this complete, lossless/vector construction-sheet PDF: row ${row}, column ${column} of a 3-by-3 grid, including the same 8%-of-cell overlap used by the detail scanner. The target spans approximately ${percent(left)}-${percent(right)} of sheet width from the left and ${percent(top)}-${percent(bottom)} of sheet height from the top. The full page is supplied only so fine text in that region can be read from the highest-fidelity source after the raster tile proved insufficient. Ignore content outside the target region; adjacent regions are reviewed separately. Judge coverage only inside the target region, and do not mark outside content or the region boundary unreadable. Read every legible title, note, dimension and unit, legend or table row, symbol, detail, keynote, callout, revision, cross-reference and scale label inside the target. Do not infer obscured text or measurements. Return JSON {category:Plans|Documents|Photos|Geotech,coverage:COMPLETE|PARTIAL,blank:boolean,unreadableRegions:[{location,reason}],findings:[{kind,location,content}],sheetId:string,scaleVerified:false}. Set blank true only if the entire target region has no project content. Mark PARTIAL and identify the real gap if any content inside the target remains illegible or uninspected. Do not claim complete coverage from a summary.`;
+}
+async function preparedEntry(env,source,path){
+ if(!safe(path))throw new Error('Prepared source path is unsafe');
+ const reader=new ZipReader(new R2Reader(env.PROJECT_FILES,source.r2_key,source.size_bytes));let index=0;
+ try{for await(const entry of reader.getEntriesGenerator()){
+  const entryIndex=index++;if(entry.directory)continue;
+  if(entry.filename===path){if(entry.encrypted||entry.symlink||entry.uncompressedSize>20*1024**2)throw new Error('Vector retry source is invalid');return {entry_index:entryIndex,original_path:path,size_bytes:entry.uncompressedSize};}
+ }}finally{await reader.close();}
+ throw new Error('Vector retry source page is missing from prepared package');
+}
 export async function queueHoldingScan(env){
  const waiting=(await env.DB.prepare("SELECT p.*,f.r2_key,f.size_bytes FROM holding_preparations p JOIN project_files f ON f.id=p.prepared_file_id WHERE p.status='READY' LIMIT 3").all()).results||[];
  for(const p of waiting){
@@ -26,8 +44,8 @@ export async function queueHoldingScan(env){
   if(count!==expected)throw Error(`Scanner inventory differs from preparation manifest: ${count} != ${expected}`);
   await env.DB.prepare("UPDATE holding_preparations SET status='SCANNING',updated_at=? WHERE source_file_id=? AND status='READY'").bind(now(),p.source_file_id).run();
  }
- const tasks=(await env.DB.prepare("SELECT i.id FROM holding_scan_items i JOIN holding_preparations p ON p.source_file_id=i.source_file_id WHERE p.status='SCANNING' AND (i.status='PENDING' OR (i.asset_role='DETAIL_TILE' AND i.status='NEEDS_REVIEW' AND i.attempts<3) OR (i.status IN ('QUEUED','RUNNING') AND i.updated_at<?)) ORDER BY CASE WHEN i.status='NEEDS_REVIEW' THEN 0 ELSE 1 END,i.entry_index LIMIT 10").bind(stale()).all()).results||[];
- for(const row of tasks){const c=await env.DB.prepare("UPDATE holding_scan_items SET status='QUEUED',updated_at=? WHERE id=? AND (status='PENDING' OR (asset_role='DETAIL_TILE' AND status='NEEDS_REVIEW' AND attempts<3) OR (status IN ('QUEUED','RUNNING') AND updated_at<?))").bind(now(),row.id,stale()).run();if(!c.meta.changes)continue;try{await env.DEPARTMENT_QUEUE.send({kind:'HOLDING_SCAN',id:row.id});}catch(e){await env.DB.prepare("UPDATE holding_scan_items SET status='PENDING' WHERE id=? AND status='QUEUED'").bind(row.id).run();throw e;}}
+ const tasks=(await env.DB.prepare("SELECT i.id FROM holding_scan_items i JOIN holding_preparations p ON p.source_file_id=i.source_file_id WHERE p.status='SCANNING' AND (i.status='PENDING' OR (i.asset_role='DETAIL_TILE' AND i.status='NEEDS_REVIEW' AND i.attempts<4) OR (i.status IN ('QUEUED','RUNNING') AND i.updated_at<?)) ORDER BY CASE WHEN i.status='NEEDS_REVIEW' THEN 0 ELSE 1 END,i.entry_index LIMIT 10").bind(stale()).all()).results||[];
+ for(const row of tasks){const c=await env.DB.prepare("UPDATE holding_scan_items SET status='QUEUED',updated_at=? WHERE id=? AND (status='PENDING' OR (asset_role='DETAIL_TILE' AND status='NEEDS_REVIEW' AND attempts<4) OR (status IN ('QUEUED','RUNNING') AND updated_at<?))").bind(now(),row.id,stale()).run();if(!c.meta.changes)continue;try{await env.DEPARTMENT_QUEUE.send({kind:'HOLDING_SCAN',id:row.id});}catch(e){await env.DB.prepare("UPDATE holding_scan_items SET status='PENDING' WHERE id=? AND status='QUEUED'").bind(row.id).run();throw e;}}
  const scans=(await env.DB.prepare("SELECT * FROM holding_preparations p WHERE status='SCANNING' AND NOT EXISTS(SELECT 1 FROM holding_scan_items i WHERE i.source_file_id=p.source_file_id AND i.status IN ('PENDING','QUEUED','RUNNING'))").all()).results||[];
  for(const p of scans){const items=(await env.DB.prepare('SELECT * FROM holding_scan_items WHERE source_file_id=? ORDER BY entry_index').bind(p.source_file_id).all()).results||[];const complete=items.length===Number(p.scan_units_total||p.units_done)&&items.every(x=>x.status==='COMPLETE');await env.DB.prepare('UPDATE holding_preparations SET status=?,error=?,updated_at=? WHERE source_file_id=?').bind(complete?'SCANNED':'NEEDS_REVIEW',complete?null:'Brain scanner found unreadable or incomplete coverage; review scanner records',now(),p.source_file_id).run();}
 }
@@ -42,11 +60,23 @@ export async function processHoldingScan(body,env){
   const path=`Mason Project Brain/Intake/${i.source_file_id}/Sources/${i.original_path}`;
   const fid=await register(env,source,key,path,i.size_bytes,'BRAIN SCAN');
   await env.DB.prepare("UPDATE project_files SET source_class='BRAIN SCAN SOURCE' WHERE id=?").bind(fid).run();
-  const detail=i.asset_role==='DETAIL_TILE';
-  const r=normalizeScan(await askSource(env,fid,null,scanPrompt(detail),{sourcePath:i.source_path||i.original_path,scanAssetPath:i.original_path,assetRole:i.asset_role||'SOURCE',originalHoldingFileId:i.source_file_id}));
+  const detail=i.asset_role==='DETAIL_TILE';let reviewFileId=fid,reviewAssetRole=i.asset_role||'SOURCE',prompt=scanPrompt(detail);
+  // After three conservative raster reviews, retry only the same bounded region
+  // against the preserved vector page. Completed tiles and the original upload
+  // remain untouched, and genuinely illegible vector content still fails validScan.
+  if(detail&&i.attempts>=3){
+   const page=await preparedEntry(env,source,i.source_path);
+   const vectorKey=`${root}/vector-retry-sources/${i.id}`;
+   await unpack(env,source,page,vectorKey);
+   const vectorPath=`Mason Project Brain/Intake/${i.source_file_id}/Vector Retry Sources/${i.id}/${i.source_path.split('/').pop()}`;
+   reviewFileId=await register(env,source,vectorKey,vectorPath,page.size_bytes,'BRAIN SCAN VECTOR RETRY');
+   await env.DB.prepare("UPDATE project_files SET source_class='BRAIN SCAN VECTOR RETRY SOURCE' WHERE id=?").bind(reviewFileId).run();
+   reviewAssetRole='VECTOR_REGION_RETRY';prompt=vectorRegionPrompt(i.original_path);
+  }
+  const r=normalizeScan(await askSource(env,reviewFileId,null,prompt,{sourcePath:i.source_path||i.original_path,scanAssetPath:i.original_path,assetRole:reviewAssetRole,originalHoldingFileId:i.source_file_id}));
   const brainKey=`${root}/reviews/${i.id}.json`;
-  await env.PROJECT_FILES.put(brainKey,JSON.stringify({reviewedAt:now(),sourceFileId:fid,originalHoldingFileId:i.source_file_id,sourcePath:i.source_path||i.original_path,scanAssetPath:i.original_path,assetRole:i.asset_role||'SOURCE',preparedPackageFileId:source.id,scaleVerified:false,review:r,verification:'MODEL_REVIEW_NOT_INDEPENDENT_VERIFICATION'}));
+  await env.PROJECT_FILES.put(brainKey,JSON.stringify({reviewedAt:now(),sourceFileId:reviewFileId,originalHoldingFileId:i.source_file_id,sourcePath:i.source_path||i.original_path,scanAssetPath:i.original_path,assetRole:reviewAssetRole,preparedPackageFileId:source.id,scaleVerified:false,review:r,verification:'MODEL_REVIEW_NOT_INDEPENDENT_VERIFICATION'}));
   const complete=validScan(r);
-  await env.DB.prepare('UPDATE holding_scan_items SET status=?,output_file_id=?,brain_key=?,category=?,error=?,updated_at=?,finished_at=?,processing_ms=processing_ms+? WHERE id=?').bind(complete?'COMPLETE':'NEEDS_REVIEW',fid,brainKey,categories.includes(r.category)?r.category:null,complete?null:'Incomplete or unreadable source coverage; see Brain record',now(),now(),Date.now()-attemptStart,i.id).run();
+  await env.DB.prepare('UPDATE holding_scan_items SET status=?,output_file_id=?,brain_key=?,category=?,error=?,updated_at=?,finished_at=?,processing_ms=processing_ms+? WHERE id=?').bind(complete?'COMPLETE':'NEEDS_REVIEW',reviewFileId,brainKey,categories.includes(r.category)?r.category:null,complete?null:'Incomplete or unreadable source coverage; see Brain record',now(),now(),Date.now()-attemptStart,i.id).run();
  }catch(e){const terminal=i.attempts+1>=5;await env.DB.prepare('UPDATE holding_scan_items SET status=?,error=?,updated_at=?,processing_ms=processing_ms+? WHERE id=?').bind(terminal?'NEEDS_REVIEW':'PENDING',String(e.message||e).slice(0,500),now(),Date.now()-attemptStart,i.id).run();if(!terminal)throw e;}
 }

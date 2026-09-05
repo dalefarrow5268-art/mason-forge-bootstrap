@@ -27,10 +27,10 @@
   },
   "diagnosis": "The queue was active and not stale. The scanner's single whole-page input was an inadequate review unit for dense construction sheets. The conservative COMPLETE gate correctly rejected those results.",
   "repair": {
-    "status": "IMPLEMENTED_AWAITING_PRODUCTION_VERIFICATION",
+    "status": "DEPLOYED_RETRYING_AFTER_REVIEW_PACKAGE_LIMIT",
     "changes": [
       "Preserve each original single-page PDF as the Phase One source.",
-      "Create a 3-by-3 grid of overlapping, vector-preserving detail-region PDFs for every source page.",
+      "Create a 3-by-3 grid of overlapping detail regions for every source page.",
       "Require all nine detail regions to pass before the logical source page can be released.",
       "Exclude detail-region files from Phase One inventory so they cannot duplicate or replace the original page.",
       "Archive all first-pass scanner rows and Brain pointers before the controlled Bradenton retry.",
@@ -54,7 +54,7 @@
       "Dashboard tests and production build passed.",
       "Actual Bradenton sample page produced one lossless page plus nine detail regions deterministically."
     ],
-    "production": "Pending GitHub Actions validation, Cloudflare migration/deployment, new Bradenton preparation and live detail-region scanner evidence."
+    "production": "Release 2026-09-05-holding-detail-tiles deployed successfully. The first vector-tile rebuild reached 135 pages and 1,215 detail units, then correctly failed before release because its 1.68-GiB review package exceeded Wrangler's 300-MiB single-object upload limit. The retry uses compact 90-DPI one-third-sheet JPEG review regions (about 270-DPI whole-sheet detail density) while retaining every lossless source page. Live retry verification remains pending."
   },
   "remainingBlockers": [
     "Verified CSI 2026 catalog is still required before divisions and sections can complete.",

@@ -69,9 +69,10 @@ def prepare(source, name, output, manifest_path, progress=lambda m: None):
                             arc=prefix+f'/page-{n+1:05d}.pdf'
                             write(out,arc)
                             scan_assets=[]
-                            # Nine overlapping vector-preserving detail views make small plan
-                            # notes, schedules, symbols and dimensions readable without altering
-                            # the protected lossless page above.
+                            # Nine overlapping high-detail review views make small plan notes,
+                            # schedules, symbols and dimensions readable without altering the
+                            # protected lossless/vector page above. At 90 DPI per one-third view,
+                            # each region has roughly the detail of a 270 DPI whole-sheet scan.
                             cols=rows=3;overlap=.08
                             for tile_row in range(rows):
                                 for tile_col in range(cols):
@@ -82,15 +83,13 @@ def prepare(source, name, output, manifest_path, progress=lambda m: None):
                                         min(page.rect.x1,page.rect.x0+(tile_col+1)*width+width*overlap),
                                         min(page.rect.y1,page.rect.y0+(tile_row+1)*height+height*overlap),
                                     )
-                                    tile=pathlib.Path(td)/'tile.pdf'
-                                    with fitz.open() as detail:
-                                        canvas=detail.new_page(width=clip.width,height=clip.height)
-                                        canvas.show_pdf_page(canvas.rect,page_source,n,clip=clip,keep_proportion=True)
-                                        detail.save(tile,garbage=4,deflate=True,no_new_id=True)
+                                    tile=pathlib.Path(td)/'tile.jpg'
+                                    pixmap=page.get_pixmap(matrix=fitz.Matrix(1.25,1.25),clip=clip,alpha=False,annots=True)
+                                    pixmap.save(tile,jpg_quality=60)
                                     if tile.stat().st_size>LIMIT: raise ValueError('Individual detail tile exceeds 20 MiB; preserved original requires review')
-                                    tile_arc=arc+f'.brain-scan/tile-r{tile_row+1}-c{tile_col+1}.pdf'
+                                    tile_arc=arc+f'.brain-scan/tile-r{tile_row+1}-c{tile_col+1}.jpg'
                                     write(tile,tile_arc)
-                                    scan_assets.append({'path':tile_arc,'row':tile_row+1,'column':tile_col+1,'rows':rows,'columns':cols,'clip':list(clip),'sha256':sha(tile),'sizeBytes':tile.stat().st_size})
+                                    scan_assets.append({'path':tile_arc,'row':tile_row+1,'column':tile_col+1,'rows':rows,'columns':cols,'clip':list(clip),'renderDpi':90,'wholeSheetEquivalentDpi':270,'sha256':sha(tile),'sizeBytes':tile.stat().st_size})
                                     manifest['scanUnitsTotal']+=1
                             row['outputs'].append({'path':arc,'originalPage':n+1,'sha256':sha(out),'sizeBytes':out.stat().st_size,'mediaBox':list(page.mediabox),'cropBox':list(page.cropbox),'rotation':page.rotation,'scaleVerified':False,'textBlocks':page.get_text('blocks'),'links':page.get_links(),'scanAssets':scan_assets})
                             manifest['unitsDone']+=1;progress(manifest)

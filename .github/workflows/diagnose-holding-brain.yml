@@ -46,7 +46,7 @@ jobs:
           const temp=mkdtempSync(join(tmpdir(),'holding-brain-'));
           const reasonCounts={},coverageCounts={},categoryCounts={};
           const samples=[];
-          let unreadableRegions=0,missingRecords=0,emptyFindings=0;
+          let unreadableRegions=0,missingRecords=0,emptyFindings=0,invalidFindings=0;
           try{
             for(let index=0;index<reviewRows.length;index++){
               const row=reviewRows[index],file=join(temp,`${index}.json`);
@@ -60,13 +60,23 @@ jobs:
               categoryCounts[category]=(categoryCounts[category]||0)+1;
               const unreadable=Array.isArray(review.unreadableRegions)?review.unreadableRegions:[];
               unreadableRegions+=unreadable.length;
-              if(!Array.isArray(review.findings)||review.findings.length===0)emptyFindings++;
+              const findings=Array.isArray(review.findings)?review.findings:[];
+              if(findings.length===0)emptyFindings++;
+              const invalidFindingShapes=[];
+              for(let findingIndex=0;findingIndex<findings.length;findingIndex++){
+                const finding=findings[findingIndex]||{};
+                const contentValid=typeof finding.content==='string'&&finding.content.trim().length>0;
+                const locationValid=typeof finding.location==='string'&&finding.location.trim().length>0;
+                if(contentValid&&locationValid)continue;
+                invalidFindings++;
+                invalidFindingShapes.push({index:findingIndex,contentType:typeof finding.content,contentPresent:Boolean(finding.content),locationType:typeof finding.location,locationPresent:Boolean(finding.location),keys:Object.keys(finding).sort()});
+              }
               for(const item of unreadable){
                 const reason=String(item?.reason||'Unspecified unreadable region').slice(0,160);
                 reasonCounts[reason]=(reasonCounts[reason]||0)+1;
               }
-              if(samples.length<20)samples.push({id:row.id,path:row.original_path,coverage,category,unreadableCount:unreadable.length,findingCount:Array.isArray(review.findings)?review.findings.length:0,sheetId:review.sheetId||null});
+              if(samples.length<20)samples.push({id:row.id,path:row.original_path,coverage,category,unreadableCount:unreadable.length,findingCount:findings.length,invalidFindingShapes,sheetId:review.sheetId||null});
             }
           }finally{rmSync(temp,{recursive:true,force:true});}
-          console.log(JSON.stringify({observedAt:new Date().toISOString(),sourceFileId:2514,statusCounts,reviewRecordsInspected:reviewRows.length,missingRecords,coverageCounts,categoryCounts,unreadableRegions,emptyFindings,reasonCounts,samples},null,2));
+          console.log(JSON.stringify({observedAt:new Date().toISOString(),sourceFileId:2514,statusCounts,reviewRecordsInspected:reviewRows.length,missingRecords,coverageCounts,categoryCounts,unreadableRegions,emptyFindings,invalidFindings,reasonCounts,samples},null,2));
           JS

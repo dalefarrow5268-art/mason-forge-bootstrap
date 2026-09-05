@@ -9,8 +9,8 @@ def main():
       JOIN project_files layer ON layer.id=l.layered_file_id
       WHERE l.id IN ('plan-layers-3000','plan-layers-3002','plan-layers-3012')
       ORDER BY l.id""")
-    if len(jobs)!=3 or any(x['status']!='LAYER_REVIEW_REQUIRED' for x in jobs):
-        raise RuntimeError('All three Bradenton layer packages must be ready for review')
+    if len(jobs)!=3 or any(x['status'] not in ('LAYER_REVIEW_REQUIRED','READY_FOR_TAKEOFF') for x in jobs):
+        raise RuntimeError('Bradenton layer packages are not available for review export')
     summary=[]
     for job in jobs:
         stem=job['id'];source=output/f'{stem}-source.pdf';layer=output/f'{stem}-layers.pdf';manifest=output/f'{stem}-manifest.json'

@@ -1,6 +1,6 @@
-import {requirePlanLayers} from './plan-layer-handoff.js';
-import {checkScale} from './scale-gate.js';
 import {askSource,jsonObject,saveArtifact,addIssue,now,text} from './project-phase-common.js';
+import {startTakeoffCrew} from './takeoff-crew.js';
+export {calculateQuantity} from './quantity-engine.js';
 
 async function scopesForFile(env,submission,fileId){
  const rows=(await env.DB.prepare('SELECT * FROM phase_five_estimate_outbox WHERE submission_id=? ORDER BY id').bind(submission).all()).results||[];
@@ -24,51 +24,6 @@ async function sheetReview(task,env){
  await env.DB.prepare('INSERT OR REPLACE INTO project_sheet_register(task_id,submission_id,file_id,page,sheet_id,summary,result_key) VALUES(?,?,?,?,?,?,?)').bind(task.id,task.submission_id,task.file_id,task.page,d.isDrawing?d.sheetId:null,d.summary,key).run();
  for(let i=0;i<d.brokenChains.length;i++){const b=d.brokenChains[i];await addIssue(env,task,`chain-${i}`,b.description,b.question,{location:b.location,evidence:b.evidence});}
  return {key,status:'COMPLETE'};
-}
-
-export function normalizeTakeoffs(data,scopes){
- if(data.completeReview!==true||!Array.isArray(data.items)||!Array.isArray(data.exclusions))throw new Error('Takeoff coverage incomplete');
- const allowed=new Set(scopes.map(s=>s.id));
- return data.items.map((v,index)=>{
-  if(!allowed.has(v.scopeId)||!text(v.description)||!evidenceValid(v)||!['LF','SF','CY','EA'].includes(v.unit)||!v.geometry||typeof v.geometry!=='object')throw new Error('Invalid or unsupported takeoff item '+index);
-  return {scopeId:v.scopeId,description:text(v.description),size:text(v.size,300),unit:v.unit,geometry:v.geometry,source:{location:v.location,evidence:v.evidence}};
- });
-}
-async function takeoffReview(task,env){
- const prepared=await requirePlanLayers(env,task.file_id);
- if(prepared.status==='REFERENCE_ONLY')return {status:'COMPLETE',key:await saveArtifact(env,task.submission_id,9,task.id,{status:'REFERENCE_ONLY',routing:JSON.parse(prepared.route_json),note:'Retained in Brain as supporting information; no geometry takeoff.'})};
- const scopes=await scopesForFile(env,task.submission_id,task.file_id);
- const data=await askSource(env,prepared.layered_file_id,null,
-  'Phase Nine: perform detailed takeoff tracing for the supplied applicable scope lines on this page, using the Measuring PDF for walls, windows, doors and room geometry; use the accompanying original for dimensions, notes and other trades. Do not duplicate schedules and drawn objects. Identify each viewport/detail scale; never borrow the main sheet scale for another detail. Return {completeReview:true,items:[{scopeId,description,size,unit:LF|SF|CY|EA,location,evidence,geometry:{viewport:[xMin,yMin,xMax,yMax],points:[[x,y]],closed:boolean,depthFeet:null,anchors:[{points:[[x,y],[x,y]],knownFeet:number,label:string}],notToScale:boolean}}],exclusions:[{description,location,evidence}]}. Coordinates are PDF points, origin lower left; FIRST GATE: do not trust the printed scale. Check two independent labeled dimensions approximately perpendicular to one another in this viewport before tracing dimensional work. If missing, NTS, or inconsistent by more than 0.5 percent, return a cited exclusion and no dimensional items for that viewport. Record at least two independent known-dimension anchors for each scaled viewport and all traced/count locations. Include every distinct size as its own item. Units LF for length, SF area, CY volume, EA count. These are candidates pending independent source verification; do not set any verification flag. If geometry, scale or source is unreadable explain in exclusions; never fabricate coordinates. Only use supplied scope IDs.',{originalSourceFileId:task.file_id,originalPage:task.page,brainRecords:await Promise.all(JSON.parse(prepared.brain_keys_json).map(key=>jsonObject(env,key))),instruction:'Hidden content and scale dimensions must be consulted in original source; never infer missing anchors from the filtered view.',scopes:scopes.map(s=>({id:s.id,section:s.section_code,scope:s.scope_text}))},[{fileId:task.file_id,page:task.page}]);
- const candidates=normalizeTakeoffs(data,scopes),items=[];
- for(const v of candidates){
-  try{calculateQuantity(v.unit,v.geometry);items.push(v);}
-  catch(error){data.exclusions.push({description:String(error.message||error),location:v.source.location,evidence:v.source.evidence});}
- }
- const key=await saveArtifact(env,task.submission_id,9,task.id,{items,exclusions:data.exclusions,status:'CANDIDATES_REQUIRE_VERIFICATION'});
- for(let i=0;i<items.length;i++){const v=items[i];await env.DB.prepare(`INSERT OR IGNORE INTO project_takeoffs(id,submission_id,task_id,scope_id,description,unit,geometry_json,source_json,updated_at) VALUES(?,?,?,?,?,?,?,?,?)`).bind(`${task.id}-${i}`,task.submission_id,task.id,v.scopeId,v.description,v.unit,JSON.stringify(v.geometry),JSON.stringify({...v.source,size:v.size,fileId:task.file_id,page:task.page}),now()).run();}
- for(let i=0;i<data.exclusions.length;i++){const e=data.exclusions[i];if(!text(e.description)||!evidenceValid(e))throw new Error('Uncited takeoff exclusion');await addIssue(env,task,`exclude-${i}`,e.description,'Confirm takeoff treatment or provide a readable scaled detail.',e);}
- if(!items.length&&!data.exclusions.length)await addIssue(env,task,'empty','No measurable scope identified on this drawing.','Confirm this drawing requires no takeoff.',{fileId:task.file_id,page:task.page});
- return {key,status:items.length||data.exclusions.length?'WAITING_VERIFICATION':'WAITING_REVIEW'};
-}
-
-export function calculateQuantity(unit,g){
- const point=p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite);
- if(!g||!Array.isArray(g.points)||!g.points.length||g.points.some(p=>!point(p)))throw new Error('Trace coordinates required');
- if(!Array.isArray(g.viewport)||g.viewport.length!==4||!g.viewport.every(Number.isFinite))throw new Error('Viewport bounds required');
- const [x0,y0,x1,y1]=g.viewport;if(x1<=x0||y1<=y0)throw new Error('Invalid viewport');
- const inside=p=>p[0]>=x0&&p[0]<=x1&&p[1]>=y0&&p[1]<=y1;
- if(g.points.some(p=>!inside(p)))throw new Error('Trace outside calibrated viewport');
- if(unit==='EA'){if(new Set(g.points.map(p=>p.join(','))).size!==g.points.length)throw new Error('Duplicate count markers');return g.points.length;}
- const scale=checkScale(g).feetPerPdfPoint;
- if(unit==='LF'){if(g.points.length<2)throw new Error('Length needs two points');return g.points.slice(1).reduce((sum,p,i)=>sum+Math.hypot(p[0]-g.points[i][0],p[1]-g.points[i][1])*scale,0);}
- if(!['SF','CY'].includes(unit)||g.points.length<3||g.closed!==true)throw new Error('Area requires a closed polygon');
- const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
- for(let i=0;i<g.points.length;i++)for(let j=i+2;j<g.points.length;j++){if(i===0&&j===g.points.length-1)continue;const a=g.points[i],b=g.points[(i+1)%g.points.length],c=g.points[j],d=g.points[(j+1)%g.points.length];if(cross(a,b,c)*cross(a,b,d)<0&&cross(c,d,a)*cross(c,d,b)<0)throw new Error('Self-intersecting polygon');}
- let area=0;for(let i=0;i<g.points.length;i++){const a=g.points[i],b=g.points[(i+1)%g.points.length];area+=a[0]*b[1]-b[0]*a[1];}area=Math.abs(area)/2*scale**2;
- if(area<=0)throw new Error('Zero polygon area');
- if(unit==='CY'){if(!Number.isFinite(g.depthFeet)||g.depthFeet<=0)throw new Error('Verified depth in feet required');return area*g.depthFeet/27;}
- return area;
 }
 
 async function finalReview(task,env){
@@ -103,7 +58,7 @@ async function correctionReview(task,env){
 }
 export async function handlePhaseTask(task,env){
  if(task.phase===8)return sheetReview(task,env);
- if(task.phase===9)return takeoffReview(task,env);
+ if(task.phase===9)return startTakeoffCrew(task,env);
  if(task.phase===10)return finalReview(task,env);
  if(task.phase===11)return correctionReview(task,env);
  throw new Error('Unsupported review phase');

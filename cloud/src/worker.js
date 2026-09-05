@@ -1,4 +1,5 @@
 import {processSheetRouting} from './plan-layer-handoff.js';
+import {queueTakeoffCrew,processTakeoffWorker} from './takeoff-crew.js';
 import { routePendingBrainFiles } from "./brain-lobe-router.js";
 import {queueHoldingScan,processHoldingScan,releaseCompletedPlanPages,trialNativePageScan,benchmarkA21NativePage} from './holding-brain-scan.js';
 import {intakeProgress} from './intake-progress.js';
@@ -352,6 +353,7 @@ export default {
     for (const message of batch.messages) {
       const body = message.body || {};
       if(body.kind==='PLAN_SHEET_ROUTE'){try{await processSheetRouting(body,env);message.ack();}catch(e){message.retry({delaySeconds:120});}continue;}
+      if(body.kind==='TAKEOFF_WORKER'){try{await processTakeoffWorker(body,env);message.ack();}catch(e){console.error('Takeoff worker retry',body.id,String(e));message.retry({delaySeconds:120});}continue;}
       if(body.kind === 'HOLDING_SCAN') {
         try {await processHoldingScan(body,env);message.ack();}catch(error){console.error('Holding scan retry',body.id,String(error));message.retry({delaySeconds:120});}continue;
       }
@@ -435,6 +437,7 @@ export default {
     await queuePhaseSix(env);
     await queuePhaseSeven(env);
     await queueCompletionPhases(env);
+    await queueTakeoffCrew(env);
     await kickOperations(env);
     await ensureSystemContinuity(env);
     await intakeProgress(env);
@@ -459,10 +462,10 @@ export default {
     await queuePhaseSix(env);
     await queuePhaseSeven(env);
     await queueCompletionPhases(env);
+    await queueTakeoffCrew(env);
     await kickOperations(env);
     await ensureSystemContinuity(env);
     await intakeProgress(env);
     try { await routePendingBrainFiles(env); } catch(error) { console.error("Brain routing deferred", String(error?.message || error)); }
   },
 };
-

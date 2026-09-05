@@ -13,6 +13,7 @@ sql.exec(readFileSync(new URL('../schema/0017_holding_preparation.sql',import.me
 sql.exec(readFileSync(new URL('../schema/0018_holding_brain_scan.sql',import.meta.url),'utf8'));
 sql.exec(readFileSync(new URL('../schema/0020_holding_detail_tiles.sql',import.meta.url),'utf8'));
 sql.exec(readFileSync(new URL('../schema/0022_plan_layer_handoff.sql',import.meta.url),'utf8'));
+sql.exec(readFileSync(new URL('../schema/0026_takeoff_crew.sql',import.meta.url),'utf8'));
 const DB={async batch(statements){return Promise.all(statements.map(s=>s.run()));},prepare(s){return {bind(...p){return {
  async run(){return {meta:{changes:sql.prepare(s).run(...p).changes}};},
  async first(){return sql.prepare(s).get(...p);},
@@ -110,6 +111,7 @@ sql.exec("CREATE TABLE companies(id INTEGER PRIMARY KEY,name TEXT); CREATE TABLE
 const {PDFDocument}=await import('pdf-lib');
 const {queuePhaseSeven,processPhaseSeven,normalizeReport}=await import('../src/phase-seven-reports.js');
 const {queueCompletionPhases,processCompletionPhase}=await import('../src/project-phase-pipeline.js');
+const {processTakeoffWorker}=await import('../src/takeoff-crew.js');
 const {calculateQuantity}=await import('../src/project-phase-handlers.js');
 const {projectPhaseRoute}=await import('../src/project-phase-api.js');
 sql.exec(readFileSync(new URL('../schema/0013_phase_seven.sql',import.meta.url),'utf8'));
@@ -132,7 +134,7 @@ const model=async(url,options)=>{
  let result;
  if(prompt.includes('Phase Seven'))result={classification:'REPORT',classificationEvidence:{location:'page 1',evidence:'Geotechnical investigation'},reportType:'Geotechnical',summary:'Test soil report',findings:[{statement:'Test finding',location:'page 1',evidence:'test soil'}],authorRecommendations:[],masonRecommendations:[{action:'Ask engineer to confirm foundation basis',rationale:'Source finding',findingIndexes:[0]}],limitations:[],issues:[],completeReview:true};
  else if(prompt.includes('Phase Eight')){const page=body.input[1].content[0].text.includes('page 2')?2:1;result={completeReview:true,isDrawing:true,sheetId:'A'+page,summary:'Test drawing '+page,references:page===1?[{sheetId:'A2',location:'detail 1',evidence:'See A2'}]:[],brokenChains:[],limitations:[]};}
- else if(prompt.includes('Phase Nine'))result={completeReview:true,items:[{scopeId:'scope-1',description:'Test measured edge',size:'test',unit:'LF',location:'drawing',evidence:'dimensioned edge',geometry:geom}],exclusions:[]};
+ else if(prompt.includes('Phase Nine')){const kind=['ENVELOPE_SITE','INTERIOR_SPACES','OPENINGS','SYSTEMS_FOUNDATIONS'].find(k=>prompt.includes(k));result={completeReview:true,objects:[{canonicalId:`${kind}-1`,objectType:kind,scopeId:'scope-1',description:`Test ${kind} count`,size:'test',unit:'EA',location:'drawing',evidence:'unique test marker',geometry:{viewport:[0,0,600,600],points:[[{ENVELOPE_SITE:10,INTERIOR_SPACES:20,OPENINGS:30,SYSTEMS_FOUNDATIONS:40}[kind],10]]},roomNames:[],roomNumbers:[],adjacentRooms:[],finishFaces:[]}],exclusions:[]};}
  else if(prompt.includes('Phase Ten'))result={completeReview:true,findings:[{description:'Clarify scope text',question:'Confirm slab scope wording',location:'drawing',evidence:'concrete slab note',scopeId:'scope-1',takeoffId:null}],limitations:[]};
  else if(prompt.includes('Phase Eleven'))result={resolvable:true,reason:'Source wording',location:'drawing',evidence:'slab note',scopeText:'Place concrete slab per structural notes.'};
  else if(prompt.includes('Independently verify'))result={supported:true,location:'drawing',evidence:'slab note',reason:'Supported wording'};
@@ -151,6 +153,8 @@ try{
  for(const task of sent.splice(0))await processCompletionPhase(task,testEnv);
  await queueCompletionPhases(testEnv);assert.equal(sent.length,2,'takeoff follows completed page inventory');
  for(const task of sent.splice(0))await processCompletionPhase(task,testEnv);
+ assert.equal(sent.length,8,'four gated takeoff workers are queued for each measuring sheet');
+ for(const worker of sent.splice(0))await processTakeoffWorker(worker,testEnv);
  await queueCompletionPhases(testEnv);assert.equal(sql.prepare('SELECT count(*) n FROM project_phase_runs WHERE phase=10').get().n,0,'unverified takeoff blocks next phase');
  const sha=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',pdfBytes)),b=>b.toString(16).padStart(2,'0')).join('');
  for(const t of sql.prepare('SELECT * FROM project_takeoffs').all()){

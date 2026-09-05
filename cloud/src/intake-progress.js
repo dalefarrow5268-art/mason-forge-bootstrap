@@ -45,7 +45,13 @@ export async function intakeProgress(env,projectId=null){
  const events=await rows(env,'SELECT phase,status,observed_at FROM project_phase_tracking_events WHERE submission_id=? ORDER BY id DESC LIMIT 40',s.id);
  const repairRequests=await rows(env,"SELECT * FROM project_repair_requests WHERE submission_id=? ORDER BY created_at DESC LIMIT 30",s.id);
  const planLayers=await rows(env,'SELECT id,plan_file_id,source_path,status,route_json,attempts,error,layered_file_id,updated_at FROM plan_layer_jobs WHERE source_file_id IN (SELECT value FROM json_each(?))',s.source_file_ids_json);
- projects.push({planLayers,preparation,repairRequests,id:s.id,projectId:s.project_id,projectName:s.project_name,createdAt:s.sealed_at,phases,blockers,events});
+ const takeoffCrew=await rows(env,`SELECT r.task_id,r.file_id,r.page,r.status,r.error,r.updated_at,
+  (SELECT COUNT(*) FROM takeoff_worker_jobs w WHERE w.task_id=r.task_id) workers_total,
+  (SELECT COUNT(*) FROM takeoff_worker_jobs w WHERE w.task_id=r.task_id AND w.status='COMPLETE') workers_complete,
+  (SELECT COUNT(*) FROM project_takeoffs t WHERE t.task_id=r.task_id) candidates,
+  (SELECT COUNT(*) FROM project_takeoffs t WHERE t.task_id=r.task_id AND t.status='VERIFIED') verified
+  FROM takeoff_crew_runs r WHERE r.submission_id=? ORDER BY r.updated_at DESC`,s.id);
+ projects.push({planLayers,takeoffCrew,preparation,repairRequests,id:s.id,projectId:s.project_id,projectName:s.project_name,createdAt:s.sealed_at,phases,blockers,events});
  }
  return {checkedAt:new Date().toISOString(),projects};
 }

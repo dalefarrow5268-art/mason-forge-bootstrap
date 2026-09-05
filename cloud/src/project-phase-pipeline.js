@@ -55,7 +55,7 @@ async function reconcileSheets(run,env){
  }
 }
 async function finishReview(run,env){
- const counts=await env.DB.prepare(`SELECT COUNT(*) total,SUM(status IN ('PENDING','QUEUED','RUNNING')) pending,SUM(status!='COMPLETE') blocked FROM project_phase_tasks WHERE submission_id=? AND phase=?`).bind(run.submission_id,run.phase).first();
+ const counts=await env.DB.prepare(`SELECT COUNT(*) total,SUM(status IN ('PENDING','QUEUED','RUNNING','WAITING_CREW')) pending,SUM(status!='COMPLETE') blocked FROM project_phase_tasks WHERE submission_id=? AND phase=?`).bind(run.submission_id,run.phase).first();
  if(counts.pending)return;
  if(counts.blocked){await env.DB.prepare("UPDATE project_phase_runs SET status='WAITING_REVIEW',error='See task verification or review requirements',updated_at=? WHERE submission_id=? AND phase=?").bind(now(),run.submission_id,run.phase).run();return;}
  if(run.phase===8)await reconcileSheets(run,env);

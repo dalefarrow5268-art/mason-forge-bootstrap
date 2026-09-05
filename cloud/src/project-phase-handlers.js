@@ -1,3 +1,4 @@
+import {checkScale} from './scale-gate.js';
 import {askSource,jsonObject,saveArtifact,addIssue,now,text} from './project-phase-common.js';
 
 async function scopesForFile(env,submission,fileId){
@@ -35,8 +36,12 @@ export function normalizeTakeoffs(data,scopes){
 async function takeoffReview(task,env){
  const scopes=await scopesForFile(env,task.submission_id,task.file_id);
  const data=await askSource(env,task.file_id,task.page,
-  'Phase Nine: perform detailed takeoff tracing for the supplied applicable scope lines on this page, including walls, pipes, conduit, fixtures, fittings and sizes. Do not duplicate schedules and drawn objects. Identify each viewport/detail scale; never borrow the main sheet scale for another detail. Return {completeReview:true,items:[{scopeId,description,size,unit:LF|SF|CY|EA,location,evidence,geometry:{viewport:[xMin,yMin,xMax,yMax],points:[[x,y]],closed:boolean,depthFeet:null,anchors:[{points:[[x,y],[x,y]],knownFeet:number,label:string}],notToScale:boolean}}],exclusions:[{description,location,evidence}]}. Coordinates are PDF points, origin lower left; record at least two independent known-dimension anchors for each scaled viewport and all traced/count locations. Include every distinct size as its own item. Units LF for length, SF area, CY volume, EA count. These are candidates pending independent source verification; do not set any verification flag. If geometry, scale or source is unreadable explain in exclusions; never fabricate coordinates. Only use supplied scope IDs.',{scopes:scopes.map(s=>({id:s.id,section:s.section_code,scope:s.scope_text}))});
- const items=normalizeTakeoffs(data,scopes);
+  'Phase Nine: perform detailed takeoff tracing for the supplied applicable scope lines on this page, including walls, pipes, conduit, fixtures, fittings and sizes. Do not duplicate schedules and drawn objects. Identify each viewport/detail scale; never borrow the main sheet scale for another detail. Return {completeReview:true,items:[{scopeId,description,size,unit:LF|SF|CY|EA,location,evidence,geometry:{viewport:[xMin,yMin,xMax,yMax],points:[[x,y]],closed:boolean,depthFeet:null,anchors:[{points:[[x,y],[x,y]],knownFeet:number,label:string}],notToScale:boolean}}],exclusions:[{description,location,evidence}]}. Coordinates are PDF points, origin lower left; FIRST GATE: do not trust the printed scale. Check two independent labeled dimensions approximately perpendicular to one another in this viewport before tracing dimensional work. If missing, NTS, or inconsistent by more than 0.5 percent, return a cited exclusion and no dimensional items for that viewport. Record at least two independent known-dimension anchors for each scaled viewport and all traced/count locations. Include every distinct size as its own item. Units LF for length, SF area, CY volume, EA count. These are candidates pending independent source verification; do not set any verification flag. If geometry, scale or source is unreadable explain in exclusions; never fabricate coordinates. Only use supplied scope IDs.',{scopes:scopes.map(s=>({id:s.id,section:s.section_code,scope:s.scope_text}))});
+ const candidates=normalizeTakeoffs(data,scopes),items=[];
+ for(const v of candidates){
+  try{calculateQuantity(v.unit,v.geometry);items.push(v);}
+  catch(error){data.exclusions.push({description:String(error.message||error),location:v.source.location,evidence:v.source.evidence});}
+ }
  const key=await saveArtifact(env,task.submission_id,9,task.id,{items,exclusions:data.exclusions,status:'CANDIDATES_REQUIRE_VERIFICATION'});
  for(let i=0;i<items.length;i++){const v=items[i];await env.DB.prepare(`INSERT OR IGNORE INTO project_takeoffs(id,submission_id,task_id,scope_id,description,unit,geometry_json,source_json,updated_at) VALUES(?,?,?,?,?,?,?,?,?)`).bind(`${task.id}-${i}`,task.submission_id,task.id,v.scopeId,v.description,v.unit,JSON.stringify(v.geometry),JSON.stringify({...v.source,size:v.size,fileId:task.file_id,page:task.page}),now()).run();}
  for(let i=0;i<data.exclusions.length;i++){const e=data.exclusions[i];if(!text(e.description)||!evidenceValid(e))throw new Error('Uncited takeoff exclusion');await addIssue(env,task,`exclude-${i}`,e.description,'Confirm takeoff treatment or provide a readable scaled detail.',e);}
@@ -52,13 +57,7 @@ export function calculateQuantity(unit,g){
  const inside=p=>p[0]>=x0&&p[0]<=x1&&p[1]>=y0&&p[1]<=y1;
  if(g.points.some(p=>!inside(p)))throw new Error('Trace outside calibrated viewport');
  if(unit==='EA'){if(new Set(g.points.map(p=>p.join(','))).size!==g.points.length)throw new Error('Duplicate count markers');return g.points.length;}
- if(g.notToScale!==false||!Array.isArray(g.anchors)||g.anchors.length<2)throw new Error('Two known dimensions required; NTS prohibited');
- const ratios=g.anchors.map(a=>{if(!Array.isArray(a.points)||a.points.length!==2||a.points.some(p=>!point(p)||!inside(p))||!Number.isFinite(a.knownFeet)||a.knownFeet<=0||!text(a.label))throw new Error('Invalid known dimension');const n=Math.hypot(a.points[0][0]-a.points[1][0],a.points[0][1]-a.points[1][1]);if(n<=0)throw new Error('Zero dimension length');return a.knownFeet/n;});
- const distinct=new Set(g.anchors.map(a=>a.points.map(p=>p.join(',')).sort().join(';')));if(distinct.size<2)throw new Error('Independent dimension checks required');
- const directions=g.anchors.map(a=>{const dx=a.points[1][0]-a.points[0][0],dy=a.points[1][1]-a.points[0][1],n=Math.hypot(dx,dy);return [dx/n,dy/n];});
- if(!directions.some((a,i)=>directions.slice(i+1).some(b=>Math.abs(a[0]*b[1]-a[1]*b[0])>0.1)))throw new Error('Scale checks must span two directions to detect distortion');
- const scale=ratios.reduce((a,b)=>a+b,0)/ratios.length;
- if(ratios.some(r=>Math.abs(r-scale)/scale>0.01))throw new Error('Scale cross-check differs by more than 1 percent');
+ const scale=checkScale(g).feetPerPdfPoint;
  if(unit==='LF'){if(g.points.length<2)throw new Error('Length needs two points');return g.points.slice(1).reduce((sum,p,i)=>sum+Math.hypot(p[0]-g.points[i][0],p[1]-g.points[i][1])*scale,0);}
  if(!['SF','CY'].includes(unit)||g.points.length<3||g.closed!==true)throw new Error('Area requires a closed polygon');
  const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);

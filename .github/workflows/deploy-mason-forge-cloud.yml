@@ -60,6 +60,7 @@ jobs:
           node scripts/test-phase-intake.mjs
           node scripts/test-phase-one.mjs
           node scripts/test-completion-pipeline.mjs
+          node scripts/test-scale-gate.mjs
 
       - name: Read release marker
         id: release

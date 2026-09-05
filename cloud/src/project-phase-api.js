@@ -1,3 +1,4 @@
+import {checkScale} from './scale-gate.js';
 import {calculateQuantity} from './project-phase-handlers.js';
 import {now,readSource,audit,text} from './project-phase-common.js';
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json','cache-control':'no-store'}});
@@ -35,7 +36,8 @@ export async function projectPhaseRoute(request,env){
    const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');if(hash!==body.sourceSha256)return json({error:'Source hash changed or does not match'},409);
    const geometry=body.geometry||JSON.parse(item.geometry_json);const quantity=calculateQuantity(item.unit,geometry);
    if(!Number.isFinite(quantity)||quantity<=0)return json({error:'Quantity must be positive'},400);
-   const verification={reviewer:text(body.reviewer),evidence:text(body.evidence),sourceSha256:hash,at:now(),method:'INDEPENDENT_SOURCE_REVIEW_AND_GEOMETRY_CHECK'};
+   const scaleGate=item.unit==='EA'?{status:'COUNT_ONLY_NO_DIMENSIONAL_SCALE'}:{...checkScale(geometry),status:'SOURCE_REVIEWED',sourceSha256:hash,fileId:source.fileId,page:source.page};
+   const verification={scaleGate,reviewer:text(body.reviewer),evidence:text(body.evidence),sourceSha256:hash,at:now(),method:'INDEPENDENT_SOURCE_REVIEW_AND_GEOMETRY_CHECK'};
    await audit(env,submission,'VERIFY_TAKEOFF',id,{before:item,geometry,quantity,verification});
    await env.DB.prepare("UPDATE project_takeoffs SET geometry_json=?,quantity=?,status='VERIFIED',verification_json=?,updated_at=? WHERE id=? AND submission_id=?").bind(JSON.stringify(geometry),quantity,JSON.stringify(verification),now(),id,submission).run();
    return json({id,quantity,unit:item.unit,status:'VERIFIED'});

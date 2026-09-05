@@ -2,7 +2,7 @@ import pathlib,tempfile,zipfile,unittest
 import fitz
 import tomllib
 from prepare_holding import prepare,sha
-from native_capture import capture_page
+from native_capture import capture_page,write_capture
 from scan_highres import render_retry,tile_clip
 class HoldingTests(unittest.TestCase):
  def test_runner_release_gate_follows_wrangler_configuration(self):
@@ -12,7 +12,7 @@ class HoldingTests(unittest.TestCase):
   self.assertIn("EXPECTED_RELEASE=CONFIG['vars']['RELEASE_ID']",runner)
   self.assertIn("x.get('text')==EXPECTED_RELEASE",runner)
   self.assertNotIn("x.get('text')=='2026-09-05-holding-detail-tiles-v2'",runner)
-  self.assertEqual(expected,'2026-09-05-takeoff-crew-v1')
+  self.assertEqual(expected,'2026-09-05-native-capture-v2')
 
  def test_high_resolution_retry_preserves_package_and_exact_region(self):
   with tempfile.TemporaryDirectory() as td:
@@ -61,9 +61,29 @@ class HoldingTests(unittest.TestCase):
    self.assertEqual(record['page']['rect'],[0.0,0.0,1000.0,700.0])
    self.assertGreater(record['signals']['wordCount'],0)
    self.assertGreater(record['signals']['drawingCount'],0)
+   self.assertEqual(record['schemaVersion'],2)
+   self.assertNotIn('drawings',record['evidence'])
+   self.assertEqual(record['evidence']['drawingDigest']['count'],record['signals']['drawingCount'])
+   self.assertEqual(record['evidence']['drawingDigest']['authoritativeGeometry'],'PRESERVED_SOURCE_PDF')
+   self.assertEqual(len(record['evidence']['drawingDigest']['canonicalSha256']),64)
    self.assertFalse(record['signals']['semanticReviewComplete'])
    self.assertFalse(record['signals']['scaleVerified'])
    self.assertFalse(record['signals']['quantitiesVerified'])
+ def test_dense_vector_capture_is_bounded_without_losing_source_authority(self):
+  with tempfile.TemporaryDirectory() as td:
+   d=pathlib.Path(td);pdf=d/'dense.pdf';capture=d/'capture.json'
+   with fitz.open() as doc:
+    page=doc.new_page(width=1000,height=700)
+    for n in range(2500):
+     x=n%1000;y=(n//1000)*10
+     page.draw_line((x,y),(x+1,y+1))
+    doc.save(pdf)
+   with fitz.open(pdf) as doc:record=capture_page(doc[0],sha(pdf),'plans/dense.pdf',0)
+   meta=write_capture(record,capture)
+   self.assertGreater(record['signals']['drawingCount'],1000)
+   self.assertLess(meta['sizeBytes'],20*1024**2)
+   self.assertEqual(record['evidence']['drawingDigest']['count'],record['signals']['drawingCount'])
+   self.assertNotIn('drawings',record['evidence'])
  def test_nested_and_empty(self):
   with tempfile.TemporaryDirectory() as td:
    d=pathlib.Path(td)

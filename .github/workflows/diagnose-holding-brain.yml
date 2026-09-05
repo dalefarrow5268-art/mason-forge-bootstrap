@@ -1,0 +1,72 @@
+name: Diagnose Holding Brain Reviews
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diagnose-holding-brain.yml']
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cloud/package-lock.json
+      - run: npm ci --prefix cloud
+      - name: Summarize incomplete Brain reviews without source contents
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node --input-type=module <<'JS'
+          import {mkdtempSync,readFileSync,rmSync} from 'node:fs';
+          import {tmpdir} from 'node:os';
+          import {join} from 'node:path';
+          import {spawnSync} from 'node:child_process';
+
+          const account=process.env.CLOUDFLARE_ACCOUNT_ID;
+          const token=process.env.CLOUDFLARE_API_TOKEN;
+          const url=`https://api.cloudflare.com/client/v4/accounts/${account}/d1/database/736f655b-889d-4fb2-8948-0a396d39436f/query`;
+          async function query(sql){
+            const response=await fetch(url,{method:'POST',headers:{authorization:`Bearer ${token}`,'content-type':'application/json'},body:JSON.stringify({sql}),signal:AbortSignal.timeout(30000)});
+            const payload=await response.json();
+            if(!response.ok||!payload.success)throw new Error(`Read-only D1 diagnostic failed: ${response.status}`);
+            return payload.result[0].results;
+          }
+
+          const rows=await query("SELECT id,status,original_path,brain_key,category,error,attempts,updated_at FROM holding_scan_items WHERE source_file_id=2514 ORDER BY entry_index");
+          const statusCounts={};
+          for(const row of rows)statusCounts[row.status]=(statusCounts[row.status]||0)+1;
+          const reviewRows=rows.filter(row=>row.status==='NEEDS_REVIEW'&&row.brain_key);
+          const temp=mkdtempSync(join(tmpdir(),'holding-brain-'));
+          const reasonCounts={},coverageCounts={},categoryCounts={};
+          const samples=[];
+          let unreadableRegions=0,missingRecords=0,emptyFindings=0;
+          try{
+            for(let index=0;index<reviewRows.length;index++){
+              const row=reviewRows[index],file=join(temp,`${index}.json`);
+              const fetched=spawnSync('./node_modules/.bin/wrangler',['r2','object','get',`mason-forge-project-files/${row.brain_key}`,'--remote','--file',file],{cwd:'cloud',encoding:'utf8'});
+              if(fetched.status!==0){missingRecords++;continue;}
+              const record=JSON.parse(readFileSync(file,'utf8'));
+              const review=record.review||{};
+              const coverage=String(review.coverage||'MISSING');
+              const category=String(review.category||row.category||'MISSING');
+              coverageCounts[coverage]=(coverageCounts[coverage]||0)+1;
+              categoryCounts[category]=(categoryCounts[category]||0)+1;
+              const unreadable=Array.isArray(review.unreadableRegions)?review.unreadableRegions:[];
+              unreadableRegions+=unreadable.length;
+              if(!Array.isArray(review.findings)||review.findings.length===0)emptyFindings++;
+              for(const item of unreadable){
+                const reason=String(item?.reason||'Unspecified unreadable region').slice(0,160);
+                reasonCounts[reason]=(reasonCounts[reason]||0)+1;
+              }
+              if(samples.length<20)samples.push({id:row.id,path:row.original_path,coverage,category,unreadableCount:unreadable.length,findingCount:Array.isArray(review.findings)?review.findings.length:0,sheetId:review.sheetId||null});
+            }
+          }finally{rmSync(temp,{recursive:true,force:true});}
+          console.log(JSON.stringify({observedAt:new Date().toISOString(),sourceFileId:2514,statusCounts,reviewRecordsInspected:reviewRows.length,missingRecords,coverageCounts,categoryCounts,unreadableRegions,emptyFindings,reasonCounts,samples},null,2));
+          JS

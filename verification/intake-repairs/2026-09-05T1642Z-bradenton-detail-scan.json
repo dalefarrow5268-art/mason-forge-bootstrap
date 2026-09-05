@@ -37,7 +37,7 @@
       "Report logical page totals and completed logical pages separately from scan-unit totals.",
       "Extend Holding preparation workflow timeout to 120 minutes for the larger verified package.",
       "Judge each detail tile against its own visible pixels, not against absent portions of the logical sheet; still require all nine overlapping tiles before page release.",
-      "Retry first-attempt detail-tile NEEDS_REVIEW records once under the corrected contract; genuine unreadable content remains blocked after the second review."
+      "Prioritize and retry first-attempt detail-tile NEEDS_REVIEW records once under the corrected contract; genuine unreadable content remains blocked after the second review."
     ],
     "safety": [
       "Original upload is unchanged.",

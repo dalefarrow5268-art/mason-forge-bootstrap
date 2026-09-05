@@ -8,7 +8,7 @@ MASON_DASHBOARD_TOKEN_SHA256 = "dcb9fe568c3ed1b32b17a17341a2cdaf7af25491d0457e33
 ENVIRONMENT = "production"
 SYSTEM_NAME = "Mason Forge Cloud"
 OPENAI_MODEL = "gpt-5-mini"
-RELEASE_ID = "2026-09-05-native-capture-v2"
+RELEASE_ID = "2026-09-05-dedicated-holding-scan-queue"
 EVIDENCE_BATCH_SIZE = "20"
 OPENAI_REQUEST_TIMEOUT_MS = "600000"
 
@@ -26,8 +26,21 @@ bucket_name = "mason-forge-project-files"
 binding = "DEPARTMENT_QUEUE"
 queue = "mason-forge-department-work"
 
+[[queues.producers]]
+binding = "HOLDING_SCAN_QUEUE"
+queue = "mason-forge-holding-scan"
+
 [[queues.consumers]]
 queue = "mason-forge-department-work"
+max_batch_size = 1
+max_batch_timeout = 1
+max_retries = 5
+retry_delay = 120
+max_concurrency = 5
+dead_letter_queue = "mason-forge-department-dead-letter"
+
+[[queues.consumers]]
+queue = "mason-forge-holding-scan"
 max_batch_size = 1
 max_batch_timeout = 1
 max_retries = 5

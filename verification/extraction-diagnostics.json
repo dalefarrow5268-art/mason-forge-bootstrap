@@ -1,6 +1,6 @@
 {
-  "capturedAt": "2026-09-05T00:42:50.684Z",
-  "sourceCommit": "3c08cd603e84e6bfb9c514097ba714be7a1e08bf",
+  "capturedAt": "2026-09-05T00:44:02.691Z",
+  "sourceCommit": "4b5f0da2ca2b3d3085b9561a0a2604e0dea25934",
   "health": {
     "status": "online",
     "operationalReady": true,
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-05T00:42:51.497Z"
+    "checkedAt": "2026-09-05T00:44:03.205Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-05T00:42:51.880Z",
+    "retrievedAt": "2026-09-05T00:44:03.559Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",
@@ -453,7 +453,7 @@
   },
   "projects": {
     "4": {
-      "fileCount": 1963,
+      "fileCount": 1784,
       "taskCount": 1165,
       "taskCounts": {
         "COMPLETED": 1165
@@ -475,15 +475,14 @@
   },
   "errors": [],
   "collectionComplete": true,
-  "totalFiles": 2128,
+  "totalFiles": 1949,
   "byStatus": {
     "EXTRACTED - NEEDS HUMAN REVIEW": 292,
-    "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT": 150,
-    "EXTRACTED - READY": 717,
-    "EXTRACTED - MANUAL REVIEW REQUIRED: DOCUMENT": 164,
-    "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 538,
-    "MANUAL REVIEW REQUIRED: DOCUMENT": 67,
-    "ARCHIVED": 64,
+    "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT": 146,
+    "EXTRACTED - READY": 678,
+    "EXTRACTED - MANUAL REVIEW REQUIRED: DOCUMENT": 160,
+    "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 500,
+    "MANUAL REVIEW REQUIRED: DOCUMENT": 37,
     "EXTRACTED - VISUAL REVIEW REQUIRED: SCAN": 30,
     "EXTRACTED - VISUAL REVIEW REQUIRED: IMAGE": 105,
     "MANUAL REVIEW REQUIRED: IMAGE": 1

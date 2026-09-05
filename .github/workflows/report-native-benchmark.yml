@@ -19,6 +19,7 @@ jobs:
           cache-dependency-path: cloud/package-lock.json
       - run: npm ci
         working-directory: cloud
+      - run: pip install PyMuPDF==1.26.6
       - name: Close expired benchmark leases and read saved coverage evidence
         working-directory: cloud
         env:

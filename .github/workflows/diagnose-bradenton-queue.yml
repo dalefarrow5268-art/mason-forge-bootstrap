@@ -22,11 +22,13 @@ jobs:
           const queues=await cf('/queues');
           const queue=queues.find(q=>q.queue_name==='mason-forge-department-work');
           if(!queue)throw Error('Production department queue is missing');
-          const safeQueue={queue_id:queue.queue_id,queue_name:queue.queue_name,settings:queue.settings,consumers:queue.consumers?.map(c=>({consumer_id:c.consumer_id,type:c.type,script_name:c.script_name,settings:c.settings,dead_letter_queue:c.dead_letter_queue})),producers:queue.producers};
-          console.log(JSON.stringify({queue:safeQueue}));
+          const listed=queue.consumers?.find(c=>c.type==='worker');
+          if(!listed)throw Error('Production queue has no worker consumer');
+          const consumer=await cf(`/queues/${queue.queue_id}/consumers/${listed.consumer_id}`);
+          console.log(JSON.stringify({queue:{queue_id:queue.queue_id,queue_name:queue.queue_name,settings:queue.settings,producers:queue.producers},consumer:{consumer_id:consumer.consumer_id,type:consumer.type,script_name:consumer.script_name,settings:consumer.settings,dead_letter_queue:consumer.dead_letter_queue}}));
           const db='/d1/database/736f655b-889d-4fb2-8948-0a396d39436f/query';
           async function query(sql){return (await cf(db,{method:'POST',body:JSON.stringify({sql})}))[0].results;}
           console.log(JSON.stringify({scannerStates:await query("SELECT status,COUNT(*) count,MIN(updated_at) oldest,MAX(updated_at) latest,SUM(attempts) attempts FROM holding_scan_items WHERE source_file_id=2514 GROUP BY status"),recentErrors:await query("SELECT id,status,attempts,error,updated_at FROM holding_scan_items WHERE source_file_id=2514 AND (attempts>0 OR error IS NOT NULL) ORDER BY updated_at DESC LIMIT 20")}));
           if(queue.settings?.delivery_paused)throw Error('Production department queue delivery is paused');
-          if(!queue.consumers?.some(c=>c.type==='worker'&&c.script_name==='mason-forge-cloud'))throw Error('Production worker consumer is not attached');
+          if(consumer.type!=='worker'||consumer.script_name!=='mason-forge-cloud')throw Error('Production worker consumer is not attached to mason-forge-cloud');
           JS

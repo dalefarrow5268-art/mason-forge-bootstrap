@@ -27,7 +27,7 @@
   },
   "diagnosis": "The queue was active and not stale. The scanner's single whole-page input was an inadequate review unit for dense construction sheets. The conservative COMPLETE gate correctly rejected those results.",
   "repair": {
-    "status": "DEPLOYED_RETRYING_AFTER_REVIEW_PACKAGE_LIMIT",
+    "status": "DEPLOYED_PREPARATION_VERIFIED_TILE_CONTRACT_REPAIR_PENDING",
     "changes": [
       "Preserve each original single-page PDF as the Phase One source.",
       "Create a 3-by-3 grid of overlapping detail regions for every source page.",
@@ -35,7 +35,9 @@
       "Exclude detail-region files from Phase One inventory so they cannot duplicate or replace the original page.",
       "Archive all first-pass scanner rows and Brain pointers before the controlled Bradenton retry.",
       "Report logical page totals and completed logical pages separately from scan-unit totals.",
-      "Extend Holding preparation workflow timeout to 120 minutes for the larger verified package."
+      "Extend Holding preparation workflow timeout to 120 minutes for the larger verified package.",
+      "Judge each detail tile against its own visible pixels, not against absent portions of the logical sheet; still require all nine overlapping tiles before page release.",
+      "Retry first-attempt detail-tile NEEDS_REVIEW records once under the corrected contract; genuine unreadable content remains blocked after the second review."
     ],
     "safety": [
       "Original upload is unchanged.",
@@ -54,11 +56,12 @@
       "Dashboard tests and production build passed.",
       "Actual Bradenton sample page produced one lossless page plus nine detail regions deterministically."
     ],
-    "production": "Release 2026-09-05-holding-detail-tiles deployed successfully. The first vector-tile rebuild reached 135 pages and 1,215 detail units, then correctly failed before release because its 1.68-GiB review package exceeded Wrangler's 300-MiB single-object upload limit. The retry uses compact 90-DPI one-third-sheet JPEG review regions (about 270-DPI whole-sheet detail density) while retaining every lossless source page. Live retry verification remains pending."
+    "production": "Release 2026-09-05-holding-detail-tiles-v2 and repair commit 2bb54ee41d9ad3c61a2be39807e472fc54a79731 deployed successfully. The first vector-tile rebuild reached 135 pages and 1,215 detail units, then correctly failed before release because its 1.68-GiB review package exceeded Wrangler's 300-MiB single-object upload limit. The compact retry retained every lossless source page and completed preparation in GitHub Actions run 33979944032: prepared file 2599, 169 pages, 1,521 overlapping review regions, prepared SHA-256 d824cb1aa455dcf3751b87434fbb5f1be3de7f7627320853fdd9dc427db402c8. At 2026-09-05T17:22:34.470Z the queue was active. Five early tile reviews were PARTIAL only because the model treated the expected tile boundary as missing sheet coverage; all contained findings and none lacked a review record. The tile-specific coverage contract was corrected and those first-attempt records are eligible for one controlled retry."
   },
   "remainingBlockers": [
     "Verified CSI 2026 catalog is still required before divisions and sections can complete.",
     "BASK estimate delivery connection is still unverified.",
-    "Detail-region production results must be observed before Phase One is released."
+    "All 1,521 detail regions must complete under the corrected tile contract; genuinely illegible visible content must remain NEEDS_REVIEW.",
+    "Phase One must remain gated until all nine overlapping detail regions for every one of the 169 logical pages pass."
   ]
 }

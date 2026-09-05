@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-09-05T16:50:21.901Z",
-  "completedAt": "2026-09-05T16:50:26.901Z",
+  "startedAt": "2026-09-05T17:06:56.331Z",
+  "completedAt": "2026-09-05T17:07:00.222Z",
   "success": true,
   "worker": {
     "attempt": 1,
@@ -11,7 +11,7 @@
       "operationalReady": true,
       "service": "Mason Forge Cloud",
       "environment": "production",
-      "releaseId": "2026-09-05-holding-detail-tiles",
+      "releaseId": "2026-09-05-holding-detail-tiles-v2",
       "database": "D1 VERIFIED",
       "projectFileStorage": "R2 VERIFIED",
       "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
@@ -204,16 +204,16 @@
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-09-05T16:50:22.971Z"
+      "checkedAt": "2026-09-05T17:06:56.840Z"
     },
     "errors": []
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-09-05T16:50:23.620Z",
+      "capturedAt": "2026-09-05T17:06:57.419Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-09-05T16:50:23.533Z",
+        "retrievedAt": "2026-09-05T17:06:57.353Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
@@ -477,10 +477,10 @@
       "projectFiles": 2598
     },
     {
-      "capturedAt": "2026-09-05T16:50:26.064Z",
+      "capturedAt": "2026-09-05T17:06:59.599Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-09-05T16:50:25.994Z",
+        "retrievedAt": "2026-09-05T17:06:59.558Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
@@ -1586,6 +1586,6 @@
     }
   },
   "errors": [],
-  "sourceCommit": "beaf38ae3d7fc13310f595b6ce1a77c610168448",
-  "workflowRunId": "33979066125"
+  "sourceCommit": "2bb54ee41d9ad3c61a2be39807e472fc54a79731",
+  "workflowRunId": "33979908211"
 }

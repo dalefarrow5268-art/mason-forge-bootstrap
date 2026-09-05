@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-09-05T19:31:50.717Z",
-  "completedAt": "2026-09-05T19:31:55.257Z",
-  "success": false,
+  "startedAt": "2026-09-05T19:53:36.273Z",
+  "completedAt": "2026-09-05T19:53:40.619Z",
+  "success": true,
   "worker": {
     "attempt": 1,
     "httpStatus": 200,
@@ -17,7 +17,7 @@
       "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
       "openai": "CONFIGURED",
       "projects": 13,
-      "files": 2806,
+      "files": 2838,
       "taskTotals": {
         "COMPLETED": 1845
       },
@@ -31,16 +31,16 @@
       },
       "extraction": {
         "extracted": 2149,
-        "queued": 2,
+        "queued": 5,
         "retrying": 0,
         "failed": 0,
-        "pending": 655
+        "pending": 684
       },
       "staleRunningTasks": 0,
       "completedTasksWithoutOutput": 0,
       "duplicateOutputTasks": 0,
       "countsReconcile": true,
-      "projectFileTotal": 2806,
+      "projectFileTotal": 2838,
       "projectTaskTotal": 1845,
       "r2Samples": [
         {
@@ -85,7 +85,7 @@
         {
           "id": 3,
           "name": "Bask Development",
-          "file_count": 388,
+          "file_count": 417,
           "queued_tasks": 0,
           "running_tasks": 0,
           "blocked_tasks": 0,
@@ -195,7 +195,7 @@
         {
           "id": 13,
           "name": "SSX",
-          "file_count": 264,
+          "file_count": 267,
           "queued_tasks": 0,
           "running_tasks": 0,
           "blocked_tasks": 0,
@@ -204,16 +204,16 @@
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-09-05T19:31:51.526Z"
+      "checkedAt": "2026-09-05T19:53:37.093Z"
     },
     "errors": []
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-09-05T19:31:52.212Z",
+      "capturedAt": "2026-09-05T19:53:37.756Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-09-05T19:31:52.130Z",
+        "retrievedAt": "2026-09-05T19:53:37.683Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
@@ -261,7 +261,7 @@
             "client": null,
             "status": "INTAKE",
             "review_status": "NEEDS REVIEW",
-            "file_count": 264,
+            "file_count": 267,
             "running_tasks": 0,
             "queued_tasks": 0,
             "completed_tasks": 325,
@@ -411,7 +411,7 @@
             "client": null,
             "status": "INTAKE",
             "review_status": "NEEDS REVIEW",
-            "file_count": 388,
+            "file_count": 417,
             "running_tasks": 0,
             "queued_tasks": 0,
             "completed_tasks": 160,
@@ -474,13 +474,13 @@
         "FAILED": 0,
         "CANCELED": 0
       },
-      "projectFiles": 2806
+      "projectFiles": 2838
     },
     {
-      "capturedAt": "2026-09-05T19:31:54.533Z",
+      "capturedAt": "2026-09-05T19:53:39.979Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-09-05T19:31:54.475Z",
+        "retrievedAt": "2026-09-05T19:53:39.942Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
@@ -528,7 +528,7 @@
             "client": null,
             "status": "INTAKE",
             "review_status": "NEEDS REVIEW",
-            "file_count": 265,
+            "file_count": 267,
             "running_tasks": 0,
             "queued_tasks": 0,
             "completed_tasks": 325,
@@ -678,7 +678,7 @@
             "client": null,
             "status": "INTAKE",
             "review_status": "NEEDS REVIEW",
-            "file_count": 388,
+            "file_count": 417,
             "running_tasks": 0,
             "queued_tasks": 0,
             "completed_tasks": 160,
@@ -729,9 +729,7 @@
           }
         ]
       },
-      "errors": [
-        "Project files 2807 do not match health files 2806."
-      ],
+      "errors": [],
       "globalTasks": {
         "COMPLETED": 1845
       },
@@ -743,7 +741,7 @@
         "FAILED": 0,
         "CANCELED": 0
       },
-      "projectFiles": 2807
+      "projectFiles": 2838
     }
   ],
   "progression": {
@@ -1587,9 +1585,7 @@
       "actionableSamples": []
     }
   },
-  "errors": [
-    "Project files 2807 do not match health files 2806."
-  ],
-  "sourceCommit": "0d4d19d9259b48c74202ea78db21237c0f52ec6e",
-  "workflowRunId": "33987349441"
+  "errors": [],
+  "sourceCommit": "0c2ab50ae045eb38c5c4150f1dc40d2fb6ef1ab2",
+  "workflowRunId": "33988442830"
 }

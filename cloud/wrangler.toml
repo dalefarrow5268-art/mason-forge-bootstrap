@@ -3,6 +3,7 @@ main = "src/entry.js"
 compatibility_date = "2026-07-23"
 
 [vars]
+MASON_DASHBOARD_TOKEN_SHA256 = "dcb9fe568c3ed1b32b17a17341a2cdaf7af25491d0457e336e3fb18311c78022"
 ENVIRONMENT = "production"
 SYSTEM_NAME = "Mason Forge Cloud"
 OPENAI_MODEL = "gpt-5-mini"

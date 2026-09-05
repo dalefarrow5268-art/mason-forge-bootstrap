@@ -1,3 +1,4 @@
+import { dashboardRequest } from "./dashboard-auth.js";
 import foundation from "./index.js";
 import runtime from "./worker.js";
 import { connectorResponse } from "./connector.js";
@@ -35,6 +36,7 @@ async function selfHeal(env, ctx, trigger) {
 
 export default {
   async fetch(request, env, ctx) {
+    request = await dashboardRequest(request, env);
     const url = new URL(request.url);
     let phase = "runtime-schema";
 

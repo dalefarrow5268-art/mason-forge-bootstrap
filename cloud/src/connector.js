@@ -82,7 +82,7 @@ async function listFiles(projectId, env) {
   if (!project) return json({ error: "Project not found." }, 404);
   const result = await env.DB.prepare(`SELECT id, project_id, file_name, relative_path, file_type, size_bytes,
     sha256, revision, document_date, review_status, extracted_text_key, source_class, uploaded_at, updated_at
-    FROM project_files WHERE project_id = ? ORDER BY relative_path, id`).bind(projectId).all();
+    FROM project_files WHERE project_id = ? AND archived_at IS NULL ORDER BY relative_path, id`).bind(projectId).all();
   return json({ project, count: result.results?.length || 0, files: result.results || [] });
 }
 

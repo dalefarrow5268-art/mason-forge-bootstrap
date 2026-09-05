@@ -1,3 +1,4 @@
+import { routePendingBrainFiles } from "./brain-lobe-router.js";
 import {queueHoldingScan,processHoldingScan} from './holding-brain-scan.js';
 import {intakeProgress} from './intake-progress.js';
 import {queuePhaseIntake,processPhaseIntake} from './phase-intake.js';
@@ -432,6 +433,7 @@ export default {
     await kickOperations(env);
     await ensureSystemContinuity(env);
     await intakeProgress(env);
+    try { await routePendingBrainFiles(env); } catch(error) { console.error("Brain routing deferred", String(error?.message || error)); }
   },
 
   async scheduled(_event, env) {
@@ -449,6 +451,7 @@ export default {
     await kickOperations(env);
     await ensureSystemContinuity(env);
     await intakeProgress(env);
+    try { await routePendingBrainFiles(env); } catch(error) { console.error("Brain routing deferred", String(error?.message || error)); }
   },
 };
 

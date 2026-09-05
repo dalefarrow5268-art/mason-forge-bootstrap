@@ -266,7 +266,7 @@ async function listFindings(projectId, env) {
 async function listEvidence(projectId, env) {
   const project = await requireProject(projectId, env);
   if (!project) return json({ error: "Project not found." }, 404);
-  const [batches, files, reviews, totals] = await Promise.all([
+  const [batches, files, reviews, totals, brainRoutes] = await Promise.all([
     env.DB.prepare("SELECT * FROM evidence_batches WHERE project_id = ? ORDER BY created_at").bind(projectId).all(),
     env.DB.prepare(`SELECT f.id, f.file_name, f.relative_path, f.file_type, f.review_status, f.extracted_text_key,
       ebf.batch_id FROM project_files f LEFT JOIN evidence_batch_files ebf ON ebf.file_id=f.id
@@ -279,6 +279,7 @@ async function listEvidence(projectId, env) {
       SUM(CASE WHEN extracted_text_key IS NULL AND review_status IN ('EXTRACTION QUEUED','EXTRACTING','EXTRACTION RETRYING') THEN 1 ELSE 0 END) processing,
       SUM(CASE WHEN extracted_text_key IS NULL AND review_status LIKE '%REVIEW REQUIRED:%' THEN 1 ELSE 0 END) routed_unreadable
       FROM project_files WHERE project_id=?`).bind(projectId).first(),
+    env.DB.prepare("SELECT * FROM brain_lobe_routes WHERE project_id=? ORDER BY routed_at DESC LIMIT 25").bind(projectId).all(),
   ]);
   return json({
     project,
@@ -292,6 +293,7 @@ async function listEvidence(projectId, env) {
     batches: batches.results || [],
     files: files.results || [],
     reviewQueue: reviews.results || [],
+    brainRouting: {version:"1.0.0",recent:brainRoutes.results || [], meaning:"Source-linked sensory index; associations are candidates, not verified physical properties."},
   });
 }
 

@@ -69,10 +69,10 @@ def prepare(source, name, output, manifest_path, progress=lambda m: None):
                             arc=prefix+f'/page-{n+1:05d}.pdf'
                             write(out,arc)
                             scan_assets=[]
-                            # Nine overlapping high-detail review views make small plan notes,
-                            # schedules, symbols and dimensions readable without altering the
-                            # protected lossless/vector page above. At 90 DPI per one-third view,
-                            # each region has roughly the detail of a 270 DPI whole-sheet scan.
+                            # Nine overlapping review views reduce the content presented in each
+                            # model call without altering the protected lossless/vector page above.
+                            # The raster itself remains 90 DPI; terminal unreadable tiles receive
+                            # a bounded retry against the preserved vector page.
                             cols=rows=3;overlap=.08
                             for tile_row in range(rows):
                                 for tile_col in range(cols):
@@ -89,7 +89,7 @@ def prepare(source, name, output, manifest_path, progress=lambda m: None):
                                     if tile.stat().st_size>LIMIT: raise ValueError('Individual detail tile exceeds 20 MiB; preserved original requires review')
                                     tile_arc=arc+f'.brain-scan/tile-r{tile_row+1}-c{tile_col+1}.jpg'
                                     write(tile,tile_arc)
-                                    scan_assets.append({'path':tile_arc,'row':tile_row+1,'column':tile_col+1,'rows':rows,'columns':cols,'clip':list(clip),'renderDpi':90,'wholeSheetEquivalentDpi':270,'sha256':sha(tile),'sizeBytes':tile.stat().st_size})
+                                    scan_assets.append({'path':tile_arc,'row':tile_row+1,'column':tile_col+1,'rows':rows,'columns':cols,'clip':list(clip),'renderDpi':90,'sha256':sha(tile),'sizeBytes':tile.stat().st_size})
                                     manifest['scanUnitsTotal']+=1
                             row['outputs'].append({'path':arc,'originalPage':n+1,'sha256':sha(out),'sizeBytes':out.stat().st_size,'mediaBox':list(page.mediabox),'cropBox':list(page.cropbox),'rotation':page.rotation,'scaleVerified':False,'textBlocks':page.get_text('blocks'),'links':page.get_links(),'scanAssets':scan_assets})
                             manifest['unitsDone']+=1;progress(manifest)

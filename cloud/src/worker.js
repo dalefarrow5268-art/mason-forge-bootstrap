@@ -1,3 +1,5 @@
+import { queuePhaseSix, processPhaseSix } from './phase-six-brain.js';
+import { queuePhaseFive, processPhaseFive } from './phase-five-review.js';
 import { queuePhaseFour, processPhaseFour } from './phase-four-review.js';
 import { queuePhaseThree, processPhaseThree } from './phase-three-review.js';
 import { queuePhaseTwo, processPhaseTwo } from './phase-two-review.js';
@@ -303,6 +305,8 @@ export default {
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
     await queuePhaseFour(env);
+    await queuePhaseFive(env);
+    await queuePhaseSix(env);
     await kickOperations(env);
       await ensureSystemContinuity(env);
     }
@@ -311,6 +315,8 @@ export default {
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
     await queuePhaseFour(env);
+    await queuePhaseFive(env);
+    await queuePhaseSix(env);
     await kickOperations(env);
       await ensureSystemContinuity(env);
     }
@@ -326,6 +332,16 @@ export default {
     await ensureRuntimeSchema(env);
     for (const message of batch.messages) {
       const body = message.body || {};
+      if(body.kind === 'PHASE_SIX') {
+        try { await processPhaseSix(body,env); message.ack(); }
+        catch(error) { console.error('Phase Six retry',body.id,String(error)); message.retry({delaySeconds:120}); }
+        continue;
+      }
+      if(body.kind === 'PHASE_FIVE') {
+        try { await processPhaseFive(body,env); message.ack(); }
+        catch(error) { console.error('Phase Five retry',body.id,String(error)); message.retry({delaySeconds:120}); }
+        continue;
+      }
       if(body.kind === 'PHASE_FOUR') {
         try { await processPhaseFour(body,env); message.ack(); }
         catch(error) { console.error('Phase Four retry',body.id,String(error)); message.retry({delaySeconds:120}); }
@@ -374,6 +390,8 @@ export default {
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
     await queuePhaseFour(env);
+    await queuePhaseFive(env);
+    await queuePhaseSix(env);
     await kickOperations(env);
     await ensureSystemContinuity(env);
   },
@@ -384,6 +402,8 @@ export default {
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
     await queuePhaseFour(env);
+    await queuePhaseFive(env);
+    await queuePhaseSix(env);
     await kickOperations(env);
     await ensureSystemContinuity(env);
   },

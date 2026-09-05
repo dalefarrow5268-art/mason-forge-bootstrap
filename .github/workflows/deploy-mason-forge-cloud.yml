@@ -49,6 +49,9 @@ jobs:
       - name: Test MCP and OAuth contract
         run: npm run test:connector
 
+      - name: Test phase review pipeline
+        run: node scripts/test-phase-six.mjs
+
       - name: Read release marker
         id: release
         run: |

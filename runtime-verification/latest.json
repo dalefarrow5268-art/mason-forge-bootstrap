@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-09-05T21:36:53.475Z",
-  "completedAt": "2026-09-05T21:36:57.298Z",
+  "startedAt": "2026-09-05T21:40:40.394Z",
+  "completedAt": "2026-09-05T21:40:44.290Z",
   "success": true,
   "worker": {
     "attempt": 1,
@@ -11,13 +11,13 @@
       "operationalReady": true,
       "service": "Mason Forge Cloud",
       "environment": "production",
-      "releaseId": "2026-09-05-brain-lobe-routing-v1",
+      "releaseId": "2026-09-05-holding-highres-retry-v1",
       "database": "D1 VERIFIED",
       "projectFileStorage": "R2 VERIFIED",
       "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
       "openai": "CONFIGURED",
       "projects": 13,
-      "files": 2989,
+      "files": 2996,
       "taskTotals": {
         "COMPLETED": 1845
       },
@@ -34,13 +34,13 @@
         "queued": 9,
         "retrying": 0,
         "failed": 0,
-        "pending": 831
+        "pending": 838
       },
       "staleRunningTasks": 0,
       "completedTasksWithoutOutput": 0,
       "duplicateOutputTasks": 0,
       "countsReconcile": true,
-      "projectFileTotal": 2989,
+      "projectFileTotal": 2996,
       "projectTaskTotal": 1845,
       "r2Samples": [
         {
@@ -85,7 +85,7 @@
         {
           "id": 3,
           "name": "Bask Development",
-          "file_count": 568,
+          "file_count": 575,
           "queued_tasks": 0,
           "running_tasks": 0,
           "blocked_tasks": 0,
@@ -204,16 +204,16 @@
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-09-05T21:36:53.891Z"
+      "checkedAt": "2026-09-05T21:40:40.910Z"
     },
     "errors": []
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-09-05T21:36:54.413Z",
+      "capturedAt": "2026-09-05T21:40:41.422Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-09-05T21:36:54.367Z",
+        "retrievedAt": "2026-09-05T21:40:41.381Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
@@ -411,7 +411,7 @@
             "client": null,
             "status": "INTAKE",
             "review_status": "NEEDS REVIEW",
-            "file_count": 568,
+            "file_count": 575,
             "running_tasks": 0,
             "queued_tasks": 0,
             "completed_tasks": 160,
@@ -474,13 +474,13 @@
         "FAILED": 0,
         "CANCELED": 0
       },
-      "projectFiles": 2989
+      "projectFiles": 2996
     },
     {
-      "capturedAt": "2026-09-05T21:36:56.561Z",
+      "capturedAt": "2026-09-05T21:40:43.582Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-09-05T21:36:56.535Z",
+        "retrievedAt": "2026-09-05T21:40:43.553Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
@@ -678,7 +678,7 @@
             "client": null,
             "status": "INTAKE",
             "review_status": "NEEDS REVIEW",
-            "file_count": 568,
+            "file_count": 575,
             "running_tasks": 0,
             "queued_tasks": 0,
             "completed_tasks": 160,
@@ -741,7 +741,7 @@
         "FAILED": 0,
         "CANCELED": 0
       },
-      "projectFiles": 2989
+      "projectFiles": 2996
     }
   ],
   "progression": {
@@ -1586,6 +1586,6 @@
     }
   },
   "errors": [],
-  "sourceCommit": "aca36cc3fcece5791b44b76964075ec225027bb0",
-  "workflowRunId": "33993532663"
+  "sourceCommit": "f61d278d052943533853c574fca44165df15df02",
+  "workflowRunId": "33993708800"
 }

@@ -1,0 +1,83 @@
+{
+  "observedAt": "2026-09-05T22:44:45.905Z",
+  "submissionId": "bask-bradenton-2513-v1",
+  "projectId": 3,
+  "issueId": "bradenton-sheet-routing-json-mode-400",
+  "priorContinuity": {
+    "previousAudit": "verification/intake-repairs/2026-09-05T2146Z-bradenton-highres-retry.json",
+    "approvedScannerChange": "The retired 1,521-region scan was preserved as superseded audit evidence and replaced by one deterministic native capture per logical page.",
+    "activePreparationCommit": "dc22c4cd382e9bd7d9f97c87da14048db3cd5f2c"
+  },
+  "phaseMilestone": {
+    "status": "NATIVE_CAPTURE_PACKAGE_READY",
+    "holdingSourceFileId": 2514,
+    "preparedFileId": 3064,
+    "preparationVersion": "native-capture-v1",
+    "files": 3,
+    "logicalPages": 169,
+    "scanUnits": 169,
+    "preparedSha256": "be36830356866e9b4dea4ae2e19c17c858e29c36421a5b12e6ae7559aff9b6b1",
+    "safety": "Original uploads and the earlier scan history remain preserved. Native capture is evidence only and does not claim semantic review, verified scale, or verified quantities."
+  },
+  "investigation": {
+    "newFailure": "Plan-layer jobs plan-layers-3000 and plan-layers-3032 returned HTTP 400 from the sheet-routing service after completed pages reached the takeoff branch.",
+    "diagnosis": "The request enabled Responses API JSON mode with text.format type json_object but did not explicitly instruct the model to produce JSON. The API rejects that request. Other routing constraints and evidence sizes remained within their configured bounds.",
+    "authoritativeReference": "https://developers.openai.com/api/docs/guides/structured-outputs#json-mode",
+    "referenceRule": "JSON mode requires an explicit instruction to produce JSON; the API throws an error when the string JSON is absent from the context.",
+    "actionsLogs": "No current GitHub Action failed. The error occurred inside the deployed queue consumer and was saved on the affected plan-layer jobs."
+  },
+  "repair": {
+    "status": "DEPLOYED_AND_LIVE_ROUTE_VERIFIED",
+    "pullRequest": "https://github.com/dalefarrow5268-art/mason-forge-bootstrap/pull/23",
+    "commit": "dff6decdae972eee4e04b33427772c1a49e2005b",
+    "releaseId": "2026-09-05-sheet-routing-json-v1",
+    "deployment": "https://github.com/dalefarrow5268-art/mason-forge-bootstrap/actions/runs/33996462763",
+    "changes": [
+      "Explicitly request one JSON object while retaining the existing cited-evidence routing schema.",
+      "Persist a bounded provider error message on future failures instead of only the HTTP status.",
+      "Keep TAKEOFF, REFERENCE_ONLY, MIXED, NEEDS_REVIEW, high-confidence, and actual-project-geometry gates unchanged."
+    ]
+  },
+  "verification": {
+    "local": "Worker syntax, connector and authentication tests, native Holding tests, all 13 phase handoffs, Phase One, completion pipeline, scale gate, plan-layer queue, and native-trial tests passed. A new execution test reproduces the provider 400, retains its error detail, and then completes a conservative REFERENCE_ONLY route.",
+    "production": "All deployment validation, dry-run, migration, deployment, and live end-to-end verification steps passed in run 33996462763.",
+    "liveProof": {
+      "checkedAt": "2026-09-05T22:41:37.033Z",
+      "planLayerJobId": "plan-layers-3032",
+      "sourcePage": "page-00004.pdf",
+      "status": "REFERENCE_ONLY",
+      "attempts": 0,
+      "error": null,
+      "route": "REFERENCE_ONLY",
+      "confidence": "HIGH",
+      "hasProjectGeometry": false,
+      "reason": "The cited evidence identifies a sheet index/callout compilation with miniature thumbnails and no measurable project geometry. No takeoff work was authorized."
+    },
+    "formerlyFailingJobProof": {
+      "checkedAt": "2026-09-05T22:44:45.905Z",
+      "planLayerJobId": "plan-layers-3000",
+      "sourcePage": "page-00016.pdf",
+      "sheetId": "A2.4",
+      "title": "FOURTH FLOOR PLAN",
+      "status": "REGION_REVIEW_REQUIRED",
+      "attempts": 0,
+      "route": "MIXED",
+      "confidence": "HIGH",
+      "hasProjectGeometry": true,
+      "result": "The prior HTTP 400 cleared. The central floor-plan area is identified for takeoff, while the room matrix, title block, and callout references remain reference-only. The existing region-confirmation gate was preserved."
+    }
+  },
+  "currentState": {
+    "phaseOne": "PREPARING at 33 percent; one geotechnical file sorted and two plan uploads remain gated behind page review.",
+    "repairRequests": [],
+    "phaseErrors": [],
+    "otherProjects": "All other projects with registered files were checked and currently have no intake submissions in phaseProgress. The system project list reports zero failed legacy tasks."
+  },
+  "remainingBlockers": [
+    "A2.4 is correctly held at REGION_REVIEW_REQUIRED until its measurable central plan region is confirmed; the reference-only matrix, title block, and callouts must not be traced.",
+    "Jobs plan-layers-3002 and plan-layers-3012 remain queued and must complete under the repaired routing request; no result is claimed for them yet.",
+    "The 169 native capture items must be registered and semantically reviewed before the full intake gate opens.",
+    "Verified CSI 2026 catalog is still required before divisions and sections can complete.",
+    "BASK estimate delivery connection is still unverified."
+  ]
+}

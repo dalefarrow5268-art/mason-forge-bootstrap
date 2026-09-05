@@ -58,16 +58,23 @@ export async function processHoldingScan(body,env){
  const c=await env.DB.prepare("UPDATE holding_scan_items SET status='RUNNING',attempts=attempts+1,started_at=COALESCE(started_at,?),updated_at=? WHERE id=? AND (status IN ('PENDING','QUEUED') OR (status='RUNNING' AND updated_at<?))").bind(now(),now(),i.id,stale()).run();if(!c.meta.changes)return;
  try{
   const source=await env.DB.prepare('SELECT f.* FROM holding_preparations p JOIN project_files f ON f.id=p.prepared_file_id WHERE p.source_file_id=? AND f.archived_at IS NULL').bind(i.source_file_id).first();if(!source)throw Error('Prepared source unavailable');
-  const root=`projects/${source.project_id}/Mason Project Brain/Intake/${i.source_file_id}`;const key=`${root}/sources/${i.id}`;
-  await unpack(env,source,i,key);
-  const path=`Mason Project Brain/Intake/${i.source_file_id}/Sources/${i.original_path}`;
-  const fid=await register(env,source,key,path,i.size_bytes,'BRAIN SCAN');
-  await env.DB.prepare("UPDATE project_files SET source_class='BRAIN SCAN SOURCE' WHERE id=?").bind(fid).run();
-  const detail=i.asset_role==='DETAIL_TILE';let reviewFileId=fid,reviewAssetRole=i.asset_role||'SOURCE',prompt=scanPrompt(detail);
+  const root=`projects/${source.project_id}/Mason Project Brain/Intake/${i.source_file_id}`;
+  const detail=i.asset_role==='DETAIL_TILE';let reviewFileId,reviewAssetRole=i.asset_role||'SOURCE',prompt=scanPrompt(detail);
+  if(i.override_file_id){
+   const override=await env.DB.prepare('SELECT * FROM project_files WHERE id=? AND project_id=? AND archived_at IS NULL').bind(i.override_file_id,source.project_id).first();
+   if(!override||override.source_class!=='BRAIN SCAN HIGH RES RETRY SOURCE')throw new Error('High-resolution retry source unavailable or invalid');
+   reviewFileId=override.id;reviewAssetRole=i.override_asset_role||'HIGH_RES_REGION_RETRY';prompt=scanPrompt(true);
+  }else{
+   const key=`${root}/sources/${i.id}`;
+   await unpack(env,source,i,key);
+   const path=`Mason Project Brain/Intake/${i.source_file_id}/Sources/${i.original_path}`;
+   reviewFileId=await register(env,source,key,path,i.size_bytes,'BRAIN SCAN');
+   await env.DB.prepare("UPDATE project_files SET source_class='BRAIN SCAN SOURCE' WHERE id=?").bind(reviewFileId).run();
+  }
   // After three conservative raster reviews, retry only the same bounded region
   // against the preserved vector page. Completed tiles and the original upload
   // remain untouched, and genuinely illegible vector content still fails validScan.
-  if(detail&&i.attempts>=3){
+  if(!i.override_file_id&&detail&&i.attempts>=3){
    const page=await preparedEntry(env,source,i.source_path);
    const vectorKey=`${root}/vector-retry-sources/${i.id}`;
    await unpack(env,source,page,vectorKey);

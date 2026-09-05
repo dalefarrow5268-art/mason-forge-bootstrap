@@ -6,11 +6,18 @@ REVIEWS={
  'plan-layers-3000':{
   'sheet':'A2.4 FOURTH FLOOR PLAN',
   'source':'cbb29231c3a20ffe1c2ee6ed936c8bebedf87d4dc6a09f3a56641c919a67beb7',
-  'layer':'bbba4837fec3b71c5a954fd6eeb0d1c0536208d6176ea5928c28f4c06bd61c30'},
+  'layer':'bbba4837fec3b71c5a954fd6eeb0d1c0536208d6176ea5928c28f4c06bd61c30',
+  'evidence':'Measurable plan walls, openings, doors, room names and room numbers remain; room matrix, general notes, title block, furniture and reference content are excluded.'},
  'plan-layers-3002':{
   'sheet':'A2.5 FIFTH FLOOR PLAN',
   'source':'887081f2a366ecce4a195f7b8b79269fdcc404aead03508d44adb6e59e4eba2f',
-  'layer':'0741359272e8ee645071187d685ce11d2f1a8478070c39e1a1887d9e7baa0873'}
+  'layer':'0741359272e8ee645071187d685ce11d2f1a8478070c39e1a1887d9e7baa0873',
+  'evidence':'Measurable plan walls, openings, doors, room names and room numbers remain; room matrix, general notes, title block, furniture and reference content are excluded.'},
+ 'plan-layers-3012':{
+  'sheet':'A3.1 REFLECTED CEILING PLAN - FIRST FLOOR',
+  'source':'88ac86151a8a4ee754d24f054abca9c42910c31e9793eb96c48c15c786256bd6',
+  'layer':'70a32e63dfd937d69e3d199fcfcc72ddc2c3e9039a42a884d613a4217af47f55',
+  'evidence':'Measurable plan walls, openings, doors, room names and room numbers remain, and the rebuilt systems layer retains ceiling grid, fixtures and system-device symbols; legends, title block, furniture and reference content are excluded.'}
 }
 
 def sha(path):return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -34,7 +41,7 @@ def main():
    manifest=json.loads(manifest_file.read_text());source_hash=sha(source);layer_hash=sha(layer)
    if source_hash!=job['source_sha256'] or source_hash!=expected['source']:raise RuntimeError(jid+' source hash differs from reviewed source')
    if layer_hash!=expected['layer'] or manifest.get('artifactSha256',{}).get('layers.pdf')!=layer_hash:raise RuntimeError(jid+' layer hash differs from reviewed layer')
-   reviewed_at=now();review={'reviewer':'OpenAI Codex visual PDF comparison for Dale Farrow','evidence':expected['sheet']+' source and measuring-layer PDFs were compared side by side at full-page resolution. Measurable plan walls, openings, doors, room names and room numbers remain; room matrices, general notes and title-block/reference content are excluded. Classification only; scale and quantities are not verified.','sourceSha256':source_hash,'layerSha256':layer_hash,'classificationComplete':True,'scaleVerified':False,'at':reviewed_at}
+   reviewed_at=now();review={'reviewer':'OpenAI Codex visual PDF comparison for Dale Farrow','evidence':expected['sheet']+' source and measuring-layer PDFs were compared side by side at full-page and high resolution. '+expected['evidence']+' Searchable room-label text was checked. Classification only; scale and quantities are not verified.','sourceSha256':source_hash,'layerSha256':layer_hash,'classificationComplete':True,'scaleVerified':False,'at':reviewed_at}
    review_file=root/(jid+'-review.json');review_file.write_text(json.dumps(review,indent=2));r2('put',job['manifest_key']+'.review.json',review_file)
    query("INSERT OR IGNORE INTO project_phase_audit(id,submission_id,action,target_id,detail_json,created_at) VALUES(?,?,?,?,?,?)",['layer-review-'+jid+'-'+layer_hash[:12],submission,'VERIFY_PLAN_LAYERS',jid,json.dumps(review),reviewed_at])
    changed=query("UPDATE plan_layer_jobs SET status='READY_FOR_TAKEOFF',error=NULL,updated_at=? WHERE id=? AND status='LAYER_REVIEW_REQUIRED' RETURNING id",[reviewed_at,jid])

@@ -35,10 +35,8 @@ jobs:
             const measurable=route.regions.filter(x=>/TAKEOFF|MEASURABLE/i.test(String(x?.purpose||'')));
             if(!measurable.length)throw Error(`${id}: no routed measurable regions`);
             const review={reviewer:'Dale Farrow',evidence:'Dale approved the identified measurable and reference regions on 2026-09-05 before measuring-layer preparation.',regionsReviewed:true,measurableRegions:measurable,referenceRegions:route.regions.filter(x=>!measurable.includes(x)),at:new Date().toISOString()};
-            await query([
-              {sql:'INSERT INTO project_phase_audit(id,submission_id,action,target_id,detail_json,created_at) VALUES(?,?,?,?,?,?)',params:[crypto.randomUUID(),submission,'VERIFY_MIXED_SHEET_REGIONS',id,JSON.stringify(review),review.at]},
-              {sql:"UPDATE plan_layer_jobs SET status='PENDING',route_json=?,error=NULL,updated_at=? WHERE id=? AND status='REGION_REVIEW_REQUIRED'",params:[JSON.stringify({...route,regionReview:review}),review.at,id]}
-            ]);
+            await query({sql:'INSERT OR IGNORE INTO project_phase_audit(id,submission_id,action,target_id,detail_json,created_at) VALUES(?,?,?,?,?,?)',params:[`region-review-${id}`,submission,'VERIFY_MIXED_SHEET_REGIONS',id,JSON.stringify(review),review.at]});
+            await query({sql:"UPDATE plan_layer_jobs SET status='PENDING',route_json=?,error=NULL,updated_at=? WHERE id=? AND status='REGION_REVIEW_REQUIRED'",params:[JSON.stringify({...route,regionReview:review}),review.at,id]});
             console.log(JSON.stringify({id,status:'PENDING',measurableRegions:measurable.length,referenceRegions:review.referenceRegions.length}));
           }
           JS

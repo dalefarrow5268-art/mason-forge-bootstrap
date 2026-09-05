@@ -21,7 +21,7 @@ export async function projectPhaseRoute(request,env){
  if(finalized&&resource!=='candidates')return json({error:'Final estimate is immutable; register a new submission revision for changes'},409);
  try{
   // A mixed sheet must have its measurable and reference regions approved
-  // before the measuring-layer builder can receive it.
+  // before the measuring-layer builder can receive it; the approval is audited.
   if(resource==='layers'&&action==='regions'){
    const job=await env.DB.prepare(`SELECT l.* FROM plan_layer_jobs l WHERE l.id=? AND l.source_file_id IN (SELECT value FROM json_each((SELECT source_file_ids_json FROM phase_project_submissions WHERE id=?)))`).bind(id,submission).first();
    if(!job||job.status!=='REGION_REVIEW_REQUIRED')return json({error:'Mixed-sheet region review not found'},409);

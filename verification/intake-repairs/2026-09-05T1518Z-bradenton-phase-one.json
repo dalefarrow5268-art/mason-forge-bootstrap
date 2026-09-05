@@ -1,5 +1,5 @@
 {
-  "recordedAt": "2026-09-05T15:18:42.030Z",
+  "recordedAt": "2026-09-05T15:21:55.754Z",
   "system": "Mason Forge Cloud",
   "projectId": 3,
   "submissionId": "bask-bradenton-2513-v1",
@@ -34,16 +34,21 @@
           {"status": "NEEDS_REVIEW", "observedAt": "2026-09-05T15:15:11.727Z"}
         ],
         "inventoriedItems": 3,
-        "registeredOutputs": 1
+        "registeredOutputs": 3,
+        "phaseOneCounts": {
+          "SORTED": 1,
+          "NEEDS_REVIEW": 2
+        },
+        "phaseOnePercent": 33
       },
-      "preservation": "The original upload remained unchanged. The first prepared working copy is file 2516, 23-936_HAR-100- Plans.pdf, 33391795 bytes."
+      "preservation": "The original upload remained unchanged. Working copies are file 2516 (23-936_HAR-100- Plans.pdf, 33391795 bytes), file 2517 (23-936_HMEPR-100- Plans.pdf, 126101193 bytes), and file 2518 (Bradenton Hotel and Restaurant Geo Report (2).pdf, 3207354 bytes). Phase One also saved review report file 2519."
     }
   ],
   "remainingBlockers": [
     {
       "blockerId": "bask-bradenton-2513-v1-large-pdf-preparation",
       "state": "NEW_AFTER_DISPATCH_REPAIR",
-      "detail": "Phase One inventoried three files. At least the 33391795-byte plan PDF exceeds the current 20 MiB content-review gate and is preserved in Needs Review. One additional item remained RUNNING and one QUEUED at the last check. Automatic traceable PDF page or batch preparation is required before complete content review."
+      "detail": "Phase One inventoried all three source files and correctly classified the 3207354-byte geotechnical report. Both plan PDFs (33391795 and 126101193 bytes) exceed the current 20 MiB content-review gate and are preserved in Needs Review. Automatic traceable PDF page or batch preparation is required before complete content review."
     },
     {
       "blockerId": "mason-forge-csi-2026-catalog",

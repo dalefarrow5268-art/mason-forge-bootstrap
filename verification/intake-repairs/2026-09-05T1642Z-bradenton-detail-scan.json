@@ -59,6 +59,14 @@
     ],
     "production": "Release 2026-09-05-holding-detail-tiles-v2 and repair commit 2bb54ee41d9ad3c61a2be39807e472fc54a79731 deployed successfully. The first vector-tile rebuild reached 135 pages and 1,215 detail units, then correctly failed before release because its 1.68-GiB review package exceeded Wrangler's 300-MiB single-object upload limit. The compact retry retained every lossless source page and completed preparation in GitHub Actions run 33979944032: prepared file 2599, 169 pages, 1,521 overlapping review regions, prepared SHA-256 d824cb1aa455dcf3751b87434fbb5f1be3de7f7627320853fdd9dc427db402c8. At 2026-09-05T17:22:34.470Z the queue was active. Early tile reviews were PARTIAL only because the model treated the expected tile boundary as missing sheet coverage; all contained findings and none lacked a review record. Commits 0dfeb7c1b8381cf2016bdd3887a7bf2e258fbf4f and c3e1a3beb6052314eb2ac2459e90c37f9d55479d corrected the tile-specific coverage contract and prioritized one controlled retry. CI, verification and production deploy run 33981274222 passed. At 2026-09-05T17:35:10.359Z all twelve false NEEDS_REVIEW flags had cleared, nine detail regions were COMPLETE, no scanner errors were reported, and the remaining regions were actively queued or pending."
   },
+  "latestCheckpoint": {
+    "observedAt": "2026-09-05T18:39:07.205Z",
+    "issueId": "bradenton-structured-finding-content",
+    "diagnosis": "One region had COMPLETE coverage, no unreadable regions and seven valid findings, but its eighth finding returned structured object content instead of the required string and therefore correctly failed validation.",
+    "repair": "Commit 704fb2e30a349329b4add52ee4640ecc038b9604 losslessly serializes structured finding content while leaving missing fields and genuinely unreadable content blocked. The affected region received one controlled retry.",
+    "verification": "CI, worker syntax, Phase One intake tests and production deployment run 33984576657 passed. Live status then showed 89 of 1,521 review regions COMPLETE, zero NEEDS_REVIEW, no phase errors, no repair requests and an active scanner queue.",
+    "phaseGate": "No logical page or Phase One release is claimed yet; all nine regions for a page must pass. Phase One remains PREPARING at 33 percent."
+  },
   "remainingBlockers": [
     "Verified CSI 2026 catalog is still required before divisions and sections can complete.",
     "BASK estimate delivery connection is still unverified.",

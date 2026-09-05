@@ -4,35 +4,28 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/verify-bradenton-layers.yml'
+      - 'cloud/scripts/approve_layer_reviews.py'
 permissions:
   contents: read
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: cloud
     steps:
-      - name: Record completed source-to-layer comparison
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: pip install PyMuPDF==1.26.6
+      - name: Verify visually reviewed source and layer bytes
+        run: python scripts/approve_layer_reviews.py
         env:
-          MASON_API_TOKEN: ${{ secrets.MASON_API_TOKEN }}
-        run: |
-          node --input-type=module <<'JS'
-          const base='https://mason-forge-cloud.mason-forge-ssx.workers.dev/api/project-phases/bask-bradenton-2513-v1/layers';
-          const reviews=[
-            ['plan-layers-3000','cbb29231c3a20ffe1c2ee6ed936c8bebedf87d4dc6a09f3a56641c919a67beb7','bbba4837fec3b71c5a954fd6eeb0d1c0536208d6176ea5928c28f4c06bd61c30','A2.4 FOURTH FLOOR PLAN'],
-            ['plan-layers-3002','887081f2a366ecce4a195f7b8b79269fdcc404aead03508d44adb6e59e4eba2f','0741359272e8ee645071187d685ce11d2f1a8478070c39e1a1887d9e7baa0873','A2.5 FIFTH FLOOR PLAN'],
-            ['plan-layers-3012','88ac86151a8a4ee754d24f054abca9c42910c31e9793eb96c48c15c786256bd6','819f44a7a4862289056b162569970fea47b19de21a8b4fb295714d9a0f71371a','A3.1 REFLECTED CEILING PLAN - FIRST FLOOR'],
-          ];
-          if(!process.env.MASON_API_TOKEN)throw Error('MASON_API_TOKEN is not configured');
-          for(const [id,sourceSha256,layerSha256,sheet] of reviews){
-            const body={
-              sourceSha256,layerSha256,classificationComplete:true,
-              reviewer:'OpenAI Codex for Dale Farrow',
-              evidence:`${sheet}: compared the preserved source PDF to the generated measuring-layer PDF at full page and high resolution. Both are one 2592 x 1728 point page; walls, windows/openings, doors, room names and room numbers are retained; schedules, legends, title blocks, furniture and administrative/reference content are excluded. Searchable room-label text was checked. This approves classification only; scale and quantities remain unverified.`
-            };
-            const response=await fetch(`${base}/${id}/verify`,{method:'POST',headers:{authorization:`Bearer ${process.env.MASON_API_TOKEN}`,'content-type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});
-            const data=await response.json();
-            if(!response.ok)throw Error(`${id} ${response.status}: ${JSON.stringify(data)}`);
-            if(data.status!=='READY_FOR_TAKEOFF'||data.scaleVerified!==false)throw Error(`${id}: unexpected response ${JSON.stringify(data)}`);
-            console.log(JSON.stringify(data));
-          }
-          JS
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

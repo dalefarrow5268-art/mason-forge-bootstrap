@@ -1,19 +1,19 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-09-05T00:31:37.072Z",
-  "completedAt": "2026-09-05T00:36:39.226Z",
-  "success": false,
+  "startedAt": "2026-09-05T00:42:26.932Z",
+  "completedAt": "2026-09-05T00:42:31.480Z",
+  "success": true,
   "worker": {
-    "attempt": 30,
-    "httpStatus": 503,
+    "attempt": 1,
+    "httpStatus": 200,
     "data": {
-      "status": "degraded",
-      "operationalReady": false,
+      "status": "online",
+      "operationalReady": true,
       "service": "Mason Forge Cloud",
       "environment": "production",
       "releaseId": "2026-07-24-mcp-discovery-13",
       "database": "D1 VERIFIED",
-      "projectFileStorage": "R2 DEGRADED",
+      "projectFileStorage": "R2 VERIFIED",
       "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
       "openai": "CONFIGURED",
       "projects": 13,
@@ -44,17 +44,17 @@
       "projectTaskTotal": 1845,
       "r2Samples": [
         {
-          "fileId": 478,
-          "projectId": 2,
-          "present": false
-        },
-        {
           "fileId": 481,
           "projectId": 2,
           "present": true
         },
         {
           "fileId": 482,
+          "projectId": 2,
+          "present": true
+        },
+        {
+          "fileId": 483,
           "projectId": 2,
           "present": true
         }
@@ -204,20 +204,16 @@
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-09-05T00:36:36.186Z"
+      "checkedAt": "2026-09-05T00:42:27.794Z"
     },
-    "errors": [
-      "Health HTTP 503",
-      "Health status is degraded.",
-      "operationalReady is not true."
-    ]
+    "errors": []
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-09-05T00:36:36.576Z",
+      "capturedAt": "2026-09-05T00:42:28.336Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-09-05T00:36:36.540Z",
+        "retrievedAt": "2026-09-05T00:42:28.265Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
@@ -481,10 +477,10 @@
       "projectFiles": 2513
     },
     {
-      "capturedAt": "2026-09-05T00:36:38.729Z",
+      "capturedAt": "2026-09-05T00:42:30.611Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-09-05T00:36:38.704Z",
+        "retrievedAt": "2026-09-05T00:42:30.548Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
@@ -1590,11 +1586,7 @@
       "actionableSamples": []
     }
   },
-  "errors": [
-    "Health HTTP 503",
-    "Health status is degraded.",
-    "operationalReady is not true."
-  ],
-  "sourceCommit": "9e9a9d6ed95d51f0d555c2ea9cb4731642a4d6bf",
-  "workflowRunId": "33933229447"
+  "errors": [],
+  "sourceCommit": "3c08cd603e84e6bfb9c514097ba714be7a1e08bf",
+  "workflowRunId": "33933831997"
 }

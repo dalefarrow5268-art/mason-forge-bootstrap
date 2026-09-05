@@ -23,6 +23,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: npm ci
+      - run: pip install PyMuPDF==1.26.6
       - name: Download source and layer packages
         run: python scripts/export_layer_review.py
         env:

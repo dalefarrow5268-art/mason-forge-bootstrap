@@ -23,7 +23,8 @@ class R2Reader extends Reader {
  async readUint8Array(offset,length){if(length>16*1024*1024)throw new Error('Archive directory exceeds automated review limit');const o=await this.bucket.get(this.key,{range:{offset,length}});if(!o)throw new Error('Source missing');return new Uint8Array(await o.arrayBuffer());}
 }
 export async function queuePhaseOne(env){
- await env.DB.prepare(`INSERT OR IGNORE INTO phase_one_jobs(id,source_file_id,created_at,updated_at) SELECT 'intake-'||id,id,?,? FROM project_files WHERE project_id=13 AND archived_at IS NULL AND relative_path LIKE ? AND COALESCE(source_class,'') NOT IN ('PHASE ONE WORKING COPY','PHASE ONE REVIEW REPORT')`).bind(now(),now(),ROOT+'/%').run();
+ const intakePrefix=ROOT+'/';
+ await env.DB.prepare(`INSERT OR IGNORE INTO phase_one_jobs(id,source_file_id,created_at,updated_at) SELECT 'intake-'||id,id,?,? FROM project_files WHERE project_id=13 AND archived_at IS NULL AND substr(relative_path,1,?)=? AND COALESCE(source_class,'') NOT IN ('PHASE ONE WORKING COPY','PHASE ONE REVIEW REPORT')`).bind(now(),now(),intakePrefix.length,intakePrefix).run();
  await finishReports(env);
  for(const table of ['phase_one_jobs','phase_one_items']){
  const rows=await env.DB.prepare(`SELECT id FROM ${table} WHERE status='PENDING' OR (status IN ('QUEUED','RUNNING') AND updated_at < ?) LIMIT 20`).bind(new Date(Date.now()-20*60000).toISOString()).all();

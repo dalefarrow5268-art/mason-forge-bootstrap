@@ -1,3 +1,4 @@
+import { queuePhaseFour, processPhaseFour } from './phase-four-review.js';
 import { queuePhaseThree, processPhaseThree } from './phase-three-review.js';
 import { queuePhaseTwo, processPhaseTwo } from './phase-two-review.js';
 import { queuePhaseOne, processPhaseOne } from './phase-one-review.js';
@@ -301,6 +302,7 @@ export default {
       await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
+    await queuePhaseFour(env);
     await kickOperations(env);
       await ensureSystemContinuity(env);
     }
@@ -308,6 +310,7 @@ export default {
       await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
+    await queuePhaseFour(env);
     await kickOperations(env);
       await ensureSystemContinuity(env);
     }
@@ -323,6 +326,11 @@ export default {
     await ensureRuntimeSchema(env);
     for (const message of batch.messages) {
       const body = message.body || {};
+      if(body.kind === 'PHASE_FOUR') {
+        try { await processPhaseFour(body,env); message.ack(); }
+        catch(error) { console.error('Phase Four retry',body.id,String(error)); message.retry({delaySeconds:120}); }
+        continue;
+      }
       if(body.kind === 'PHASE_THREE') {
         try { await processPhaseThree(body,env); message.ack(); }
         catch(error) { console.error('Phase Three retry',body.id,String(error)); message.retry({delaySeconds:120}); }
@@ -365,6 +373,7 @@ export default {
     await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
+    await queuePhaseFour(env);
     await kickOperations(env);
     await ensureSystemContinuity(env);
   },
@@ -374,6 +383,7 @@ export default {
     await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
+    await queuePhaseFour(env);
     await kickOperations(env);
     await ensureSystemContinuity(env);
   },

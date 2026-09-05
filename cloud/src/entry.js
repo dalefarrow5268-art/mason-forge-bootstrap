@@ -1,3 +1,4 @@
+import { projectPhaseRoute } from './project-phase-api.js';
 import { dashboardRequest } from "./dashboard-auth.js";
 import foundation from "./index.js";
 import runtime from "./worker.js";
@@ -56,6 +57,8 @@ export default {
       }
 
       await ensureRuntimeSchema(env);
+      const projectPhases = await projectPhaseRoute(request, env);
+      if (projectPhases) return projectPhases;
 
       phase = "oauth";
       const oauth = await oauthResponse(request, env);

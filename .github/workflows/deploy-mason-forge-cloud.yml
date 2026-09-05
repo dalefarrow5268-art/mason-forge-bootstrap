@@ -50,7 +50,9 @@ jobs:
         run: npm run test:connector
 
       - name: Test phase review pipeline
-        run: node scripts/test-phase-six.mjs
+        run: |
+          node scripts/test-phase-one.mjs
+          node scripts/test-completion-pipeline.mjs
 
       - name: Read release marker
         id: release

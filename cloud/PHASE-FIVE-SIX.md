@@ -10,8 +10,6 @@ A completed memory inventory does NOT mean an estimate was delivered. Scope rows
 
 `node scripts/test-phase-six.mjs` exercises Phases Two through Six using SQLite, fake R2 and a mocked model. It verifies predecessor gates, source references, unsupported/empty entries, duplicate messages, pending delivery and missing-source rejection. This does not prove model accuracy or a real Bradenton run.
 
-## Remaining implementation
+## Subsequent workers
 
-Phases Seven through Thirteen remain to be implemented: report analysis, sheet-by-sheet broken chains/RFIs, scale-verified takeoff, independent review, corrections, finalization, and draft bid packages/subsourcing. No bid invitations are sent by these modules.
-
-The existing sealed-submission entry, verified CSI 2026 catalog and BASK estimate connection are still prerequisites for a real end-to-end project run. Do not represent the code deployment as completion of those prerequisites.
+Phases Seven through Thirteen are implemented in the completion pipeline; see PHASE-SEVEN-THIRTEEN.md for operating gates and tested limitations. A sealed submission, verified CSI 2026 catalog and exact BASK estimate connection still need to be supplied for a real end-to-end project run.

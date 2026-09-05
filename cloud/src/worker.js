@@ -447,7 +447,9 @@ export default {
     await queuePhaseIntake(env);
     await queueHoldingScan(env);
     await releaseCompletedPlanPages(env);
-    await benchmarkA21NativePage(env);
+    // HTTP health self-heal has a short background lifetime; only the real cron
+    // may run this bounded API benchmark.
+    if(_event.cron==='*/2 * * * *')await benchmarkA21NativePage(env);
     await trialNativePageScan(env);
     await queuePhaseOne(env);
     await queuePhaseTwo(env);

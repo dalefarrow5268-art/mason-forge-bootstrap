@@ -167,8 +167,8 @@ export async function trialNativePageScan(env){
 // One explicit A2.1 benchmark. This records timing and evidence without marking
 // any production tiles or takeoff quantities complete.
 export async function benchmarkA21NativePage(env){
- const id='benchmark-a21-inline-v2', sourceId=2937, path='original-page.pdf';
- const claim=await env.DB.prepare("INSERT OR IGNORE INTO native_page_scan_trials(id,source_file_id,source_path,status,previous_items_json,updated_at) VALUES(?,?,?,'RUNNING','[]',?)").bind(id,sourceId,path+'#inline-v2',now()).run();
+ const id='benchmark-a21-inline-v3', sourceId=2937, path='original-page.pdf';
+ const claim=await env.DB.prepare("INSERT OR IGNORE INTO native_page_scan_trials(id,source_file_id,source_path,status,previous_items_json,updated_at) VALUES(?,?,?,'RUNNING','[]',?)").bind(id,sourceId,path+'#inline-v3',now()).run();
  if(!claim.meta.changes)return;
  const start=Date.now();
  try{

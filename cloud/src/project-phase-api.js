@@ -20,6 +20,18 @@ export async function projectPhaseRoute(request,env){
  const finalized=await env.DB.prepare("SELECT status FROM project_phase_runs WHERE submission_id=? AND phase=12 AND status='COMPLETE'").bind(submission).first();
  if(finalized&&resource!=='candidates')return json({error:'Final estimate is immutable; register a new submission revision for changes'},409);
  try{
+  if(resource==='layers'&&action==='regions'){
+   const job=await env.DB.prepare(`SELECT l.* FROM plan_layer_jobs l WHERE l.id=? AND l.source_file_id IN (SELECT value FROM json_each((SELECT source_file_ids_json FROM phase_project_submissions WHERE id=?)))`).bind(id,submission).first();
+   if(!job||job.status!=='REGION_REVIEW_REQUIRED')return json({error:'Mixed-sheet region review not found'},409);
+   let route;try{route=JSON.parse(job.route_json||'{}');}catch{return json({error:'Saved sheet route is invalid'},409);}
+   if(route.route!=='MIXED'||!Array.isArray(route.regions)||!route.regions.length)return json({error:'A complete mixed-sheet route is required'},409);
+   const measurable=route.regions.filter(x=>/TAKEOFF|MEASURABLE/i.test(String(x?.purpose||'')));
+   if(body.regionsReviewed!==true||!text(body.reviewer)||!text(body.evidence)||!measurable.length)return json({error:'Reviewer, evidence, complete region review, and at least one routed measurable region required'},400);
+   const review={reviewer:text(body.reviewer),evidence:text(body.evidence),regionsReviewed:true,measurableRegions:measurable,referenceRegions:route.regions.filter(x=>!measurable.includes(x)),at:now()};
+   await audit(env,submission,'VERIFY_MIXED_SHEET_REGIONS',id,review);
+   await env.DB.prepare("UPDATE plan_layer_jobs SET status='PENDING',route_json=?,error=NULL,updated_at=? WHERE id=? AND status='REGION_REVIEW_REQUIRED'").bind(JSON.stringify({...route,regionReview:review}),now(),id).run();
+   return json({id,status:'PENDING',measurableRegions:measurable.length,referenceRegions:review.referenceRegions.length});
+  }
   if(resource==='layers'&&action==='verify'){
    const job=await env.DB.prepare(`SELECT l.* FROM plan_layer_jobs l WHERE l.id=? AND l.source_file_id IN (SELECT value FROM json_each((SELECT source_file_ids_json FROM phase_project_submissions WHERE id=?)))`).bind(id,submission).first();
    if(!job||job.status!=='LAYER_REVIEW_REQUIRED'||!job.layered_file_id)return json({error:'Completed layer package requiring review not found'},409);

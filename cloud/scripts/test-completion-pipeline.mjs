@@ -127,7 +127,7 @@ assert.throws(()=>calculateQuantity('LF',{...geom,points:[[0,0],[700,0]]}));
 const pdf=await PDFDocument.create();pdf.addPage([600,600]);pdf.addPage([600,600]);const pdfBytes=await pdf.save();objects.set('copy',pdfBytes);
 sql.prepare("UPDATE project_files SET file_name='plans.pdf',size_bytes=? WHERE id=2").run(pdfBytes.length);
 sql.exec("INSERT INTO phase_five_estimate_outbox(id,submission_id,section_code,scope_text,evidence_json,result_key,created_at) VALUES('scope-1','project-1','03 30 00','Place concrete slab.','[{\"sourceFileId\":2,\"sheet\":\"A1\",\"evidence\":\"slab\"}]','scope-result','now')");
-sql.exec("INSERT INTO plan_layer_jobs(id,source_file_id,prepared_file_id,plan_file_id,source_path,brain_keys_json,status,layered_file_id,updated_at) VALUES('test-layer',1,1,2,'plans.pdf','[]','READY_FOR_TAKEOFF',2,'now')");
+sql.exec(`INSERT INTO plan_layer_jobs(id,source_file_id,prepared_file_id,plan_file_id,source_path,brain_keys_json,status,route_json,updated_at) VALUES('test-layer',1,1,2,'plans.pdf','[]','REGION_REVIEW_REQUIRED','{"route":"MIXED","regions":[{"location":"main plan","purpose":"TAKEOFF - measurable geometry"},{"location":"title block","purpose":"REFERENCE_ONLY"}]}','now')`);
 const model=async(url,options)=>{
  if(String(url).includes('/v1/files'))return Response.json({id:'test-upload'});
  const body=JSON.parse(options.body),prompt=body.input[0].content;
@@ -142,6 +142,12 @@ const model=async(url,options)=>{
  return Response.json({output_text:JSON.stringify(result)});
 };
 const testEnv={...env,OPENAI_API_KEY:'test',MASON_API_TOKEN:'test-admin'};
+const regionPath='https://local/api/project-phases/project-1/layers/test-layer/regions';
+const regionApproval=await projectPhaseRoute(new Request(regionPath,{method:'POST',headers:{authorization:'Bearer test-admin','content-type':'application/json'},body:JSON.stringify({regionsReviewed:true,reviewer:'Dale Farrow',evidence:'Approved identified measurable and reference regions'})}),testEnv);
+assert.equal(regionApproval.status,200,await regionApproval.text());
+assert.equal(sql.prepare("SELECT status FROM plan_layer_jobs WHERE id='test-layer'").get().status,'PENDING');
+assert.equal(sql.prepare("SELECT COUNT(*) n FROM project_phase_audit WHERE action='VERIFY_MIXED_SHEET_REGIONS'").get().n,1);
+sql.exec("UPDATE plan_layer_jobs SET status='READY_FOR_TAKEOFF',layered_file_id=2 WHERE id='test-layer'");
 sql.exec("UPDATE phase_six_brains SET status='RUNNING'");await queuePhaseSeven(testEnv);assert.equal(sent.length,0);
 sql.exec("UPDATE phase_six_brains SET status='COMPLETE'");await queuePhaseSeven(testEnv);assert.equal(sent.length,1);
 globalThis.fetch=model;

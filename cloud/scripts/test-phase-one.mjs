@@ -51,7 +51,7 @@ await processPhaseOne({table:'phase_one_jobs',id:'intake-200'},env);
 assert.equal(sql.prepare("SELECT COUNT(*) n FROM phase_one_items WHERE job_id='intake-200'").get().n,1);
 console.log('PASS: preparation gate, stale-message gate and verified-package inventory');
 // Brain scan must precede Phase One. Use real ZIP handling and mocked model evidence.
-const {queueHoldingScan,processHoldingScan,validScan,scanPrompt,normalizeScan}=await import('../src/holding-brain-scan.js');
+const {queueHoldingScan,processHoldingScan,validScan,scanPrompt,normalizeScan,vectorRegionPrompt}=await import('../src/holding-brain-scan.js');
 sql.exec(readFileSync(new URL('../schema/0018_holding_brain_scan.sql',import.meta.url),'utf8'));
 assert(!validScan({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[]}));
 assert(validScan({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[],blank:true}));
@@ -59,6 +59,9 @@ assert(!validScan({coverage:'PARTIAL',category:'Plans',unreadableRegions:[],find
 assert.match(scanPrompt(true),/Judge coverage only for the pixels visible inside this supplied tile/);
 assert.match(scanPrompt(true),/do not mark coverage PARTIAL/);
 assert.match(scanPrompt(true),/requires all tiles before releasing the logical page/);
+assert.match(vectorRegionPrompt('plans/page.pdf.brain-scan/tile-r3-c1.jpg'),/row 3, column 1/);
+assert.match(vectorRegionPrompt('plans/page.pdf.brain-scan/tile-r3-c1.jpg'),/0.0%-36.0%/);
+assert.throws(()=>vectorRegionPrompt('plans/page.pdf'),/does not identify/);
 const normalizedFinding=normalizeScan({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[{location:'lower-left',content:{text:'Door note',value:3}}]});
 assert.equal(normalizedFinding.findings[0].content,'{"text":"Door note","value":3}');
 assert(validScan(normalizedFinding));
@@ -81,17 +84,38 @@ console.log('PASS: preparation is not review; complete saved Brain scan required
 sent.length=0;
 const tiledZip=new ZipWriter(new Uint8ArrayWriter(),{useWebWorkers:false});
 await tiledZip.add('plans/page-00001.pdf',new TextReader('lossless page source'));
-await tiledZip.add('plans/page-00001.pdf.brain-scan/tile-r1-c1.pdf',new TextReader('tile one'));
-await tiledZip.add('plans/page-00001.pdf.brain-scan/tile-r1-c2.pdf',new TextReader('tile two'));
+await tiledZip.add('plans/page-00001.pdf.brain-scan/tile-r1-c1.jpg',new TextReader('tile one'));
+await tiledZip.add('plans/page-00001.pdf.brain-scan/tile-r1-c2.jpg',new TextReader('tile two'));
 const tiledBytes=await tiledZip.close();objects.set('prepared400',tiledBytes);
 sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(400,3,'source400','original.zip','Holding/original.zip',100,'PHASE ONE INTAKE')").run();
 sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(401,3,'prepared400','prepared.zip','Prepared/400.zip',?,'HOLDING PREPARED PACKAGE')").run(tiledBytes.length);
 sql.prepare("INSERT INTO phase_one_jobs(id,source_file_id,created_at,updated_at) VALUES('intake-400',400,'now','now')").run();
 sql.prepare("INSERT INTO holding_preparations(source_file_id,status,prepared_file_id,units_done,scan_units_total,updated_at) VALUES(400,'SCANNED',401,1,2,'now')").run();
-sql.prepare("INSERT INTO holding_scan_items(id,source_file_id,entry_index,original_path,source_path,asset_role,size_bytes,status,brain_key,category,updated_at) VALUES('scan-400-1',400,1,'plans/page-00001.pdf.brain-scan/tile-r1-c1.pdf','plans/page-00001.pdf','DETAIL_TILE',8,'COMPLETE','brain/1','Plans','now'),('scan-400-2',400,2,'plans/page-00001.pdf.brain-scan/tile-r1-c2.pdf','plans/page-00001.pdf','DETAIL_TILE',8,'COMPLETE','brain/2','Plans','now')").run();
+sql.prepare("INSERT INTO holding_scan_items(id,source_file_id,entry_index,original_path,source_path,asset_role,size_bytes,status,brain_key,category,updated_at) VALUES('scan-400-1',400,1,'plans/page-00001.pdf.brain-scan/tile-r1-c1.jpg','plans/page-00001.pdf','DETAIL_TILE',8,'COMPLETE','brain/1','Plans','now'),('scan-400-2',400,2,'plans/page-00001.pdf.brain-scan/tile-r1-c2.jpg','plans/page-00001.pdf','DETAIL_TILE',8,'COMPLETE','brain/2','Plans','now')").run();
 await queuePhaseOne(env);await processPhaseOne(sent.find(x=>x.id==='intake-400'),env);await queuePhaseOne(env);
 assert.equal(sql.prepare("SELECT COUNT(*) n FROM phase_one_items WHERE job_id='intake-400'").get().n,1);
 const tiledTask={table:'phase_one_items',id:sql.prepare("SELECT id FROM phase_one_items WHERE job_id='intake-400'").get().id};
 await processPhaseOne(tiledTask,env);
 assert.equal(sql.prepare("SELECT category FROM phase_one_items WHERE job_id='intake-400'").get().category,'Plans');
 console.log('PASS: overlapping detail assets are excluded from Phase One inventory and linked to the preserved page');
+
+// A terminal low-resolution tile gets one bounded retry against its preserved
+// vector page; successful tiles are not reset and unreadable content is not waived.
+sent.length=0;
+sql.prepare("UPDATE holding_preparations SET status='SCANNING',scan_units_total=2,updated_at='now' WHERE source_file_id=400").run();
+sql.prepare("UPDATE holding_scan_items SET status='NEEDS_REVIEW',attempts=3,error='fine text unreadable',updated_at='now' WHERE id='scan-400-1'").run();
+await queueHoldingScan(env);
+const vectorTask=sent.find(x=>x.id==='scan-400-1');assert(vectorTask,'terminal raster review receives a vector-region retry');
+const calls=[];globalThis.fetch=async(url,options={})=>{
+ calls.push({url:String(url),body:options.body});
+ if(String(url).endsWith('/v1/files'))return Response.json({id:'file-vector'});
+ if(String(url).includes('/v1/files/file-vector')&&options.method==='DELETE')return Response.json({deleted:true});
+ return Response.json({output:[{content:[{type:'output_text',text:JSON.stringify({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[{kind:'note',location:'bottom-left target region',content:'Fine print read from vector source.'}],scaleVerified:false})}]}]});
+};
+await processHoldingScan(vectorTask,env);globalThis.fetch=originalFetch;
+const retried=sql.prepare("SELECT * FROM holding_scan_items WHERE id='scan-400-1'").get();
+assert.equal(retried.status,'COMPLETE');assert.equal(retried.attempts,4);
+assert.equal(sql.prepare("SELECT status FROM holding_scan_items WHERE id='scan-400-2'").get().status,'COMPLETE','successful neighbor stays intact');
+const responseCall=calls.find(call=>String(call.url).endsWith('/v1/responses'));assert(responseCall);
+assert.match(String(responseCall.body),/VECTOR_REGION_RETRY/);assert.match(String(responseCall.body),/row 1, column 1/);
+console.log('PASS: bounded vector-region retry preserves completed tiles and keeps the unreadable-content gate');

@@ -1,6 +1,6 @@
 {
-  "capturedAt": "2026-09-05T23:34:02.521Z",
-  "sourceCommit": "656e53e4f3e4983dafd3c276fae3333d0ea7971c",
+  "capturedAt": "2026-09-05T23:36:57.511Z",
+  "sourceCommit": "1d76441a3a012ef743a69bbd3322f786e9f013d9",
   "health": {
     "status": "online",
     "operationalReady": true,
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-05T23:34:02.938Z"
+    "checkedAt": "2026-09-05T23:36:58.007Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-05T23:34:03.283Z",
+    "retrievedAt": "2026-09-05T23:36:58.427Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",

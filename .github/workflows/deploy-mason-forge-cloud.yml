@@ -63,6 +63,7 @@ jobs:
           node scripts/test-scale-gate.mjs
           node scripts/test-plan-layer-handoff.mjs
           python scripts/test_plan_layer_queue.py
+          python scripts/test_native_trial_claim.py
 
       - name: Read release marker
         id: release

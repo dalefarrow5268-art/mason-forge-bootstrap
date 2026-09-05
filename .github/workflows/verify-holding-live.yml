@@ -5,14 +5,14 @@ on:
     branches: [main]
     paths: ['.github/workflows/verify-holding-live.yml']
   workflow_run:
-    workflows: ['Prepare Holding Files']
+    workflows: ['Prepare Holding Files', 'Deploy Mason Forge Cloud']
     types: [completed]
 permissions:
   contents: read
 jobs:
   observe:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 6
     steps:
       - name: Read saved preparation and scanner progress
         env:
@@ -22,8 +22,8 @@ jobs:
           node --input-type=module <<'JS'
           const url='https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID+'/d1/database/736f655b-889d-4fb2-8948-0a396d39436f/query';
           async function query(sql){const r=await fetch(url,{method:'POST',headers:{authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN,'content-type':'application/json'},body:JSON.stringify({sql}),signal:AbortSignal.timeout(30000)});const d=await r.json();if(!r.ok||!d.success)throw Error('Read-only diagnostic failed: '+r.status);return d.result[0].results;}
-          for(let i=0;i<3;i++){
-            console.log(JSON.stringify({observedAt:new Date().toISOString(),preparation:await query('SELECT source_file_id,status,prepared_file_id,files_total,pages_total,units_done,attempts,error,updated_at FROM holding_preparations'),scans:await query('SELECT source_file_id,status,COUNT(*) count,MAX(updated_at) latest,SUM(processing_ms) processing_ms FROM holding_scan_items GROUP BY source_file_id,status'),errors:await query("SELECT id,error,attempts FROM holding_scan_items WHERE error IS NOT NULL LIMIT 10"),phaseOne:await query('SELECT j.id,j.status,COUNT(i.id) inventoried FROM phase_one_jobs j LEFT JOIN phase_one_items i ON i.job_id=j.id GROUP BY j.id')}));
-            if(i<2)await new Promise(r=>setTimeout(r,30000));
+          for(let i=0;i<8;i++){
+            console.log(JSON.stringify({observedAt:new Date().toISOString(),preparation:await query('SELECT source_file_id,status,prepared_file_id,files_total,pages_total,units_done,attempts,error,updated_at FROM holding_preparations'),nativeTrials:await query('SELECT id,source_path,status,processing_ms,error,updated_at FROM native_page_scan_trials'),planLayers:await query('SELECT id,source_path,status,error FROM plan_layer_jobs'),scans:await query('SELECT source_file_id,status,COUNT(*) count,MAX(updated_at) latest,SUM(processing_ms) processing_ms FROM holding_scan_items GROUP BY source_file_id,status'),errors:await query("SELECT id,error,attempts FROM holding_scan_items WHERE error IS NOT NULL LIMIT 10"),phaseOne:await query('SELECT j.id,j.status,COUNT(i.id) inventoried FROM phase_one_jobs j LEFT JOIN phase_one_items i ON i.job_id=j.id GROUP BY j.id')}));
+            if(i<7)await new Promise(r=>setTimeout(r,30000));
           }
           JS

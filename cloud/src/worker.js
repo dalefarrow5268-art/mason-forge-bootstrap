@@ -1,6 +1,6 @@
 import {processSheetRouting} from './plan-layer-handoff.js';
 import { routePendingBrainFiles } from "./brain-lobe-router.js";
-import {queueHoldingScan,processHoldingScan} from './holding-brain-scan.js';
+import {queueHoldingScan,processHoldingScan,releaseCompletedPlanPages,trialNativePageScan,benchmarkA21NativePage} from './holding-brain-scan.js';
 import {intakeProgress} from './intake-progress.js';
 import {queuePhaseIntake,processPhaseIntake} from './phase-intake.js';
 import { queuePhaseSeven, processPhaseSeven } from './phase-seven-reports.js';
@@ -310,6 +310,7 @@ export default {
     if (url.pathname === "/health" && request.method === "GET") {
       await queuePhaseIntake(env);
     await queueHoldingScan(env);
+    await releaseCompletedPlanPages(env);
     await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
@@ -325,6 +326,7 @@ export default {
     if (url.pathname === "/api/connector/bootstrap" && request.method === "GET" && authorized(request, env)) {
       await queuePhaseIntake(env);
     await queueHoldingScan(env);
+    await releaseCompletedPlanPages(env);
     await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
@@ -424,6 +426,7 @@ export default {
 
     await queuePhaseIntake(env);
     await queueHoldingScan(env);
+    await releaseCompletedPlanPages(env);
     await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
@@ -443,6 +446,9 @@ export default {
     if (ctx?.waitUntil) ctx.waitUntil(brainRouting); else await brainRouting;
     await queuePhaseIntake(env);
     await queueHoldingScan(env);
+    await releaseCompletedPlanPages(env);
+    await benchmarkA21NativePage(env);
+    await trialNativePageScan(env);
     await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);

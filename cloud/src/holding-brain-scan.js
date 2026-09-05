@@ -83,3 +83,104 @@ export async function processHoldingScan(body,env){
   await env.DB.prepare('UPDATE holding_scan_items SET status=?,output_file_id=?,brain_key=?,category=?,error=?,updated_at=?,finished_at=?,processing_ms=processing_ms+? WHERE id=?').bind(complete?'COMPLETE':'NEEDS_REVIEW',reviewFileId,brainKey,categories.includes(r.category)?r.category:null,complete?null:'Incomplete or unreadable source coverage; see Brain record',now(),now(),Date.now()-attemptStart,i.id).run();
  }catch(e){const terminal=i.attempts+1>=5;await env.DB.prepare('UPDATE holding_scan_items SET status=?,error=?,updated_at=?,processing_ms=processing_ms+? WHERE id=?').bind(terminal?'NEEDS_REVIEW':'PENDING',String(e.message||e).slice(0,500),now(),Date.now()-attemptStart,i.id).run();if(!terminal)throw e;}
 }
+
+// Release a completed logical page without releasing its incomplete upload batch.
+export const completedPlanPagesSql=`SELECT p.source_file_id,p.prepared_file_id,
+ COALESCE(i.source_path,i.original_path) source_path,
+ json_group_array(i.brain_key) brain_keys_json
+ FROM holding_preparations p JOIN holding_scan_items i ON i.source_file_id=p.source_file_id
+ WHERE p.status IN ('SCANNING','SCANNED','COMPLETE')
+ AND NOT EXISTS(SELECT 1 FROM plan_layer_jobs l WHERE l.source_file_id=p.source_file_id
+ AND l.prepared_file_id=p.prepared_file_id AND l.source_path=COALESCE(i.source_path,i.original_path))
+ GROUP BY p.source_file_id,p.prepared_file_id,COALESCE(i.source_path,i.original_path)
+ HAVING SUM(CASE WHEN i.status='COMPLETE' AND i.brain_key IS NOT NULL THEN 0 ELSE 1 END)=0
+ AND SUM(CASE WHEN i.category='Plans' THEN 1 ELSE 0 END)>0
+ AND ((COUNT(*)=9 AND MIN(i.asset_role)='DETAIL_TILE' AND MAX(i.asset_role)='DETAIL_TILE')
+ OR (COUNT(*)=1 AND MIN(i.asset_role)='SOURCE'))
+ ORDER BY p.source_file_id,MIN(i.entry_index) LIMIT 2`;
+export async function releaseCompletedPlanPages(env){
+ const pages=(await env.DB.prepare(completedPlanPagesSql).all()).results||[];
+ for(const page of pages){
+  const source=await env.DB.prepare('SELECT * FROM project_files WHERE id=? AND archived_at IS NULL').bind(page.prepared_file_id).first();if(!source)continue;
+  const entry=await preparedEntry(env,source,page.source_path);
+  const job=await env.DB.prepare('SELECT id FROM phase_one_jobs WHERE source_file_id=?').bind(page.source_file_id).first();if(!job)continue;
+  // Match the identity used by later Phase One inventory, preserving downstream file links.
+  const itemId=`${job.id}-prepared-${source.id}-${entry.entry_index}`;
+  const key=`projects/${source.project_id}/phase-one/${itemId}`;
+  const existing=await env.PROJECT_FILES.head(key);
+  if(!existing)await unpack(env,source,entry,key);
+  else if(existing.size!==entry.size_bytes)throw new Error('Completed page source size mismatch');
+  const path=`Mason Project Brain/Intake/${page.source_file_id}/Completed Pages/${page.source_path}`;
+  const fileId=await register(env,source,key,path,entry.size_bytes,'COMPLETE PAGE SCAN');
+  await env.DB.prepare(`INSERT OR IGNORE INTO plan_layer_jobs(id,source_file_id,prepared_file_id,plan_file_id,source_path,brain_keys_json,updated_at) VALUES(?,?,?,?,?,?,?)`).bind(`plan-layers-${fileId}`,page.source_file_id,page.prepared_file_id,fileId,page.source_path,page.brain_keys_json,now()).run();
+ }
+}
+
+// A bounded pilot: one native PDF review may cover all nine regions. A failed
+// full-page coverage check returns untouched tile work to its existing fallback.
+export async function trialNativePageScan(env){
+ if(env.NATIVE_PAGE_TRIALS_ENABLED!=='true')return;
+ const expired=(await env.DB.prepare("SELECT * FROM native_page_scan_trials WHERE status='RUNNING' AND updated_at<?").bind(stale()).all()).results||[];
+ for(const t of expired)await env.DB.batch([
+  env.DB.prepare("UPDATE holding_scan_items SET status='PENDING',updated_at=? WHERE source_file_id=? AND COALESCE(source_path,original_path)=? AND status='RUNNING' AND attempts=0").bind(now(),t.source_file_id,t.source_path),
+  env.DB.prepare("UPDATE native_page_scan_trials SET status='TILE_FALLBACK',error='Native page trial lease expired; tile work resumed',updated_at=? WHERE id=? AND status='RUNNING'").bind(now(),t.id)
+ ]);
+ const count=await env.DB.prepare('SELECT COUNT(*) n FROM native_page_scan_trials').first();if(count.n>=3)return;
+ const page=await env.DB.prepare(`SELECT p.source_file_id,p.prepared_file_id,COALESCE(i.source_path,i.original_path) source_path
+ FROM holding_preparations p JOIN holding_scan_items i ON i.source_file_id=p.source_file_id
+ WHERE p.status='SCANNING' AND NOT EXISTS(SELECT 1 FROM native_page_scan_trials t WHERE t.source_file_id=p.source_file_id AND t.source_path=COALESCE(i.source_path,i.original_path))
+ GROUP BY p.source_file_id,p.prepared_file_id,COALESCE(i.source_path,i.original_path)
+ HAVING COUNT(*)=9 AND SUM(CASE WHEN i.attempts=0 AND i.status IN ('PENDING','QUEUED') AND i.asset_role='DETAIL_TILE' THEN 1 ELSE 0 END)=9
+ ORDER BY MIN(i.entry_index) LIMIT 1`).first();if(!page)return;
+ const id=`native-${page.source_file_id}-${crypto.randomUUID()}`,at=now(),start=Date.now();
+ // The claim and all nine locks share a D1 transaction, so queued messages cannot
+ // begin a competing tile review between the eligibility check and the locks.
+ const claimed=await env.DB.batch([
+  env.DB.prepare(`INSERT INTO native_page_scan_trials(id,source_file_id,source_path,status,previous_items_json,updated_at)
+  SELECT ?,?,?,'RUNNING',json_group_array(json_object('id',id,'status',status,'attempts',attempts)),?
+  FROM holding_scan_items WHERE source_file_id=? AND COALESCE(source_path,original_path)=?
+  HAVING COUNT(*)=9 AND SUM(CASE WHEN attempts=0 AND status IN ('PENDING','QUEUED') AND asset_role='DETAIL_TILE' THEN 1 ELSE 0 END)=9
+  AND (SELECT COUNT(*) FROM native_page_scan_trials)<3
+  ON CONFLICT(source_file_id,source_path) DO NOTHING`).bind(id,page.source_file_id,page.source_path,at,page.source_file_id,page.source_path),
+  env.DB.prepare(`UPDATE holding_scan_items SET status='RUNNING',updated_at=? WHERE source_file_id=? AND COALESCE(source_path,original_path)=? AND EXISTS(SELECT 1 FROM native_page_scan_trials WHERE id=?)`).bind(at,page.source_file_id,page.source_path,id)
+ ]);if(!claimed[0].meta.changes)return;
+ try{
+  const source=await env.DB.prepare('SELECT * FROM project_files WHERE id=? AND archived_at IS NULL').bind(page.prepared_file_id).first();if(!source)throw new Error('Prepared source missing');
+  const entry=await preparedEntry(env,source,page.source_path),key=`projects/${source.project_id}/Mason Project Brain/Intake/${page.source_file_id}/native-sources/${id}`;
+  await unpack(env,source,entry,key);
+  const fileId=await register(env,source,key,`Mason Project Brain/Intake/${page.source_file_id}/Native Page Trials/${id}.pdf`,entry.size_bytes,'FULL PAGE SCAN TRIAL');
+  const r=normalizeScan(await askSource(env,fileId,null,scanPrompt(false),{sourcePath:page.source_path,assetRole:'FULL_NATIVE_PAGE',originalHoldingFileId:page.source_file_id}));
+  const brainKey=key+'.review.json';await env.PROJECT_FILES.put(brainKey,JSON.stringify({reviewedAt:now(),sourceFileId:fileId,originalHoldingFileId:page.source_file_id,sourcePath:page.source_path,scanAssetPath:page.source_path,assetRole:'FULL_NATIVE_PAGE',preparedPackageFileId:source.id,scaleVerified:false,review:r,verification:'MODEL_REVIEW_NOT_INDEPENDENT_VERIFICATION'}));
+  await env.DB.prepare('UPDATE native_page_scan_trials SET brain_key=? WHERE id=?').bind(brainKey,id).run();
+  if(!validScan(r))throw new Error('Whole-page coverage incomplete; retaining detail-tile fallback');
+  const elapsed=Date.now()-start;
+  await env.DB.batch([
+   env.DB.prepare("UPDATE holding_scan_items SET status='COMPLETE',brain_key=?,output_file_id=?,category=?,error=NULL,finished_at=?,updated_at=? WHERE source_file_id=? AND COALESCE(source_path,original_path)=? AND status='RUNNING' AND attempts=0").bind(brainKey,fileId,r.category,now(),now(),page.source_file_id,page.source_path),
+   env.DB.prepare("UPDATE native_page_scan_trials SET status='COMPLETE',processing_ms=?,updated_at=? WHERE id=?").bind(elapsed,now(),id)
+  ]);
+ }catch(e){await env.DB.batch([
+  env.DB.prepare("UPDATE holding_scan_items SET status='PENDING',updated_at=? WHERE source_file_id=? AND COALESCE(source_path,original_path)=? AND status='RUNNING' AND attempts=0").bind(now(),page.source_file_id,page.source_path),
+  env.DB.prepare("UPDATE native_page_scan_trials SET status='TILE_FALLBACK',error=?,processing_ms=?,updated_at=? WHERE id=?").bind(String(e.message||e).slice(0,400),Date.now()-start,now(),id)
+ ]);}
+}
+
+// One explicit A2.1 benchmark. This records timing and evidence without marking
+// any production tiles or takeoff quantities complete.
+export async function benchmarkA21NativePage(env){
+ const id='benchmark-a21-native-v1', sourceId=2937, path='original-page.pdf';
+ const claim=await env.DB.prepare("INSERT OR IGNORE INTO native_page_scan_trials(id,source_file_id,source_path,status,previous_items_json,updated_at) VALUES(?,?,?,'RUNNING','[]',?)").bind(id,sourceId,path,now()).run();
+ if(!claim.meta.changes)return;
+ const start=Date.now();
+ try{
+  const source=await env.DB.prepare('SELECT * FROM project_files WHERE id=? AND project_id=3 AND archived_at IS NULL').bind(sourceId).first();
+  if(!source)throw new Error('A2.1 benchmark package unavailable');
+  const entry=await preparedEntry(env,source,path);
+  const key=`projects/3/Mason Project Brain/Scanner Benchmarks/${id}/source.pdf`;
+  await unpack(env,source,entry,key);
+  const fileId=await register(env,source,key,'Mason Project Brain/Scanner Benchmarks/A2.1/native-source.pdf',entry.size_bytes,'SCANNER BENCHMARK');
+  const r=normalizeScan(await askSource(env,fileId,null,scanPrompt(false),{sheetId:'A2.1',assetRole:'FULL_NATIVE_PAGE_BENCHMARK',scaleVerified:false}));
+  const elapsed=Date.now()-start,brainKey=key+'.review.json';
+  await env.PROJECT_FILES.put(brainKey,JSON.stringify({reviewedAt:now(),sourceFileId:fileId,sourcePackageFileId:sourceId,sourcePath:path,assetRole:'FULL_NATIVE_PAGE_BENCHMARK',processingMs:elapsed,scaleVerified:false,review:r,verification:'MODEL_REVIEW_NOT_INDEPENDENT_VERIFICATION',productionScanItemsChanged:false}));
+  await env.DB.prepare('UPDATE native_page_scan_trials SET status=?,brain_key=?,processing_ms=?,updated_at=? WHERE id=?').bind(validScan(r)?'MODEL_COMPLETE':'NEEDS_REVIEW',brainKey,elapsed,now(),id).run();
+ }catch(e){await env.DB.prepare("UPDATE native_page_scan_trials SET status='FAILED',error=?,processing_ms=?,updated_at=? WHERE id=?").bind(String(e.message||e).slice(0,400),Date.now()-start,now(),id).run();}
+}

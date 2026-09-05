@@ -1,6 +1,6 @@
 {
-  "capturedAt": "2026-09-05T21:02:43.923Z",
-  "sourceCommit": "7f456ab3157353102a7af9270b98f389c9cdf558",
+  "capturedAt": "2026-09-05T21:29:17.744Z",
+  "sourceCommit": "56389ba8fde67dfd5ed8ed4d4935768932d6f2a0",
   "health": {
     "status": "online",
     "operationalReady": true,
@@ -12,7 +12,7 @@
     "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
     "openai": "CONFIGURED",
     "projects": 13,
-    "files": 2935,
+    "files": 2977,
     "taskTotals": {
       "COMPLETED": 1845
     },
@@ -29,13 +29,13 @@
       "queued": 9,
       "retrying": 0,
       "failed": 0,
-      "pending": 777
+      "pending": 819
     },
     "staleRunningTasks": 0,
     "completedTasksWithoutOutput": 0,
     "duplicateOutputTasks": 0,
     "countsReconcile": true,
-    "projectFileTotal": 2935,
+    "projectFileTotal": 2977,
     "projectTaskTotal": 1845,
     "r2Samples": [
       {
@@ -80,7 +80,7 @@
       {
         "id": 3,
         "name": "Bask Development",
-        "file_count": 514,
+        "file_count": 556,
         "queued_tasks": 0,
         "running_tasks": 0,
         "blocked_tasks": 0,
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-05T21:02:44.321Z"
+    "checkedAt": "2026-09-05T21:29:18.613Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-05T21:02:44.746Z",
+    "retrievedAt": "2026-09-05T21:29:19.232Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",
@@ -400,7 +400,7 @@
         "client": null,
         "status": "INTAKE",
         "review_status": "NEEDS REVIEW",
-        "file_count": 514,
+        "file_count": 556,
         "running_tasks": 0,
         "queued_tasks": 0,
         "completed_tasks": 160,

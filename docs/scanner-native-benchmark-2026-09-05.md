@@ -21,3 +21,5 @@ Options researched from primary documentation:
 - Existing OpenAI API: PDF input provides extracted text and page imagery. https://developers.openai.com/api/docs/guides/file-inputs
 
 No new paid API is needed to run this benchmark. Evaluate missing-content coverage and measured latency before replacing all nine-tile reviews or increasing concurrency.
+
+Follow-up: pdfplumber captured A2.1 text and drawing objects in 2.26 seconds (695 word groups; tokenization differs). The first native API benchmark prepared and registered its 1.66 MB source in approximately 2.3 seconds but remained RUNNING beyond three minutes. Code review found file upload has a separate 600-second timeout. An isolated direct-inline PDF variant removes that upload request; ordinary phase review file uploads are now bounded to 60 seconds. The cause of the first benchmark stall is not yet conclusively established.

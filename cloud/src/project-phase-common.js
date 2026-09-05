@@ -19,7 +19,7 @@ export async function readSource(env,fileId,page=null){
 export async function askSource(env,fileId,page,prompt,context={},companionSources=[]){
  if(!env.OPENAI_API_KEY)throw new Error('Review model not configured');
  const serialized=JSON.stringify(context);if(serialized.length>180000)throw new Error('Review context requires smaller batches');
- const {file,bytes}=await readSource(env,fileId,page);const input=await fileInputContent(env,file,bytes);
+ const {file,bytes}=await readSource(env,fileId,page);const input=await fileInputContent({...env,OPENAI_REQUEST_TIMEOUT_MS:'60000'},file,bytes);
  const companions=[];
  try{
   for(const ref of companionSources){const extra=await readSource(env,ref.fileId,ref.page??null);companions.push(await fileInputContent(env,extra.file,extra.bytes));}

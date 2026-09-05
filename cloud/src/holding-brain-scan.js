@@ -167,8 +167,8 @@ export async function trialNativePageScan(env){
 // One explicit A2.1 benchmark. This records timing and evidence without marking
 // any production tiles or takeoff quantities complete.
 export async function benchmarkA21NativePage(env){
- const id='benchmark-a21-native-v1', sourceId=2937, path='original-page.pdf';
- const claim=await env.DB.prepare("INSERT OR IGNORE INTO native_page_scan_trials(id,source_file_id,source_path,status,previous_items_json,updated_at) VALUES(?,?,?,'RUNNING','[]',?)").bind(id,sourceId,path,now()).run();
+ const id='benchmark-a21-inline-v2', sourceId=2937, path='original-page.pdf';
+ const claim=await env.DB.prepare("INSERT OR IGNORE INTO native_page_scan_trials(id,source_file_id,source_path,status,previous_items_json,updated_at) VALUES(?,?,?,'RUNNING','[]',?)").bind(id,sourceId,path+'#inline-v2',now()).run();
  if(!claim.meta.changes)return;
  const start=Date.now();
  try{
@@ -178,7 +178,7 @@ export async function benchmarkA21NativePage(env){
   const key=`projects/3/Mason Project Brain/Scanner Benchmarks/${id}/source.pdf`;
   await unpack(env,source,entry,key);
   const fileId=await register(env,source,key,'Mason Project Brain/Scanner Benchmarks/A2.1/native-source.pdf',entry.size_bytes,'SCANNER BENCHMARK');
-  const r=normalizeScan(await askSource(env,fileId,null,scanPrompt(false),{sheetId:'A2.1',assetRole:'FULL_NATIVE_PAGE_BENCHMARK',scaleVerified:false}));
+  const r=normalizeScan(await askSource({...env,INLINE_PDF_INPUT_ENABLED:'true'},fileId,null,scanPrompt(false),{sheetId:'A2.1',assetRole:'FULL_NATIVE_PAGE_BENCHMARK',scaleVerified:false}));
   const elapsed=Date.now()-start,brainKey=key+'.review.json';
   await env.PROJECT_FILES.put(brainKey,JSON.stringify({reviewedAt:now(),sourceFileId:fileId,sourcePackageFileId:sourceId,sourcePath:path,assetRole:'FULL_NATIVE_PAGE_BENCHMARK',processingMs:elapsed,scaleVerified:false,review:r,verification:'MODEL_REVIEW_NOT_INDEPENDENT_VERIFICATION',productionScanItemsChanged:false}));
   await env.DB.prepare('UPDATE native_page_scan_trials SET status=?,brain_key=?,processing_ms=?,updated_at=? WHERE id=?').bind(validScan(r)?'MODEL_COMPLETE':'NEEDS_REVIEW',brainKey,elapsed,now(),id).run();

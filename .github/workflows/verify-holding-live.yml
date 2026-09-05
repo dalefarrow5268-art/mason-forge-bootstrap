@@ -1,9 +1,6 @@
 name: Verify Holding Live Progress
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ['.github/workflows/verify-holding-live.yml']
   workflow_run:
     workflows: ['Prepare Holding Files', 'Deploy Mason Forge Cloud']
     types: [completed]

@@ -143,6 +143,10 @@ export async function fileInputContent(env, file, bytes) {
       uploadedFileId: null,
     };
   }
+  if (ext === "pdf" && env.INLINE_PDF_INPUT_ENABLED === 'true' && bytes.length <= 5 * 1024 * 1024) {
+    return {content: [{type: 'input_file', filename: file.file_name,
+      file_data: `data:application/pdf;base64,${bytesToBase64(bytes)}`}], uploadedFileId: null};
+  }
   const uploadedFileId = await uploadOpenAIFile(env, file, bytes);
   return {
     content: [{ type: "input_file", file_id: uploadedFileId }],

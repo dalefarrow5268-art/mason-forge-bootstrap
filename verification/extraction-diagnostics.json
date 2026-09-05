@@ -1,18 +1,18 @@
 {
-  "capturedAt": "2026-09-05T19:28:24.032Z",
-  "sourceCommit": "b3a39f15a4d96b1881875fdfb9f78b6e2cdec877",
+  "capturedAt": "2026-09-05T19:29:49.446Z",
+  "sourceCommit": "e286d407e625855a2212cca417c7c9d409345858",
   "health": {
     "status": "online",
     "operationalReady": true,
     "service": "Mason Forge Cloud",
     "environment": "production",
-    "releaseId": "2026-09-05-holding-vector-region-retry",
+    "releaseId": "2026-09-05-brain-lobe-routing-v1",
     "database": "D1 VERIFIED",
     "projectFileStorage": "R2 VERIFIED",
     "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
     "openai": "CONFIGURED",
     "projects": 13,
-    "files": 2800,
+    "files": 2804,
     "taskTotals": {
       "COMPLETED": 1845
     },
@@ -29,13 +29,13 @@
       "queued": 1,
       "retrying": 0,
       "failed": 0,
-      "pending": 650
+      "pending": 654
     },
     "staleRunningTasks": 0,
     "completedTasksWithoutOutput": 0,
     "duplicateOutputTasks": 0,
     "countsReconcile": true,
-    "projectFileTotal": 2800,
+    "projectFileTotal": 2804,
     "projectTaskTotal": 1845,
     "r2Samples": [
       {
@@ -80,7 +80,7 @@
       {
         "id": 3,
         "name": "Bask Development",
-        "file_count": 383,
+        "file_count": 386,
         "queued_tasks": 0,
         "running_tasks": 0,
         "blocked_tasks": 0,
@@ -190,7 +190,7 @@
       {
         "id": 13,
         "name": "SSX",
-        "file_count": 263,
+        "file_count": 264,
         "queued_tasks": 0,
         "running_tasks": 0,
         "blocked_tasks": 0,
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-05T19:28:24.481Z"
+    "checkedAt": "2026-09-05T19:29:50.403Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-05T19:28:25.005Z",
+    "retrievedAt": "2026-09-05T19:29:50.954Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",
@@ -250,7 +250,7 @@
         "client": null,
         "status": "INTAKE",
         "review_status": "NEEDS REVIEW",
-        "file_count": 263,
+        "file_count": 264,
         "running_tasks": 0,
         "queued_tasks": 0,
         "completed_tasks": 325,
@@ -400,7 +400,7 @@
         "client": null,
         "status": "INTAKE",
         "review_status": "NEEDS REVIEW",
-        "file_count": 383,
+        "file_count": 386,
         "running_tasks": 0,
         "queued_tasks": 0,
         "completed_tasks": 160,

@@ -1,6 +1,6 @@
 {
-  "capturedAt": "2026-09-05T00:27:25.579Z",
-  "sourceCommit": "38f5cac1156e1af62d94ed8cc7c1ec3fbe893225",
+  "capturedAt": "2026-09-05T00:31:44.656Z",
+  "sourceCommit": "9e9a9d6ed95d51f0d555c2ea9cb4731642a4d6bf",
   "health": {},
   "bootstrap": {},
   "projects": {
@@ -35,10 +35,6 @@
       "error": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F4%2Ffiles HTTP 401: {\"error\":\"Unauthorized.\"}"
     },
     {
-      "url": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F4%2Ftasks",
-      "error": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F4%2Ftasks HTTP 401: {\"error\":\"Unauthorized.\"}"
-    },
-    {
       "url": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F4%2Foutputs",
       "error": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F4%2Foutputs HTTP 401: {\"error\":\"Unauthorized.\"}"
     },
@@ -47,8 +43,8 @@
       "error": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F4%2Fevidence HTTP 401: {\"error\":\"Unauthorized.\"}"
     },
     {
-      "url": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F5%2Fevidence",
-      "error": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F5%2Fevidence HTTP 401: {\"error\":\"Unauthorized.\"}"
+      "url": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F4%2Ftasks",
+      "error": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F4%2Ftasks HTTP 401: {\"error\":\"Unauthorized.\"}"
     },
     {
       "url": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F5%2Foutputs",
@@ -61,6 +57,10 @@
     {
       "url": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F5%2Ftasks",
       "error": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F5%2Ftasks HTTP 401: {\"error\":\"Unauthorized.\"}"
+    },
+    {
+      "url": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F5%2Fevidence",
+      "error": "https://mason-forge-live.vercel.app/api/mason?path=api%2Fprojects%2F5%2Fevidence HTTP 401: {\"error\":\"Unauthorized.\"}"
     }
   ],
   "collectionComplete": false,

@@ -1,12 +1,12 @@
 {
-  "capturedAt": "2026-09-05T15:37:10.608Z",
-  "sourceCommit": "b7003abdb19ca2a7d6e849b8493416b13eb4ea60",
+  "capturedAt": "2026-09-05T15:48:22.875Z",
+  "sourceCommit": "85cf5d0f75e71bcc1c511486fd01fc9cb44ecb17",
   "health": {
     "status": "online",
     "operationalReady": true,
     "service": "Mason Forge Cloud",
     "environment": "production",
-    "releaseId": "2026-09-05-holding-brain-scan",
+    "releaseId": "2026-09-05-holding-brain-scan-v2",
     "database": "D1 VERIFIED",
     "projectFileStorage": "R2 VERIFIED",
     "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-05T15:37:11.977Z"
+    "checkedAt": "2026-09-05T15:48:23.284Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-05T15:37:12.819Z",
+    "retrievedAt": "2026-09-05T15:48:23.609Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",

@@ -27,6 +27,21 @@ async function preparedEntry(env,source,path){
  }}finally{await reader.close();}
  throw new Error('Vector retry source page is missing from prepared package');
 }
+async function persistNativeCapture(env,source,item,root){
+ if(!item.capture_path)return null;
+ const entry=await preparedEntry(env,source,item.capture_path);
+ const key=`${root}/native-captures/${item.id}.json`;
+ await unpack(env,source,entry,key);
+ const object=await env.PROJECT_FILES.get(key);if(!object)throw new Error('Native capture was not persisted');
+ if(object.size>20*1024**2)throw new Error('Native capture exceeds bounded interpretation context; index split required');
+ const capture=JSON.parse(await object.text());
+ if(capture.captureStatus!=='CAPTURED_NOT_SEMANTICALLY_REVIEWED'||!capture.cacheKey||!capture.captureSha256)throw new Error('Native capture provenance is invalid');
+ const path=`Mason Project Brain/Intake/${item.source_file_id}/Native Captures/${item.source_path.split('/').pop()}.json`;
+ const fileId=await register(env,source,key,path,entry.size_bytes,'NATIVE PDF CAPTURE');
+ await env.DB.prepare("UPDATE project_files SET source_class='NATIVE PDF CAPTURE - NOT SEMANTICALLY REVIEWED' WHERE id=?").bind(fileId).run();
+ await env.DB.prepare('UPDATE holding_scan_items SET capture_key=?,capture_file_id=?,updated_at=? WHERE id=?').bind(key,fileId,now(),item.id).run();
+ return {captureStatus:capture.captureStatus,cacheKey:capture.cacheKey,captureSha256:capture.captureSha256,extractorVersion:capture.extractorVersion,source:capture.source,page:capture.page,signals:capture.signals,textBlocks:capture.evidence?.textBlocks||[],words:capture.evidence?.words||[]};
+}
 export async function queueHoldingScan(env){
  await queuePlanLayers(env);
  await queueSheetRouting(env);
@@ -37,11 +52,14 @@ export async function queueHoldingScan(env){
    const i=index++;if(e.directory)continue;if(!safe(e.filename)||e.encrypted||e.symlink||e.uncompressedSize>20*1024**2)throw Error('Prepared scan entry is invalid');entries.push({e,i});
   }}finally{await reader.close();}
   const tiled=new Set(entries.filter(({e})=>e.filename.includes('.brain-scan/')).map(({e})=>e.filename.slice(0,e.filename.indexOf('.brain-scan/'))));
+  const captures=new Map(entries.filter(({e})=>e.filename.endsWith('.brain-capture/native.json')).map(({e})=>[e.filename.slice(0,e.filename.indexOf('.brain-capture/')),e.filename]));
   for(const {e,i} of entries){
+   if(e.filename.includes('.brain-capture/'))continue;
    const marker=e.filename.indexOf('.brain-scan/');
    if(marker<0&&tiled.has(e.filename))continue;
    const sourcePath=marker>=0?e.filename.slice(0,marker):e.filename;
-   await env.DB.prepare('INSERT OR IGNORE INTO holding_scan_items(id,source_file_id,entry_index,original_path,source_path,asset_role,size_bytes,updated_at) VALUES(?,?,?,?,?,?,?,?)').bind(`scan-${p.source_file_id}-${p.prepared_file_id}-${i}`,p.source_file_id,i,e.filename,sourcePath,marker>=0?'DETAIL_TILE':'SOURCE',e.uncompressedSize,now()).run();count++;
+   const capturePath=marker<0?captures.get(e.filename)||null:null;
+   await env.DB.prepare('INSERT OR IGNORE INTO holding_scan_items(id,source_file_id,entry_index,original_path,source_path,asset_role,size_bytes,capture_path,updated_at) VALUES(?,?,?,?,?,?,?,?,?)').bind(`scan-${p.source_file_id}-${p.prepared_file_id}-${i}`,p.source_file_id,i,e.filename,sourcePath,marker>=0?'DETAIL_TILE':capturePath?'NATIVE_PAGE':'SOURCE',e.uncompressedSize,capturePath,now()).run();count++;
   }
   const expected=Number(p.scan_units_total||p.units_done);
   if(count!==expected)throw Error(`Scanner inventory differs from preparation manifest: ${count} != ${expected}`);
@@ -60,6 +78,7 @@ export async function processHoldingScan(body,env){
   const source=await env.DB.prepare('SELECT f.* FROM holding_preparations p JOIN project_files f ON f.id=p.prepared_file_id WHERE p.source_file_id=? AND f.archived_at IS NULL').bind(i.source_file_id).first();if(!source)throw Error('Prepared source unavailable');
   const root=`projects/${source.project_id}/Mason Project Brain/Intake/${i.source_file_id}`;
   const detail=i.asset_role==='DETAIL_TILE';let reviewFileId,reviewAssetRole=i.asset_role||'SOURCE',prompt=scanPrompt(detail);
+  const nativeCapture=i.asset_role==='NATIVE_PAGE'?await persistNativeCapture(env,source,i,root):null;
   if(i.override_file_id){
    const override=await env.DB.prepare('SELECT * FROM project_files WHERE id=? AND project_id=? AND archived_at IS NULL').bind(i.override_file_id,source.project_id).first();
    if(!override||override.source_class!=='BRAIN SCAN HIGH RES RETRY SOURCE')throw new Error('High-resolution retry source unavailable or invalid');
@@ -83,7 +102,7 @@ export async function processHoldingScan(body,env){
    await env.DB.prepare("UPDATE project_files SET source_class='BRAIN SCAN VECTOR RETRY SOURCE' WHERE id=?").bind(reviewFileId).run();
    reviewAssetRole='VECTOR_REGION_RETRY';prompt=vectorRegionPrompt(i.original_path);
   }
-  const r=normalizeScan(await askSource(env,reviewFileId,null,prompt,{sourcePath:i.source_path||i.original_path,scanAssetPath:i.original_path,assetRole:reviewAssetRole,originalHoldingFileId:i.source_file_id}));
+  const r=normalizeScan(await askSource(env,reviewFileId,null,prompt,{sourcePath:i.source_path||i.original_path,scanAssetPath:i.original_path,assetRole:reviewAssetRole,originalHoldingFileId:i.source_file_id,nativeCapture}));
   const brainKey=`${root}/reviews/${i.id}.json`;
   await env.PROJECT_FILES.put(brainKey,JSON.stringify({reviewedAt:now(),sourceFileId:reviewFileId,originalHoldingFileId:i.source_file_id,sourcePath:i.source_path||i.original_path,scanAssetPath:i.original_path,assetRole:reviewAssetRole,preparedPackageFileId:source.id,scaleVerified:false,review:r,verification:'MODEL_REVIEW_NOT_INDEPENDENT_VERIFICATION'}));
   const complete=validScan(r);

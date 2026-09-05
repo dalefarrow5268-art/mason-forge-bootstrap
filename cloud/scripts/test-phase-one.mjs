@@ -12,6 +12,7 @@ sql.exec(readFileSync(new URL('../schema/0018_holding_brain_scan.sql',import.met
 sql.exec(readFileSync(new URL('../schema/0020_holding_detail_tiles.sql',import.meta.url),'utf8'));
 sql.exec(readFileSync(new URL('../schema/0022_plan_layer_handoff.sql',import.meta.url),'utf8'));
 sql.exec(readFileSync(new URL('../schema/0024_holding_scan_highres_retry.sql',import.meta.url),'utf8'));
+sql.exec(readFileSync(new URL('../schema/0025_native_capture_replaces_tiles.sql',import.meta.url),'utf8'));
 const DB={async batch(statements){return Promise.all(statements.map(s=>s.run()));},prepare(s){return {bind(...p){return {
  async run(){return {meta:{changes:sql.prepare(s).run(...p).changes}};},
  async first(){return sql.prepare(s).get(...p);},

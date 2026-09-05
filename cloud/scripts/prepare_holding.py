@@ -1,6 +1,7 @@
 """Lossless, disk-backed Holding preparation. No credentials or file content in logs."""
 import hashlib, json, os, pathlib, shutil, stat, tempfile, zipfile
 import fitz
+from native_capture import capture_page, write_capture, EXTRACTOR_VERSION
 LIMIT = 20 * 1024**2
 MAX_EXPANDED = 20 * 1024**3
 
@@ -14,7 +15,7 @@ def safe(name):
     return bool(name) and len(name)<1100 and not name.startswith('/') and '\\' not in name and ':' not in name and not any(ord(c)<32 for c in name) and all(p not in ('', '.', '..') for p in name.split('/'))
 
 def prepare(source, name, output, manifest_path, progress=lambda m: None):
-    manifest={'version':2,'sourceName':name,'sourceSha256':sha(source),'files':[], 'pagesTotal':0,'unitsDone':0,'scanUnitsTotal':0,'scaleVerified':False}
+    manifest={'version':3,'sourceName':name,'sourceSha256':sha(source),'files':[], 'pagesTotal':0,'unitsDone':0,'scanUnitsTotal':0,'scaleVerified':False,'nativeCaptureExtractorVersion':EXTRACTOR_VERSION}
     expanded=0
     with tempfile.TemporaryDirectory() as td, zipfile.ZipFile(output,'w',compression=zipfile.ZIP_DEFLATED,allowZip64=True) as target:
         def write(path,arc):
@@ -68,30 +69,16 @@ def prepare(source, name, output, manifest_path, progress=lambda m: None):
                                 if a.samples!=b.samples: raise ValueError(f'PDF page appearance changed: {original}, page {n+1}')
                             arc=prefix+f'/page-{n+1:05d}.pdf'
                             write(out,arc)
-                            scan_assets=[]
-                            # Nine overlapping review views reduce the content presented in each
-                            # model call without altering the protected lossless/vector page above.
-                            # The raster itself remains 90 DPI; terminal unreadable tiles receive
-                            # a bounded retry against the preserved vector page.
-                            cols=rows=3;overlap=.08
-                            for tile_row in range(rows):
-                                for tile_col in range(cols):
-                                    width=page.rect.width/cols;height=page.rect.height/rows
-                                    clip=fitz.Rect(
-                                        max(page.rect.x0,page.rect.x0+tile_col*width-width*overlap),
-                                        max(page.rect.y0,page.rect.y0+tile_row*height-height*overlap),
-                                        min(page.rect.x1,page.rect.x0+(tile_col+1)*width+width*overlap),
-                                        min(page.rect.y1,page.rect.y0+(tile_row+1)*height+height*overlap),
-                                    )
-                                    tile=pathlib.Path(td)/'tile.jpg'
-                                    pixmap=page.get_pixmap(matrix=fitz.Matrix(1.25,1.25),clip=clip,alpha=False,annots=True)
-                                    pixmap.save(tile,jpg_quality=60)
-                                    if tile.stat().st_size>LIMIT: raise ValueError('Individual detail tile exceeds 20 MiB; preserved original requires review')
-                                    tile_arc=arc+f'.brain-scan/tile-r{tile_row+1}-c{tile_col+1}.jpg'
-                                    write(tile,tile_arc)
-                                    scan_assets.append({'path':tile_arc,'row':tile_row+1,'column':tile_col+1,'rows':rows,'columns':cols,'clip':list(clip),'renderDpi':90,'sha256':sha(tile),'sizeBytes':tile.stat().st_size})
-                                    manifest['scanUnitsTotal']+=1
-                            row['outputs'].append({'path':arc,'originalPage':n+1,'sha256':sha(out),'sizeBytes':out.stat().st_size,'mediaBox':list(page.mediabox),'cropBox':list(page.cropbox),'rotation':page.rotation,'scaleVerified':False,'textBlocks':page.get_text('blocks'),'links':page.get_links(),'scanAssets':scan_assets})
+                            capture=pathlib.Path(td)/'native-capture.json'
+                            capture_record=capture_page(page,row['sha256'],arc,n)
+                            capture_meta=write_capture(capture_record,capture)
+                            capture_arc=arc+'.brain-capture/native.json'
+                            write(capture,capture_arc)
+                            # Native-first intake replaces the automatic nine-tile scan.  The
+                            # protected vector page remains beside one deterministic capture.
+                            # Targeted visual crops are created later only for explicit risk gaps.
+                            scan_assets=[];manifest['scanUnitsTotal']+=1
+                            row['outputs'].append({'path':arc,'originalPage':n+1,'sha256':sha(out),'sizeBytes':out.stat().st_size,'mediaBox':list(page.mediabox),'cropBox':list(page.cropbox),'rotation':page.rotation,'scaleVerified':False,'textBlocks':page.get_text('blocks'),'links':page.get_links(),'nativeCapture':{'path':capture_arc,'cacheKey':capture_record['cacheKey'],'captureStatus':capture_record['captureStatus'],**capture_meta},'scanAssets':scan_assets})
                             manifest['unitsDone']+=1;progress(manifest)
             else:
                 if row['sizeBytes']>LIMIT: raise ValueError('Non-PDF exceeds review size; original requires review')
@@ -105,6 +92,8 @@ def prepare(source, name, output, manifest_path, progress=lambda m: None):
         for f in manifest['files']:
             for output_record in f['outputs']:
                 expected.append({k:output_record[k] for k in ('path','sha256')})
+                if output_record.get('nativeCapture'):
+                    expected.append({k:output_record['nativeCapture'][k] for k in ('path','sha256')})
                 expected.extend({k:asset[k] for k in ('path','sha256')} for asset in output_record.get('scanAssets',[]))
         if verify.namelist()!=[o['path'] for o in expected]: raise ValueError('Prepared inventory mismatch')
         for o in expected:

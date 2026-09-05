@@ -1,0 +1,60 @@
+{
+  "recordedAt": "2026-09-05T15:18:42.030Z",
+  "system": "Mason Forge Cloud",
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "projectName": "Downtown Bradenton",
+  "continuityRead": {
+    "checkpointId": "checkpoint_64c5f95a-e67b-478e-b5f0-6854742105db",
+    "version": 246,
+    "verificationStatus": "VERIFIED",
+    "updatedAt": "2026-09-04T20:46:56.514Z"
+  },
+  "repairRequestsInvestigated": [],
+  "issues": [
+    {
+      "issueId": "bask-bradenton-2513-v1-phase-1-d1-like-pattern",
+      "stateBefore": "Phase One remained at zero inventory with its source job PENDING while the dashboard summarized the state as QUEUED.",
+      "diagnosis": "Cloudflare tail logs repeatedly showed D1_ERROR: LIKE or GLOB pattern too complex in queuePhaseOne. The exception stopped both the 15-minute scheduler and health self-heal before dispatch. The Cloudflare Queue producer and consumer were present and correctly bound.",
+      "actualRepair": "Replaced the parameterized LIKE prefix predicate with an exact substr prefix comparison in cloud/src/phase-one-review.js. Updated the release marker to 2026-09-05-phase-one-prefix-fix.",
+      "commit": "84783415f3e4b9ffcd60654599be49a120c5e54f",
+      "deploymentRun": 33974143660,
+      "verification": {
+        "localSyntax": "PASS",
+        "connectorContract": "PASS",
+        "phaseOneTests": "PASS, including 5000-entry bounded inventory",
+        "phaseIntakeTests": "PASS",
+        "completionPipelineTests": "PASS",
+        "wranglerDryRun": "PASS",
+        "githubDeploy": "SUCCESS",
+        "liveRelease": "2026-09-05-phase-one-prefix-fix",
+        "liveOperationalReady": true,
+        "phaseEventsAfterRepair": [
+          {"status": "RUNNING", "observedAt": "2026-09-05T15:14:11.791Z"},
+          {"status": "NEEDS_REVIEW", "observedAt": "2026-09-05T15:15:11.727Z"}
+        ],
+        "inventoriedItems": 3,
+        "registeredOutputs": 1
+      },
+      "preservation": "The original upload remained unchanged. The first prepared working copy is file 2516, 23-936_HAR-100- Plans.pdf, 33391795 bytes."
+    }
+  ],
+  "remainingBlockers": [
+    {
+      "blockerId": "bask-bradenton-2513-v1-large-pdf-preparation",
+      "state": "NEW_AFTER_DISPATCH_REPAIR",
+      "detail": "Phase One inventoried three files. At least the 33391795-byte plan PDF exceeds the current 20 MiB content-review gate and is preserved in Needs Review. One additional item remained RUNNING and one QUEUED at the last check. Automatic traceable PDF page or batch preparation is required before complete content review."
+    },
+    {
+      "blockerId": "mason-forge-csi-2026-catalog",
+      "state": "UNCHANGED",
+      "detail": "No authoritative verified 2026 division and section catalog is loaded. The system must not invent catalog codes."
+    },
+    {
+      "blockerId": "bask-estimate-delivery-connection",
+      "state": "UNCHANGED",
+      "detail": "The exact BASK estimate target and write verification are not configured. No estimate delivery was claimed."
+    }
+  ],
+  "finalDeliverableState": "NOT COMPLETE"
+}

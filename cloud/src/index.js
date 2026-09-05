@@ -159,7 +159,7 @@ async function health(env) {
     env.DB.prepare(`SELECT COUNT(*) count FROM department_tasks t
       WHERE t.status='COMPLETED' AND NOT EXISTS (SELECT 1 FROM department_outputs o WHERE o.task_id=t.id)`).first(),
     env.DB.prepare(`SELECT COUNT(*) count FROM (SELECT task_id FROM department_outputs GROUP BY task_id HAVING COUNT(*) > 1)`).first(),
-    env.DB.prepare("SELECT id, project_id, r2_key FROM project_files ORDER BY project_id, id LIMIT 3").all(),
+    env.DB.prepare("SELECT id, project_id, r2_key FROM project_files WHERE archived_at IS NULL ORDER BY project_id, id LIMIT 3").all(),
   ]);
 
   const taskTotals = Object.fromEntries((taskRows.results || []).map((row) => [row.status, Number(row.count || 0)]));

@@ -1,18 +1,18 @@
 {
-  "capturedAt": "2026-09-05T22:03:15.006Z",
-  "sourceCommit": "dc22c4cd382e9bd7d9f97c87da14048db3cd5f2c",
+  "capturedAt": "2026-09-05T22:38:43.993Z",
+  "sourceCommit": "dff6decdae972eee4e04b33427772c1a49e2005b",
   "health": {
     "status": "online",
     "operationalReady": true,
     "service": "Mason Forge Cloud",
     "environment": "production",
-    "releaseId": "2026-09-05-holding-native-capture-v1",
+    "releaseId": "2026-09-05-sheet-routing-json-v1",
     "database": "D1 VERIFIED",
     "projectFileStorage": "R2 VERIFIED",
     "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
     "openai": "CONFIGURED",
     "projects": 13,
-    "files": 3027,
+    "files": 3028,
     "taskTotals": {
       "COMPLETED": 1845
     },
@@ -25,17 +25,17 @@
       "updated_at": "2026-09-04T23:30:26.394Z"
     },
     "extraction": {
-      "extracted": 2149,
-      "queued": 9,
+      "extracted": 2151,
+      "queued": 7,
       "retrying": 0,
       "failed": 0,
-      "pending": 869
+      "pending": 870
     },
     "staleRunningTasks": 0,
     "completedTasksWithoutOutput": 0,
     "duplicateOutputTasks": 0,
     "countsReconcile": true,
-    "projectFileTotal": 3027,
+    "projectFileTotal": 3028,
     "projectTaskTotal": 1845,
     "r2Samples": [
       {
@@ -80,7 +80,7 @@
       {
         "id": 3,
         "name": "Bask Development",
-        "file_count": 606,
+        "file_count": 607,
         "queued_tasks": 0,
         "running_tasks": 0,
         "blocked_tasks": 0,
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-05T22:03:15.727Z"
+    "checkedAt": "2026-09-05T22:38:44.581Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-05T22:03:16.177Z",
+    "retrievedAt": "2026-09-05T22:38:45.208Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",
@@ -400,7 +400,7 @@
         "client": null,
         "status": "INTAKE",
         "review_status": "NEEDS REVIEW",
-        "file_count": 606,
+        "file_count": 607,
         "running_tasks": 0,
         "queued_tasks": 0,
         "completed_tasks": 160,

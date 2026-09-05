@@ -1,0 +1,16 @@
+{
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "issueId": "holding-queue-create-idempotency",
+  "investigatedAt": "2026-09-05T23:55:10.773Z",
+  "diagnosis": "Cloudflare returned existing queue code 11009 with the phrase 'already taken'; the deployment preflight accepted only 'already exists'.",
+  "repair": "Accept Cloudflare's documented runtime response variants for the exact pre-existing queue while continuing to fail every other queue-creation error.",
+  "verificationRequired": [
+    "Deployment reaches dry run, migrations, Worker deployment, and live verification.",
+    "Bradenton scan retries produce COMPLETE records."
+  ],
+  "safety": [
+    "No queue was deleted or purged.",
+    "No scan state or upload was changed."
+  ]
+}

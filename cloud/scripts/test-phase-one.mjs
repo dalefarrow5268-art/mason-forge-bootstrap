@@ -51,7 +51,7 @@ await processPhaseOne({table:'phase_one_jobs',id:'intake-200'},env);
 assert.equal(sql.prepare("SELECT COUNT(*) n FROM phase_one_items WHERE job_id='intake-200'").get().n,1);
 console.log('PASS: preparation gate, stale-message gate and verified-package inventory');
 // Brain scan must precede Phase One. Use real ZIP handling and mocked model evidence.
-const {queueHoldingScan,processHoldingScan,validScan,scanPrompt}=await import('../src/holding-brain-scan.js');
+const {queueHoldingScan,processHoldingScan,validScan,scanPrompt,normalizeScan}=await import('../src/holding-brain-scan.js');
 sql.exec(readFileSync(new URL('../schema/0018_holding_brain_scan.sql',import.meta.url),'utf8'));
 assert(!validScan({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[]}));
 assert(validScan({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[],blank:true}));
@@ -59,6 +59,9 @@ assert(!validScan({coverage:'PARTIAL',category:'Plans',unreadableRegions:[],find
 assert.match(scanPrompt(true),/Judge coverage only for the pixels visible inside this supplied tile/);
 assert.match(scanPrompt(true),/do not mark coverage PARTIAL/);
 assert.match(scanPrompt(true),/requires all tiles before releasing the logical page/);
+const normalizedFinding=normalizeScan({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[{location:'lower-left',content:{text:'Door note',value:3}}]});
+assert.equal(normalizedFinding.findings[0].content,'{"text":"Door note","value":3}');
+assert(validScan(normalizedFinding));
 const scanZip=new ZipWriter(new Uint8ArrayWriter(),{useWebWorkers:false});await scanZip.add('source/notes.txt',new TextReader('Project note: retain original.'));const scanBytes=await scanZip.close();objects.set('scan300',scanBytes);
 sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(300,3,'source300','original.zip','Holding/original.zip',100,'PHASE ONE INTAKE')").run();
 sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(301,3,'scan300','prepared.zip','Prepared/300.zip',?,'HOLDING PREPARED PACKAGE')").run(scanBytes.length);

@@ -1,0 +1,26 @@
+{
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "reviewedAt": "2026-09-05T23:30:00Z",
+  "reviewer": "OpenAI Codex for Dale Farrow",
+  "scope": "Measuring-layer classification only; scale and quantities remain unverified",
+  "jobs": [
+    {"id":"plan-layers-3000","sheet":"A2.4 FOURTH FLOOR PLAN","sourceFileId":3000,"layerFileId":3070,"sourceSha256":"cbb29231c3a20ffe1c2ee6ed936c8bebedf87d4dc6a09f3a56641c919a67beb7","layerSha256":"bbba4837fec3b71c5a954fd6eeb0d1c0536208d6176ea5928c28f4c06bd61c30","result":"CLASSIFICATION_VERIFIED"},
+    {"id":"plan-layers-3002","sheet":"A2.5 FIFTH FLOOR PLAN","sourceFileId":3002,"layerFileId":3075,"sourceSha256":"887081f2a366ecce4a195f7b8b79269fdcc404aead03508d44adb6e59e4eba2f","layerSha256":"0741359272e8ee645071187d685ce11d2f1a8478070c39e1a1887d9e7baa0873","result":"CLASSIFICATION_VERIFIED"},
+    {"id":"plan-layers-3012","sheet":"A3.1 REFLECTED CEILING PLAN - FIRST FLOOR","sourceFileId":3012,"layerFileId":3080,"sourceSha256":"88ac86151a8a4ee754d24f054abca9c42910c31e9793eb96c48c15c786256bd6","layerSha256":"819f44a7a4862289056b162569970fea47b19de21a8b4fb295714d9a0f71371a","result":"CLASSIFICATION_VERIFIED"}
+  ],
+  "checks": {
+    "pageCount":"1 each",
+    "pageGeometry":"2592 x 1728 points for each source and layer pair",
+    "retained":["walls","windows/openings","doors","room names","room numbers"],
+    "excluded":["schedules","legends","title blocks","furniture","administrative/reference content"],
+    "searchableLabelsChecked":true,
+    "visualComparison":"PASS"
+  },
+  "remainingBlockers":[
+    "Native Mason Brain scan has not completed all 169 pages.",
+    "Scale and takeoff quantities have not been independently verified.",
+    "Verified CSI 2026 catalog is required before divisions and sections can complete.",
+    "BASK estimate delivery connection has not been verified."
+  ]
+}

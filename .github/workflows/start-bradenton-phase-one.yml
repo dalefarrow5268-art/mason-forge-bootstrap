@@ -1,0 +1,27 @@
+name: Start Bradenton Phase One
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/start-bradenton-phase-one.yml'
+      - 'cloud/scripts/start-bradenton-phase-one.mjs'
+permissions:
+  contents: read
+concurrency:
+  group: bradenton-phase-one-enrollment
+  cancel-in-progress: false
+jobs:
+  enroll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enroll verified Bradenton upload after deployment
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node cloud/scripts/start-bradenton-phase-one.mjs

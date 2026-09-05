@@ -51,6 +51,7 @@ jobs:
 
       - name: Test phase review pipeline
         run: |
+          node scripts/test-phase-intake.mjs
           node scripts/test-phase-one.mjs
           node scripts/test-completion-pipeline.mjs
 

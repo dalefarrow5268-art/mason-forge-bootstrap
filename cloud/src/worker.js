@@ -1,3 +1,4 @@
+import {queuePhaseIntake,processPhaseIntake} from './phase-intake.js';
 import { queuePhaseSeven, processPhaseSeven } from './phase-seven-reports.js';
 import { queueCompletionPhases, processCompletionPhase } from './project-phase-pipeline.js';
 import { queuePhaseSix, processPhaseSix } from './phase-six-brain.js';
@@ -303,7 +304,8 @@ export default {
 
     const url = new URL(request.url);
     if (url.pathname === "/health" && request.method === "GET") {
-      await queuePhaseOne(env);
+      await queuePhaseIntake(env);
+    await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
     await queuePhaseFour(env);
@@ -315,7 +317,8 @@ export default {
       await ensureSystemContinuity(env);
     }
     if (url.pathname === "/api/connector/bootstrap" && request.method === "GET" && authorized(request, env)) {
-      await queuePhaseOne(env);
+      await queuePhaseIntake(env);
+    await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
     await queuePhaseFour(env);
@@ -338,6 +341,11 @@ export default {
     await ensureRuntimeSchema(env);
     for (const message of batch.messages) {
       const body = message.body || {};
+      if(body.kind === 'PHASE_INTAKE') {
+        try { await processPhaseIntake(body,env); message.ack(); }
+        catch(error) { console.error('Phase intake retry',body.id,String(error)); message.retry({delaySeconds:120}); }
+        continue;
+      }
       if(body.kind === 'PROJECT_PHASE') {
         try { await processCompletionPhase(body,env); message.ack(); }
         catch(error) { console.error('Project phase retry',body.id,String(error)); message.retry({delaySeconds:120}); }
@@ -402,6 +410,7 @@ export default {
       }
     }
 
+    await queuePhaseIntake(env);
     await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);
@@ -416,6 +425,7 @@ export default {
 
   async scheduled(_event, env) {
     await ensureRuntimeSchema(env);
+    await queuePhaseIntake(env);
     await queuePhaseOne(env);
     await queuePhaseTwo(env);
     await queuePhaseThree(env);

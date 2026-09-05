@@ -1,6 +1,6 @@
 {
-  "capturedAt": "2026-09-05T19:22:27.995Z",
-  "sourceCommit": "014591531fbdf0353326bb956c353ea0c09df392",
+  "capturedAt": "2026-09-05T19:28:24.032Z",
+  "sourceCommit": "b3a39f15a4d96b1881875fdfb9f78b6e2cdec877",
   "health": {
     "status": "online",
     "operationalReady": true,
@@ -12,7 +12,7 @@
     "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
     "openai": "CONFIGURED",
     "projects": 13,
-    "files": 2790,
+    "files": 2800,
     "taskTotals": {
       "COMPLETED": 1845
     },
@@ -26,16 +26,16 @@
     },
     "extraction": {
       "extracted": 2149,
-      "queued": 0,
+      "queued": 1,
       "retrying": 0,
       "failed": 0,
-      "pending": 641
+      "pending": 650
     },
     "staleRunningTasks": 0,
     "completedTasksWithoutOutput": 0,
     "duplicateOutputTasks": 0,
     "countsReconcile": true,
-    "projectFileTotal": 2790,
+    "projectFileTotal": 2800,
     "projectTaskTotal": 1845,
     "r2Samples": [
       {
@@ -80,7 +80,7 @@
       {
         "id": 3,
         "name": "Bask Development",
-        "file_count": 374,
+        "file_count": 383,
         "queued_tasks": 0,
         "running_tasks": 0,
         "blocked_tasks": 0,
@@ -190,7 +190,7 @@
       {
         "id": 13,
         "name": "SSX",
-        "file_count": 262,
+        "file_count": 263,
         "queued_tasks": 0,
         "running_tasks": 0,
         "blocked_tasks": 0,
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-05T19:22:28.717Z"
+    "checkedAt": "2026-09-05T19:28:24.481Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-05T19:22:29.246Z",
+    "retrievedAt": "2026-09-05T19:28:25.005Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",
@@ -250,7 +250,7 @@
         "client": null,
         "status": "INTAKE",
         "review_status": "NEEDS REVIEW",
-        "file_count": 262,
+        "file_count": 263,
         "running_tasks": 0,
         "queued_tasks": 0,
         "completed_tasks": 325,
@@ -400,7 +400,7 @@
         "client": null,
         "status": "INTAKE",
         "review_status": "NEEDS REVIEW",
-        "file_count": 374,
+        "file_count": 383,
         "running_tasks": 0,
         "queued_tasks": 0,
         "completed_tasks": 160,

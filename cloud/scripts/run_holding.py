@@ -5,7 +5,7 @@ BASE='https://api.cloudflare.com/client/v4/accounts/'+os.environ['CLOUDFLARE_ACC
 TOKEN=os.environ['CLOUDFLARE_API_TOKEN']
 DB='736f655b-889d-4fb2-8948-0a396d39436f'
 BUCKET='mason-forge-project-files'
-PREPARATION_VERSION='native-capture-v1'
+PREPARATION_VERSION='native-capture-v2'
 CONFIG=tomllib.loads((pathlib.Path(__file__).resolve().parents[1]/'wrangler.toml').read_text())
 EXPECTED_RELEASE=CONFIG['vars']['RELEASE_ID']
 def now():return datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00','Z')

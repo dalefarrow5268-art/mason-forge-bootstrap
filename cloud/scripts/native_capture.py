@@ -8,7 +8,7 @@ import json
 
 import fitz
 
-EXTRACTOR_VERSION = "mason-native-pdf-v1"
+EXTRACTOR_VERSION = "mason-native-pdf-v2"
 
 
 def _json_default(value):
@@ -22,6 +22,54 @@ def _json_default(value):
 
 def _json_bytes(value):
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True, default=_json_default).encode("utf-8")
+
+
+def _json_sha256(value):
+    """Hash canonical JSON without materializing very large drawing arrays."""
+    digest = hashlib.sha256()
+    encoder = json.JSONEncoder(
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+        default=_json_default,
+    )
+    for chunk in encoder.iterencode(value):
+        digest.update(chunk.encode("utf-8"))
+    return digest.hexdigest()
+
+
+def _drawing_summary(drawings):
+    type_counts = {}
+    layer_counts = {}
+    bounds = None
+    for drawing in drawings:
+        drawing_type = str(drawing.get("type") or "UNKNOWN")
+        type_counts[drawing_type] = type_counts.get(drawing_type, 0) + 1
+        layer = str(drawing.get("layer") or "UNSPECIFIED")
+        layer_counts[layer] = layer_counts.get(layer, 0) + 1
+        rect = drawing.get("rect")
+        if rect is None:
+            continue
+        coordinates = list(rect)
+        if len(coordinates) != 4:
+            continue
+        if bounds is None:
+            bounds = coordinates
+        else:
+            bounds = [
+                min(bounds[0], coordinates[0]),
+                min(bounds[1], coordinates[1]),
+                max(bounds[2], coordinates[2]),
+                max(bounds[3], coordinates[3]),
+            ]
+    return {
+        "count": len(drawings),
+        "canonicalSha256": _json_sha256(drawings),
+        "typeCounts": type_counts,
+        "layerCounts": layer_counts,
+        "bounds": bounds,
+        "authoritativeGeometry": "PRESERVED_SOURCE_PDF",
+    }
 
 
 def capture_key(source_sha256, page_index, profile=EXTRACTOR_VERSION):
@@ -46,7 +94,7 @@ def capture_page(page, source_sha256, source_path, page_index, revision=None):
     if text_chars < 40 and images:
         risks.append("POSSIBLE_IMAGE_ONLY_OR_MIXED_PAGE")
     record = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "captureStatus": "CAPTURED_NOT_SEMANTICALLY_REVIEWED",
         "extractorVersion": EXTRACTOR_VERSION,
         "source": {
@@ -66,7 +114,11 @@ def capture_page(page, source_sha256, source_path, page_index, revision=None):
         "evidence": {
             "textBlocks": blocks,
             "words": words,
-            "drawings": drawings,
+            # Individual drawing paths can exceed tens of MiB because PDFs often
+            # repeat hatch/line primitives. The lossless PDF remains the
+            # authoritative geometry source; retain a deterministic digest and
+            # useful counts here so the Brain capture stays bounded for review.
+            "drawingDigest": _drawing_summary(drawings),
             "images": images,
             "links": links,
         },

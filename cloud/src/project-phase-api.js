@@ -20,6 +20,21 @@ export async function projectPhaseRoute(request,env){
  const finalized=await env.DB.prepare("SELECT status FROM project_phase_runs WHERE submission_id=? AND phase=12 AND status='COMPLETE'").bind(submission).first();
  if(finalized&&resource!=='candidates')return json({error:'Final estimate is immutable; register a new submission revision for changes'},409);
  try{
+  if(resource==='layers'&&action==='verify'){
+   const job=await env.DB.prepare(`SELECT l.* FROM plan_layer_jobs l WHERE l.id=? AND l.source_file_id IN (SELECT value FROM json_each((SELECT source_file_ids_json FROM phase_project_submissions WHERE id=?)))`).bind(id,submission).first();
+   if(!job||job.status!=='LAYER_REVIEW_REQUIRED'||!job.layered_file_id)return json({error:'Completed layer package requiring review not found'},409);
+   if(body.classificationComplete!==true||!text(body.reviewer)||!text(body.evidence)||!/^[a-f0-9]{64}$/.test(body.sourceSha256||'')||!/^[a-f0-9]{64}$/.test(body.layerSha256||''))return json({error:'Source and layer hashes, reviewer and classification evidence required'},400);
+   const source=await readSource(env,job.plan_file_id),layer=await readSource(env,job.layered_file_id);
+   const hash=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
+   if(await hash(source.bytes)!==job.source_sha256||body.sourceSha256!==job.source_sha256||await hash(layer.bytes)!==body.layerSha256)return json({error:'Source or measuring layer hash differs'},409);
+   const object=await env.PROJECT_FILES.get(job.manifest_key);if(!object)return json({error:'Layer manifest missing'},409);const manifest=JSON.parse(await object.text());
+   if(manifest.artifactSha256?.['layers.pdf']!==body.layerSha256)return json({error:'Measuring file differs from recorded layer build'},409);
+   const review={reviewer:text(body.reviewer),evidence:text(body.evidence),sourceSha256:job.source_sha256,layerSha256:body.layerSha256,classificationComplete:true,scaleVerified:false,at:now()};
+   await audit(env,submission,'VERIFY_PLAN_LAYERS',id,review);
+   await env.PROJECT_FILES.put(job.manifest_key+'.review.json',JSON.stringify(review));
+   await env.DB.prepare("UPDATE plan_layer_jobs SET status='READY_FOR_TAKEOFF',error=NULL,updated_at=? WHERE id=? AND status='LAYER_REVIEW_REQUIRED'").bind(now(),id).run();
+   return json({id,status:'READY_FOR_TAKEOFF',scaleVerified:false});
+  }
   if(resource==='takeoffs'&&parts.length===2){
    const scope=await env.DB.prepare('SELECT id FROM phase_five_estimate_outbox WHERE id=? AND submission_id=?').bind(body.scopeId||'',submission).first();
    const task=await env.DB.prepare('SELECT id FROM project_phase_tasks WHERE submission_id=? AND phase=9 AND file_id=? AND page=?').bind(submission,body.fileId||0,body.page||0).first();

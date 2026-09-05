@@ -1,3 +1,4 @@
+import {queuePlanLayers,queueSheetRouting} from './plan-layer-handoff.js';
 import {ZipReader} from '@zip.js/zip.js';
 import {R2Reader,unpack,register,safe} from './phase-one-review.js';
 import {askSource} from './project-phase-common.js';
@@ -27,6 +28,8 @@ async function preparedEntry(env,source,path){
  throw new Error('Vector retry source page is missing from prepared package');
 }
 export async function queueHoldingScan(env){
+ await queuePlanLayers(env);
+ await queueSheetRouting(env);
  const waiting=(await env.DB.prepare("SELECT p.*,f.r2_key,f.size_bytes FROM holding_preparations p JOIN project_files f ON f.id=p.prepared_file_id WHERE p.status='READY' LIMIT 3").all()).results||[];
  for(const p of waiting){
   const reader=new ZipReader(new R2Reader(env.PROJECT_FILES,p.r2_key,p.size_bytes));let index=0,count=0;const entries=[];

@@ -44,7 +44,8 @@ export async function intakeProgress(env,projectId=null){
  for(const p of phases)if(p.status==='NEEDS_REVIEW')blockers.push(`Phase ${p.phase}: ${p.errors[0]||'Review required before proceeding.'}`);
  const events=await rows(env,'SELECT phase,status,observed_at FROM project_phase_tracking_events WHERE submission_id=? ORDER BY id DESC LIMIT 40',s.id);
  const repairRequests=await rows(env,"SELECT * FROM project_repair_requests WHERE submission_id=? ORDER BY created_at DESC LIMIT 30",s.id);
- projects.push({preparation,repairRequests,id:s.id,projectId:s.project_id,projectName:s.project_name,createdAt:s.sealed_at,phases,blockers,events});
+ const planLayers=await rows(env,'SELECT id,plan_file_id,source_path,status,route_json,attempts,error,layered_file_id,updated_at FROM plan_layer_jobs WHERE source_file_id IN (SELECT value FROM json_each(?))',s.source_file_ids_json);
+ projects.push({planLayers,preparation,repairRequests,id:s.id,projectId:s.project_id,projectName:s.project_name,createdAt:s.sealed_at,phases,blockers,events});
  }
  return {checkedAt:new Date().toISOString(),projects};
 }

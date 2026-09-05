@@ -1,3 +1,4 @@
+import {processSheetRouting} from './plan-layer-handoff.js';
 import { routePendingBrainFiles } from "./brain-lobe-router.js";
 import {queueHoldingScan,processHoldingScan} from './holding-brain-scan.js';
 import {intakeProgress} from './intake-progress.js';
@@ -348,6 +349,7 @@ export default {
     await ensureRuntimeSchema(env);
     for (const message of batch.messages) {
       const body = message.body || {};
+      if(body.kind==='PLAN_SHEET_ROUTE'){try{await processSheetRouting(body,env);message.ack();}catch(e){message.retry({delaySeconds:120});}continue;}
       if(body.kind === 'HOLDING_SCAN') {
         try {await processHoldingScan(body,env);message.ack();}catch(error){console.error('Holding scan retry',body.id,String(error));message.retry({delaySeconds:120});}continue;
       }

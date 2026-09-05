@@ -61,6 +61,8 @@ jobs:
           node scripts/test-phase-one.mjs
           node scripts/test-completion-pipeline.mjs
           node scripts/test-scale-gate.mjs
+          node scripts/test-plan-layer-handoff.mjs
+          python scripts/test_plan_layer_queue.py
 
       - name: Read release marker
         id: release

@@ -12,6 +12,7 @@ sql.exec(readFileSync(new URL('../schema/0008_phase_two.sql',import.meta.url),'u
 sql.exec(readFileSync(new URL('../schema/0017_holding_preparation.sql',import.meta.url),'utf8')); 
 sql.exec(readFileSync(new URL('../schema/0018_holding_brain_scan.sql',import.meta.url),'utf8'));
 sql.exec(readFileSync(new URL('../schema/0020_holding_detail_tiles.sql',import.meta.url),'utf8'));
+sql.exec(readFileSync(new URL('../schema/0022_plan_layer_handoff.sql',import.meta.url),'utf8'));
 const DB={async batch(statements){return Promise.all(statements.map(s=>s.run()));},prepare(s){return {bind(...p){return {
  async run(){return {meta:{changes:sql.prepare(s).run(...p).changes}};},
  async first(){return sql.prepare(s).get(...p);},
@@ -124,6 +125,7 @@ assert.throws(()=>calculateQuantity('LF',{...geom,points:[[0,0],[700,0]]}));
 const pdf=await PDFDocument.create();pdf.addPage([600,600]);pdf.addPage([600,600]);const pdfBytes=await pdf.save();objects.set('copy',pdfBytes);
 sql.prepare("UPDATE project_files SET file_name='plans.pdf',size_bytes=? WHERE id=2").run(pdfBytes.length);
 sql.exec("INSERT INTO phase_five_estimate_outbox(id,submission_id,section_code,scope_text,evidence_json,result_key,created_at) VALUES('scope-1','project-1','03 30 00','Place concrete slab.','[{\"sourceFileId\":2,\"sheet\":\"A1\",\"evidence\":\"slab\"}]','scope-result','now')");
+sql.exec("INSERT INTO plan_layer_jobs(id,source_file_id,prepared_file_id,plan_file_id,source_path,brain_keys_json,status,layered_file_id,updated_at) VALUES('test-layer',1,1,2,'plans.pdf','[]','READY_FOR_TAKEOFF',2,'now')");
 const model=async(url,options)=>{
  if(String(url).includes('/v1/files'))return Response.json({id:'test-upload'});
  const body=JSON.parse(options.body),prompt=body.input[0].content;

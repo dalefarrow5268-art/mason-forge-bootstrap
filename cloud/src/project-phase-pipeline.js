@@ -107,6 +107,7 @@ export async function queueCompletionPhases(env){
  const eligible=(await env.DB.prepare("SELECT submission_id FROM phase_seven_jobs WHERE status='COMPLETE'").all()).results||[];
  for(const row of eligible)await env.DB.prepare('INSERT OR IGNORE INTO project_phase_runs(submission_id,phase,updated_at) VALUES(?,8,?)').bind(row.submission_id,now()).run();
  // Verification and issue resolution are saved inputs; the scheduler resumes automatically.
+ await env.DB.prepare("UPDATE project_phase_tasks SET status='PENDING',error=NULL,updated_at=? WHERE phase=9 AND status='WAITING_LAYERS' AND EXISTS(SELECT 1 FROM plan_layer_jobs l WHERE l.plan_file_id=project_phase_tasks.file_id AND l.status IN ('READY_FOR_TAKEOFF','REFERENCE_ONLY'))").bind(now()).run();
  await env.DB.prepare(`UPDATE project_phase_tasks SET status='COMPLETE',updated_at=? WHERE phase=9 AND status IN ('WAITING_VERIFICATION','WAITING_REVIEW')
  AND result_key IS NOT NULL
  AND NOT EXISTS(SELECT 1 FROM project_takeoffs t WHERE t.task_id=project_phase_tasks.id AND t.status!='VERIFIED')
@@ -137,5 +138,5 @@ export async function processCompletionPhase(body,env){
  if(!task||!['PENDING','QUEUED','RUNNING'].includes(task.status))return;
  const lease=crypto.randomUUID();const claim=await env.DB.prepare(`UPDATE project_phase_tasks SET status='RUNNING',lease_token=?,attempts=attempts+1,updated_at=? WHERE id=? AND (status IN ('PENDING','QUEUED') OR (status='RUNNING' AND updated_at<?))`).bind(lease,now(),task.id,stale()).run();if(!claim.meta.changes)return;
  try{const result=await handlePhaseTask(task,env);await env.DB.prepare('UPDATE project_phase_tasks SET status=?,result_key=?,error=NULL,updated_at=? WHERE id=? AND lease_token=?').bind(result.status,result.key,now(),task.id,lease).run();}
- catch(error){const terminal=task.attempts+1>=5;await env.DB.prepare('UPDATE project_phase_tasks SET status=?,error=?,updated_at=? WHERE id=? AND lease_token=?').bind(terminal?'NEEDS_REVIEW':'PENDING',String(error.message||error).slice(0,500),now(),task.id,lease).run();if(!terminal)throw error;}
+ catch(error){if(String(error.message||error).startsWith('PLAN_LAYER_GATE:')){await env.DB.prepare("UPDATE project_phase_tasks SET status='WAITING_LAYERS',attempts=MAX(0,attempts-1),error=?,updated_at=? WHERE id=? AND lease_token=?").bind(String(error.message),now(),task.id,lease).run();return;}const terminal=task.attempts+1>=5;await env.DB.prepare('UPDATE project_phase_tasks SET status=?,error=?,updated_at=? WHERE id=? AND lease_token=?').bind(terminal?'NEEDS_REVIEW':'PENDING',String(error.message||error).slice(0,500),now(),task.id,lease).run();if(!terminal)throw error;}
 }

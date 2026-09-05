@@ -6,9 +6,9 @@ import fitz
 from pypdf import PdfReader, PdfWriter
 from pypdf.generic import ContentStream, DictionaryObject, NameObject, ArrayObject, TextStringObject
 
-VERSION = 'mason-plan-layers-0.2.0'
+VERSION = 'mason-plan-layers-0.3.0'
 PAINT = {b'S', b's', b'f', b'F', b'f*', b'B', b'B*', b'b', b'b*', b'Tj', b'TJ', b"'", b'"', b'Do', b'sh', b'INLINE IMAGE'}
-LAYERS = {'walls':'Walls', 'windows':'Windows', 'doors':'Doors', 'rooms':'Room names and numbers', 'other':'Not needed for measuring'}
+LAYERS = {'walls':'Walls', 'windows':'Windows', 'doors':'Doors', 'rooms':'Room names and numbers', 'systems':'Ceiling and system devices', 'other':'Not needed for measuring'}
 
 def digest(data): return hashlib.sha256(data).hexdigest()
 def write_json(path, value): path.write_text(json.dumps(value, indent=2, default=list))
@@ -30,7 +30,7 @@ def apply_layers(reader, page_index, assignments, names, visible):
         props[NameObject(alias)] = ref; aliases[key] = alias
     config = DictionaryObject({NameObject('/BaseState'):NameObject('/OFF'), NameObject('/ON'):ArrayObject([refs[k] for k in visible]), NameObject('/OFF'):ArrayObject([v for k,v in refs.items() if k not in visible]), NameObject('/Order'):ArrayObject(list(refs.values()))})
     if set(names)==set(LAYERS):
-        config[NameObject('/Order')]=ArrayObject([ArrayObject([TextStringObject('Measuring')]+[refs[k] for k in ('walls','windows','doors','rooms')]),refs['other']])
+        config[NameObject('/Order')]=ArrayObject([ArrayObject([TextStringObject('Measuring')]+[refs[k] for k in ('walls','windows','doors','rooms','systems')]),refs['other']])
     writer._root_object[NameObject('/OCProperties')] = DictionaryObject({NameObject('/OCGs'):ArrayObject(list(refs.values())), NameObject('/D'):config})
     stream = ContentStream(page['/Contents'],writer); original = list(stream.operations); output=[]; stack=[]
     for operands,operator in original:
@@ -90,6 +90,7 @@ def run(source, page_number, profile, output):
                 if re.search(r'[A-Za-z].*\d{3}\s*$',text[k],re.S): room_votes[region]+=1
         profile=dict(profile, drawingRegion=max(wall_votes,key=wall_votes.get,default=None),textRegion=max(room_votes,key=room_votes.get,default=None))
         supported=supported and bool(wall_votes) and bool(room_votes)
+    is_rcp=bool(re.search(r'REFLECTED\s+CEILING\s+PLAN|\bRCP\b',fp.get_text(),re.I))
     assignments={k:'other' for k in groups}; records=[]
     if supported:
         tag_names={k:k for k in groups}; tag_names['other']='other'
@@ -115,6 +116,8 @@ def run(source, page_number, profile, output):
                 if swing: category='doors'; reason='Quarter-swing geometry candidate'
                 elif rec['maxwidth']>=profile.get('wallStrokeMin',1.2) or rec['gray']:
                     category='walls'; reason='Heavy stroke or gray wall-fill candidate'
+                elif is_rcp:
+                    category='systems'; reason='Reflected-ceiling/system element inside the selected drawing region'
                 elif .3<short<12 and 18<long<110:
                     category='windows'; reason='Narrow frame candidate; may include sliding doors or other elements'
             assignments[k]=category
@@ -130,7 +133,7 @@ def run(source, page_number, profile, output):
     else:
         status='UNSUPPORTED_REQUIRES_OCR_OR_LAYER_ADAPTER'; original_count=layered_count=0
     artifacts={p.name:digest(p.read_bytes()) for p in folder.iterdir() if p.is_file() and p.name!='layer-manifest.json'}
-    manifest={'identity':identity,'cacheKey':key,'brainCaptureStatus':'CAPTURED_NOT_SEMANTICALLY_REVIEWED','layerStatus':status,'scaleStatus':'NOT_CHECKED','takeoffAllowed':False,'defaultVisibleLayers':['measuring'],'measuringCategories':['walls','windows','doors','rooms'],'roomLabelsKeptTogether':True,'counts':{k:sum(v==k for v in assignments.values()) for k in LAYERS},'elements':records,'resolvedProfile':profile,'sourceOperations':original_count,'layeredOperations':layered_count,'artifactSha256':artifacts,'elapsedSeconds':round(time.monotonic()-started,3),'limitations':['Candidate rules are profile-specific, not validated semantic classification.','Window rule may include sliding doors; missing candidates require review.','Full-page capture is not OCR or complete visual interpretation.','Production queue integration is not installed.']}
+    manifest={'identity':identity,'cacheKey':key,'brainCaptureStatus':'CAPTURED_NOT_SEMANTICALLY_REVIEWED','layerStatus':status,'scaleStatus':'NOT_CHECKED','takeoffAllowed':False,'defaultVisibleLayers':['measuring'],'measuringCategories':['walls','windows','doors','rooms','systems'],'roomLabelsKeptTogether':True,'counts':{k:sum(v==k for v in assignments.values()) for k in LAYERS},'elements':records,'resolvedProfile':profile,'sourceOperations':original_count,'layeredOperations':layered_count,'artifactSha256':artifacts,'elapsedSeconds':round(time.monotonic()-started,3),'limitations':['Candidate rules are profile-specific, not validated semantic classification.','Window rule may include sliding doors on floor plans; missing candidates require review.','RCP device candidates remain grouped in the systems layer and require visual review.','Full-page capture is not OCR or complete visual interpretation.']}
     write_json(marker,manifest)
     return {'cacheHit':False,'folder':str(folder),'manifest':manifest}
 

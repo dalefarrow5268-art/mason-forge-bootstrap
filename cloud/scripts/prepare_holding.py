@@ -46,24 +46,30 @@ def prepare(source, name, output, manifest_path, progress=lambda m: None):
                 with fitz.open(path) as doc:
                     if doc.needs_pass or doc.page_count==0: raise ValueError('Encrypted or empty PDF')
                     row['pages']=doc.page_count;manifest['pagesTotal']+=doc.page_count
-                    for n,page in enumerate(doc):
-                        out=pathlib.Path(td)/'page.pdf'
-                        with fitz.open() as single:
-                            single.insert_pdf(doc,from_page=n,to_page=n,links=True,annots=True)
-                            single.save(out,garbage=4,deflate=True,no_new_id=True)
-                        if out.stat().st_size>LIMIT: raise ValueError('Individual PDF page exceeds 20 MiB; preserved original requires review')
-                        with fitz.open(out) as check:
-                            q=check[0]
-                            if q.rect!=page.rect or q.mediabox!=page.mediabox or q.cropbox!=page.cropbox or q.rotation!=page.rotation:
-                                raise ValueError('PDF page geometry changed')
-                            # Compare rendered content including annotations; no downsampling in saved PDF.
-                            a=page.get_pixmap(matrix=fitz.Matrix(.25,.25),alpha=False)
-                            b=q.get_pixmap(matrix=fitz.Matrix(.25,.25),alpha=False)
-                            if a.samples!=b.samples: raise ValueError('PDF page appearance changed')
-                        arc=prefix+f'/page-{n+1:05d}.pdf'
-                        write(out,arc)
-                        row['outputs'].append({'path':arc,'originalPage':n+1,'sha256':sha(out),'sizeBytes':out.stat().st_size,'mediaBox':list(page.mediabox),'cropBox':list(page.cropbox),'rotation':page.rotation,'scaleVerified':False,'textBlocks':page.get_text('blocks'),'links':page.get_links()})
-                        manifest['unitsDone']+=1;progress(manifest)
+                    for n in range(doc.page_count):
+                        with fitz.open(path) as page_source:
+                            page=page_source[n]
+                            out=pathlib.Path(td)/'page.pdf'
+                            with fitz.open() as single:
+                                single.insert_pdf(page_source,from_page=n,to_page=n,links=True,annots=True)
+                                single.save(out,garbage=4,deflate=True,no_new_id=True)
+                                if out.stat().st_size>LIMIT:
+                                    single[0].clean_contents()
+                                    out.unlink()
+                                    single.save(out,garbage=4,deflate=True,no_new_id=True)
+                            if out.stat().st_size>LIMIT: raise ValueError('Individual PDF page exceeds 20 MiB; preserved original requires review')
+                            with fitz.open(out) as check:
+                                q=check[0]
+                                if q.rect!=page.rect or q.mediabox!=page.mediabox or q.cropbox!=page.cropbox or q.rotation!=page.rotation:
+                                    raise ValueError('PDF page geometry changed')
+                                # Compare rendered content including annotations; no downsampling in saved PDF.
+                                a=page.get_pixmap(matrix=fitz.Matrix(.25,.25),alpha=False)
+                                b=q.get_pixmap(matrix=fitz.Matrix(.25,.25),alpha=False)
+                                if a.samples!=b.samples: raise ValueError(f'PDF page appearance changed: {original}, page {n+1}')
+                            arc=prefix+f'/page-{n+1:05d}.pdf'
+                            write(out,arc)
+                            row['outputs'].append({'path':arc,'originalPage':n+1,'sha256':sha(out),'sizeBytes':out.stat().st_size,'mediaBox':list(page.mediabox),'cropBox':list(page.cropbox),'rotation':page.rotation,'scaleVerified':False,'textBlocks':page.get_text('blocks'),'links':page.get_links()})
+                            manifest['unitsDone']+=1;progress(manifest)
             else:
                 if row['sizeBytes']>LIMIT: raise ValueError('Non-PDF exceeds review size; original requires review')
                 write(path,prefix);row['outputs'].append({'path':prefix,'sha256':row['sha256'],'sizeBytes':row['sizeBytes']})

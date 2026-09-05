@@ -28,3 +28,6 @@ Phase One can sort a page based on the saved scanner classification, but later f
 `node scripts/test-phase-one.mjs` checks real ZIP inventory/extraction, 5,000-entry bounded inventory, queue deduplication, preparation and stale-message gates, Brain scanner admission and saved-review release using mocked model responses.
 `node scripts/test-completion-pipeline.mjs` verifies downstream orchestration and independent scale gates with model fixtures.
 Use the actual deployment and preparation run results for live status. Never describe mocked model tests as proof of drawing-reading accuracy.
+
+## Bradenton source validation and lossless resource repair
+The actual upload has 61 architectural pages, 74 engineering pages, and 34 geotechnical pages (169 total). Some pages retained shared resources from most of the complete PDF, causing single-page copies to remain 33–125 MB. PyMuPDF clean_contents removes unused page resources before lossless serialization; geometry and rendered-content checks still apply. Migration 0019 retries only source 2514 with the exact known oversize error. This is a retry, not a fabricated success.

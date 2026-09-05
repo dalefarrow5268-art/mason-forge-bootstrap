@@ -19,7 +19,7 @@ def main():
     req=urllib.request.Request(BASE+'/workers/scripts/mason-forge-cloud/settings',headers={'Authorization':'Bearer '+TOKEN})
     with urllib.request.urlopen(req,timeout=60) as r:settings=json.load(r)
     bindings=settings.get('result',{}).get('bindings',[])
-    if not any(x.get('name')=='RELEASE_ID' and x.get('text')=='2026-09-05-holding-brain-scan' for x in bindings):raise RuntimeError('Holding scanner deployment not live')
+    if not any(x.get('name')=='RELEASE_ID' and x.get('text')=='2026-09-05-holding-brain-scan-v2' for x in bindings):raise RuntimeError('Holding scanner deployment not live')
     query("INSERT OR IGNORE INTO holding_preparations(source_file_id,updated_at) SELECT j.source_file_id,? FROM phase_one_jobs j JOIN project_files f ON f.id=j.source_file_id WHERE f.source_class='PHASE ONE INTAKE' AND j.status='PENDING'",[now()])
     jobs=query("SELECT p.*,f.r2_key,f.file_name,f.size_bytes,f.project_id FROM holding_preparations p JOIN project_files f ON f.id=p.source_file_id WHERE f.archived_at IS NULL AND (p.status='PENDING' OR (p.status='RUNNING' AND p.updated_at<?)) AND p.attempts<5 ORDER BY p.source_file_id LIMIT 3",[(datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(minutes=40)).isoformat()])
     for job in jobs:

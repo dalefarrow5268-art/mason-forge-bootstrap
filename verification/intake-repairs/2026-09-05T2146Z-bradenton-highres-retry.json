@@ -1,0 +1,82 @@
+{
+  "observedAt": "2026-09-05T21:46:43.143Z",
+  "submissionId": "bask-bradenton-2513-v1",
+  "projectId": 3,
+  "holdingSourceFileId": 2514,
+  "issueId": "bradenton-logo-high-resolution-retry",
+  "priorContinuity": {
+    "audit": "verification/intake-repairs/2026-09-05T1642Z-bradenton-detail-scan.json",
+    "vectorRetryCommit": "7998fbd1da444b177c008cdd870b86ab48fbeb2e",
+    "preservedPreparedFileId": 2599,
+    "preparedSha256": "d824cb1aa455dcf3751b87434fbb5f1be3de7f7627320853fdd9dc427db402c8"
+  },
+  "investigation": {
+    "scanItemId": "scan-2514-2599-7",
+    "sourcePath": "00001/Downtown Bradenton (2).zip/Downtown Bradenton/23-936_HAR-100- Plans.pdf/page-00001.pdf",
+    "region": "row 3, column 1 of the overlapping 3-by-3 scan grid",
+    "initialState": {
+      "checkedAt": "2026-09-05T21:30:44Z",
+      "scanComplete": 288,
+      "scanNeedsReview": 1,
+      "logicalPagesComplete": 2
+    },
+    "savedReview": {
+      "coverage": "PARTIAL",
+      "unreadableRegions": 1,
+      "reason": "The bottom-edge hotel-brand marks were too small and low-resolution in the 276 by 357 pixel tile to identify reliably. The earlier vector-region retry had already resolved the separate fine-print gap."
+    },
+    "sourceCheck": "The same exact region was rendered from the preserved one-page PDF at higher resolution. Visual inspection showed the marks and nearby text were legible without inference or modification of the source."
+  },
+  "diagnosis": "This was a genuine evidence-resolution limit, not a stale queue, malformed model response, or false tile-boundary failure. The queue continued advancing and no project repair request or phase error was present.",
+  "repair": {
+    "status": "DEPLOYED_RETRY_QUEUED_FOR_CONSERVATIVE_MODEL_REVIEW",
+    "pullRequest": "https://github.com/dalefarrow5268-art/mason-forge-bootstrap/pull/21",
+    "commit": "f61d278d052943533853c574fca44165df15df02",
+    "releaseId": "2026-09-05-holding-highres-retry-v1",
+    "changes": [
+      "Render only the terminal tile's exact source region from the verified preserved one-page PDF.",
+      "Store the lossless PNG as a project-bound Brain retry source and verify its stored bytes before release.",
+      "Run the unchanged COMPLETE, findings, and zero-unreadable-regions validation gate against that evidence.",
+      "Allow only one high-resolution attempt after the bounded vector retry; unresolved content remains NEEDS_REVIEW.",
+      "Leave the original upload, prepared package, completed tiles, neighboring scan records, and phase gates unchanged."
+    ],
+    "safety": [
+      "No original or prepared artifact was altered.",
+      "No completed scan was reset.",
+      "No CSI code, measurement, quantity, price, estimate line, or invitation was created.",
+      "Printed scales remain unverified."
+    ]
+  },
+  "verification": {
+    "local": "Worker syntax, connector and authentication tests, Holding preparation and high-resolution rendering tests, Phase One, all 13 phase handoffs, completion pipeline, scale gate, plan-layer handoff, queue, and native-trial tests passed.",
+    "branchChecks": [
+      "https://github.com/dalefarrow5268-art/mason-forge-bootstrap/actions/runs/33993668190",
+      "https://github.com/dalefarrow5268-art/mason-forge-bootstrap/actions/runs/33993668195"
+    ],
+    "productionDeployment": "https://github.com/dalefarrow5268-art/mason-forge-bootstrap/actions/runs/33993708800",
+    "liveRetryJob": "https://github.com/dalefarrow5268-art/mason-forge-bootstrap/actions/runs/33993741218",
+    "liveRetryEvidence": {
+      "overrideFileId": 3028,
+      "width": 1200,
+      "height": 1554,
+      "renderDpi": 392.16,
+      "sizeBytes": 125012,
+      "sha256": "adfff7935d699a1a225ec571ffdd96144ebdfd177a8b1355dc11d32c64486ded",
+      "preparedSha256Reverified": "d824cb1aa455dcf3751b87434fbb5f1be3de7f7627320853fdd9dc427db402c8"
+    },
+    "latestCheckpoint": {
+      "checkedAt": "2026-09-05T21:46:25.111Z",
+      "scanComplete": 300,
+      "scanNeedsReview": 0,
+      "logicalPagesComplete": 4,
+      "targetSpecificResult": "The high-resolution evidence is saved and the target is in the normal scanner queue; target-specific COMPLETE has not yet been observed and is not claimed."
+    }
+  },
+  "otherProjects": "All other projects with registered files were checked. None currently has an intake submission in phaseProgress, and the system project list reports zero failed, running, or queued legacy tasks.",
+  "remainingBlockers": [
+    "The exact high-resolution retry must pass the normal model review before scan-2514-2599-7 can be claimed COMPLETE.",
+    "All 1,521 scan regions must complete before the full Bradenton intake gate opens.",
+    "Verified CSI 2026 catalog is still required before divisions and sections can complete.",
+    "BASK estimate delivery connection is still unverified."
+  ]
+}

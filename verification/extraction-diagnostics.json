@@ -1,12 +1,12 @@
 {
-  "capturedAt": "2026-09-05T16:50:44.023Z",
-  "sourceCommit": "beaf38ae3d7fc13310f595b6ce1a77c610168448",
+  "capturedAt": "2026-09-05T17:07:14.303Z",
+  "sourceCommit": "2bb54ee41d9ad3c61a2be39807e472fc54a79731",
   "health": {
     "status": "online",
     "operationalReady": true,
     "service": "Mason Forge Cloud",
     "environment": "production",
-    "releaseId": "2026-09-05-holding-detail-tiles",
+    "releaseId": "2026-09-05-holding-detail-tiles-v2",
     "database": "D1 VERIFIED",
     "projectFileStorage": "R2 VERIFIED",
     "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-05T16:50:45.064Z"
+    "checkedAt": "2026-09-05T17:07:14.697Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-05T16:50:45.683Z",
+    "retrievedAt": "2026-09-05T17:07:15.049Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",

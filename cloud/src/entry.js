@@ -1,3 +1,4 @@
+import {intakeDashboardRoute} from './intake-progress.js';
 import { projectPhaseRoute } from './project-phase-api.js';
 import { dashboardRequest } from "./dashboard-auth.js";
 import foundation from "./index.js";
@@ -37,6 +38,8 @@ async function selfHeal(env, ctx, trigger) {
 
 export default {
   async fetch(request, env, ctx) {
+    const intakeDashboard = await intakeDashboardRoute(request, env);
+    if (intakeDashboard) return intakeDashboard;
     request = await dashboardRequest(request, env);
     const url = new URL(request.url);
     let phase = "runtime-schema";

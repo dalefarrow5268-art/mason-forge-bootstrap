@@ -1,3 +1,4 @@
+import {intakeProgress} from './intake-progress.js';
 import {queuePhaseIntake,processPhaseIntake} from './phase-intake.js';
 import { queuePhaseSeven, processPhaseSeven } from './phase-seven-reports.js';
 import { queueCompletionPhases, processCompletionPhase } from './project-phase-pipeline.js';
@@ -315,6 +316,7 @@ export default {
     await queueCompletionPhases(env);
     await kickOperations(env);
       await ensureSystemContinuity(env);
+    await intakeProgress(env);
     }
     if (url.pathname === "/api/connector/bootstrap" && request.method === "GET" && authorized(request, env)) {
       await queuePhaseIntake(env);
@@ -328,6 +330,7 @@ export default {
     await queueCompletionPhases(env);
     await kickOperations(env);
       await ensureSystemContinuity(env);
+    await intakeProgress(env);
     }
 
     const connector = await connectorResponse(request, env);
@@ -421,6 +424,7 @@ export default {
     await queueCompletionPhases(env);
     await kickOperations(env);
     await ensureSystemContinuity(env);
+    await intakeProgress(env);
   },
 
   async scheduled(_event, env) {
@@ -436,5 +440,6 @@ export default {
     await queueCompletionPhases(env);
     await kickOperations(env);
     await ensureSystemContinuity(env);
+    await intakeProgress(env);
   },
 };

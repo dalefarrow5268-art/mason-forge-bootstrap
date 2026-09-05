@@ -1,3 +1,4 @@
+import {intakeProgress} from './intake-progress.js';
 const json = (data, status = 200) => new Response(JSON.stringify(data, null, 2), {
   status,
   headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
@@ -355,6 +356,7 @@ async function completeStatus(projectId, env) {
     rfiCount: Number(rfis?.count || 0),
     takeoffSummary: takeoff.results || [],
     partyCount: Number(parties?.count || 0),
+    phaseProgress: await intakeProgress(env,projectId),
     continuity: continuity ? { ...continuity, state: parseJson(continuity.state_json, {}) } : null,
   });
 }

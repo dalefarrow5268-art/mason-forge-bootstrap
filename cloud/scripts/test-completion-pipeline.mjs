@@ -177,3 +177,12 @@ const retried=await projectPhaseRoute(new Request('https://local/api/project-pha
 assert.equal(retried.status,200);assert.equal(sql.prepare("SELECT attempts FROM phase_seven_items WHERE id='retry-item'").get().attempts,0);
 assert.equal(sql.prepare("SELECT status FROM phase_seven_items WHERE submission_id='project-1'").get().status,'COMPLETE');
 console.log('PASS: bounded terminal retry, operator recovery, preservation of completed work');
+import {intakeProgress,intakeDashboardRoute,summarize} from '../src/intake-progress.js';
+sql.exec(readFileSync(new URL('../schema/0016_phase_tracking.sql',import.meta.url),'utf8'));
+assert.equal(summarize([{status:'COMPLETE'}],[{status:'NEEDS_REVIEW'}],1).status,'NEEDS_REVIEW');
+assert.equal(summarize([{status:'RUNNING'}],[{status:'COMPLETE'},{status:'PENDING'}],8).percent,50);
+const progress=await intakeProgress(env);assert.equal(progress.projects.find(p=>p.id==='project-1').phases.length,13);
+const events=sql.prepare('SELECT COUNT(*) n FROM project_phase_tracking_events').get().n;
+await intakeProgress(env);assert.equal(sql.prepare('SELECT COUNT(*) n FROM project_phase_tracking_events').get().n,events);
+assert.equal((await intakeDashboardRoute(new Request('https://local/api/intake-dashboard'),env)).status,401);
+console.log('PASS: 13 live phase rows, honest blocked progress, persistent nonduplicate timing events, protected dashboard');

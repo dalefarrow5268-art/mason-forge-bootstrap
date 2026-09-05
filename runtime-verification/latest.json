@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-09-05T22:54:44.765Z",
-  "completedAt": "2026-09-05T22:54:48.636Z",
+  "startedAt": "2026-09-05T23:00:45.887Z",
+  "completedAt": "2026-09-05T23:00:50.561Z",
   "success": true,
   "worker": {
     "attempt": 1,
@@ -30,11 +30,11 @@
         "updated_at": "2026-09-04T23:30:26.394Z"
       },
       "extraction": {
-        "extracted": 2151,
-        "queued": 6,
+        "extracted": 2153,
+        "queued": 5,
         "retrying": 0,
         "failed": 0,
-        "pending": 871
+        "pending": 870
       },
       "staleRunningTasks": 0,
       "completedTasksWithoutOutput": 0,
@@ -204,16 +204,16 @@
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-09-05T22:54:45.287Z"
+      "checkedAt": "2026-09-05T23:00:46.755Z"
     },
     "errors": []
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-09-05T22:54:45.927Z",
+      "capturedAt": "2026-09-05T23:00:47.481Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-09-05T22:54:45.881Z",
+        "retrievedAt": "2026-09-05T23:00:47.390Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
@@ -477,10 +477,10 @@
       "projectFiles": 3028
     },
     {
-      "capturedAt": "2026-09-05T22:54:48.092Z",
+      "capturedAt": "2026-09-05T23:00:49.761Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-09-05T22:54:48.070Z",
+        "retrievedAt": "2026-09-05T23:00:49.703Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
@@ -1586,6 +1586,6 @@
     }
   },
   "errors": [],
-  "sourceCommit": "d660d2def60e1f87f6ad38563e4a2942470a607f",
-  "workflowRunId": "33997209938"
+  "sourceCommit": "42c099dc5536292e4dbe3706b64d3b13c1b0710b",
+  "workflowRunId": "33997461737"
 }

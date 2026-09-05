@@ -1,11 +1,13 @@
 """Scheduled preparation runner using the existing Cloudflare deployment credential."""
-import datetime, json, os, pathlib, subprocess, tempfile, time, urllib.request
+import datetime, json, os, pathlib, subprocess, tempfile, time, tomllib, urllib.request
 from prepare_holding import prepare,sha
 BASE='https://api.cloudflare.com/client/v4/accounts/'+os.environ['CLOUDFLARE_ACCOUNT_ID']
 TOKEN=os.environ['CLOUDFLARE_API_TOKEN']
 DB='736f655b-889d-4fb2-8948-0a396d39436f'
 BUCKET='mason-forge-project-files'
 PREPARATION_VERSION='detail-tiles-v2'
+CONFIG=tomllib.loads((pathlib.Path(__file__).resolve().parents[1]/'wrangler.toml').read_text())
+EXPECTED_RELEASE=CONFIG['vars']['RELEASE_ID']
 def now():return datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00','Z')
 def query(sql,params=()):
     req=urllib.request.Request(BASE+'/d1/database/'+DB+'/query',data=json.dumps({'sql':sql,'params':list(params)}).encode(),headers={'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'})
@@ -20,7 +22,7 @@ def main():
     req=urllib.request.Request(BASE+'/workers/scripts/mason-forge-cloud/settings',headers={'Authorization':'Bearer '+TOKEN})
     with urllib.request.urlopen(req,timeout=60) as r:settings=json.load(r)
     bindings=settings.get('result',{}).get('bindings',[])
-    if not any(x.get('name')=='RELEASE_ID' and x.get('text')=='2026-09-05-holding-detail-tiles-v2' for x in bindings):raise RuntimeError('Holding scanner deployment not live')
+    if not any(x.get('name')=='RELEASE_ID' and x.get('text')==EXPECTED_RELEASE for x in bindings):raise RuntimeError('Holding scanner deployment not live')
     query("INSERT OR IGNORE INTO holding_preparations(source_file_id,updated_at) SELECT j.source_file_id,? FROM phase_one_jobs j JOIN project_files f ON f.id=j.source_file_id WHERE f.source_class='PHASE ONE INTAKE' AND j.status='PENDING'",[now()])
     jobs=query("SELECT p.*,f.r2_key,f.file_name,f.size_bytes,f.project_id FROM holding_preparations p JOIN project_files f ON f.id=p.source_file_id WHERE f.archived_at IS NULL AND (p.status='PENDING' OR (p.status='RUNNING' AND p.updated_at<?)) AND p.attempts<5 ORDER BY p.source_file_id LIMIT 3",[(datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(minutes=40)).isoformat()])
     for job in jobs:

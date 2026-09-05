@@ -11,6 +11,7 @@ sql.exec(readFileSync(new URL('../schema/0017_holding_preparation.sql',import.me
 sql.exec(readFileSync(new URL('../schema/0018_holding_brain_scan.sql',import.meta.url),'utf8'));
 sql.exec(readFileSync(new URL('../schema/0020_holding_detail_tiles.sql',import.meta.url),'utf8'));
 sql.exec(readFileSync(new URL('../schema/0022_plan_layer_handoff.sql',import.meta.url),'utf8'));
+sql.exec(readFileSync(new URL('../schema/0024_holding_scan_highres_retry.sql',import.meta.url),'utf8'));
 const DB={async batch(statements){return Promise.all(statements.map(s=>s.run()));},prepare(s){return {bind(...p){return {
  async run(){return {meta:{changes:sql.prepare(s).run(...p).changes}};},
  async first(){return sql.prepare(s).get(...p);},
@@ -120,3 +121,22 @@ assert.equal(sql.prepare("SELECT status FROM holding_scan_items WHERE id='scan-4
 const responseCall=calls.find(call=>String(call.url).endsWith('/v1/responses'));assert(responseCall);
 assert.match(String(responseCall.body),/VECTOR_REGION_RETRY/);assert.match(String(responseCall.body),/row 1, column 1/);
 console.log('PASS: bounded vector-region retry preserves completed tiles and keeps the unreadable-content gate');
+
+// A terminal vector-region review can use one lossless high-resolution crop.
+// The override is bound to this project and does not reset completed neighbors.
+objects.set('highres400',new TextEncoder().encode('lossless high-resolution region'));
+sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,file_type,size_bytes,source_class) VALUES(4500,3,'highres400','scan-400-1.png','Brain/retry.png','image/png',31,'BRAIN SCAN HIGH RES RETRY SOURCE')").run();
+sql.prepare("UPDATE holding_scan_items SET status='PENDING',attempts=4,override_file_id=4500,override_asset_role='HIGH_RES_REGION_RETRY',error=NULL,updated_at='now' WHERE id='scan-400-1'").run();
+const highresCalls=[];globalThis.fetch=async(url,options={})=>{
+ highresCalls.push({url:String(url),body:options.body});
+ if(String(url).endsWith('/v1/files'))return Response.json({id:'file-highres'});
+ if(String(url).includes('/v1/files/file-highres')&&options.method==='DELETE')return Response.json({deleted:true});
+ return Response.json({output:[{content:[{type:'output_text',text:JSON.stringify({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[{kind:'brand',location:'bottom edge',content:'Waldorf Astoria; LXR; Conrad; Canopy; Signia Hilton; Hilton'}],scaleVerified:false})}]}]});
+};
+await processHoldingScan({kind:'HOLDING_SCAN',id:'scan-400-1'},env);globalThis.fetch=originalFetch;
+const highres=sql.prepare("SELECT * FROM holding_scan_items WHERE id='scan-400-1'").get();
+assert.equal(highres.status,'COMPLETE');assert.equal(highres.attempts,5);assert.equal(highres.output_file_id,4500);
+assert.equal(sql.prepare("SELECT status FROM holding_scan_items WHERE id='scan-400-2'").get().status,'COMPLETE');
+const highresResponse=highresCalls.find(call=>String(call.url).endsWith('/v1/responses'));assert(highresResponse);
+assert.match(String(highresResponse.body),/HIGH_RES_REGION_RETRY/);assert.doesNotMatch(String(highresResponse.body),/VECTOR_REGION_RETRY/);
+console.log('PASS: exact high-resolution override preserves successful scans and the unreadable-content gate');

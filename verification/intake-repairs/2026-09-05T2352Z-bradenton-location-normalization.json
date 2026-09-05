@@ -1,0 +1,33 @@
+{
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "issueId": "bradenton-scan-location-structured-value",
+  "investigatedAt": "2026-09-05T23:52:06.336Z",
+  "diagnosis": {
+    "statusCounts": {
+      "NEEDS_REVIEW": 4,
+      "QUEUED": 164,
+      "RUNNING": 1
+    },
+    "reviewsInspected": 4,
+    "coverageComplete": 4,
+    "unreadableRegions": 0,
+    "invalidFindings": 134,
+    "cause": "The model returned finding.location as structured objects. Content normalization existed, but location normalization did not, so otherwise complete reviews failed validation."
+  },
+  "repair": "Losslessly serialize structured finding.location values before validation, matching the existing structured finding.content handling.",
+  "safety": [
+    "No source upload or completed review was changed.",
+    "Coverage and unreadable-content gates remain unchanged.",
+    "No measurement, scale, CSI code, quantity, unit, or price was inferred."
+  ],
+  "verificationRequired": [
+    "All scanner and Phase One tests pass.",
+    "Production deployment succeeds.",
+    "Bradenton records begin reaching COMPLETE after normal retry processing."
+  ],
+  "remainingBlockers": [
+    "Verified CSI 2026 catalog is required before divisions and sections can complete.",
+    "BASK estimate delivery connection has not been verified."
+  ]
+}

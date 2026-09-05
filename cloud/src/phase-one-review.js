@@ -25,9 +25,18 @@ class R2Reader extends Reader {
 export async function queuePhaseOne(env){
  const intakePrefix=ROOT+'/';
  await env.DB.prepare(`INSERT OR IGNORE INTO phase_one_jobs(id,source_file_id,created_at,updated_at) SELECT 'intake-'||id,id,?,? FROM project_files WHERE project_id=13 AND archived_at IS NULL AND substr(relative_path,1,?)=? AND COALESCE(source_class,'') NOT IN ('PHASE ONE WORKING COPY','PHASE ONE REVIEW REPORT')`).bind(now(),now(),intakePrefix.length,intakePrefix).run();
+ await env.DB.prepare("INSERT OR IGNORE INTO holding_preparations(source_file_id,updated_at) SELECT j.source_file_id,? FROM phase_one_jobs j JOIN project_files f ON f.id=j.source_file_id WHERE f.source_class='PHASE ONE INTAKE' AND j.status='PENDING'").bind(now()).run();
+ const ready=(await env.DB.prepare("SELECT p.* FROM holding_preparations p JOIN phase_one_jobs j ON j.source_file_id=p.source_file_id WHERE p.status='READY' AND j.status!='RUNNING' AND NOT EXISTS(SELECT 1 FROM phase_one_items i WHERE i.job_id=j.id AND i.status='RUNNING')").all()).results||[];
+ for(const p of ready){await env.DB.batch([
+ env.DB.prepare("INSERT OR IGNORE INTO holding_superseded_items(item_id,source_file_id,record_json,archived_at) SELECT i.id,?,json_object('id',i.id,'job_id',i.job_id,'entry_index',i.entry_index,'original_path',i.original_path,'size_bytes',i.size_bytes,'status',i.status,'worker',i.worker,'category',i.category,'reason',i.reason,'output_file_id',i.output_file_id,'updated_at',i.updated_at),? FROM phase_one_items i JOIN phase_one_jobs j ON j.id=i.job_id WHERE j.source_file_id=?").bind(p.source_file_id,now(),p.source_file_id),
+ env.DB.prepare('DELETE FROM phase_one_items WHERE job_id IN (SELECT id FROM phase_one_jobs WHERE source_file_id=?)').bind(p.source_file_id),
+ env.DB.prepare("UPDATE phase_one_jobs SET status='PENDING',error=NULL,updated_at=? WHERE source_file_id=?").bind(now(),p.source_file_id),
+ env.DB.prepare("UPDATE holding_preparations SET status='COMPLETE',updated_at=? WHERE source_file_id=? AND status='READY'").bind(now(),p.source_file_id)
+ ]);}
  await finishReports(env);
  for(const table of ['phase_one_jobs','phase_one_items']){
- const rows=await env.DB.prepare(`SELECT id FROM ${table} WHERE status='PENDING' OR (status IN ('QUEUED','RUNNING') AND updated_at < ?) LIMIT 20`).bind(new Date(Date.now()-20*60000).toISOString()).all();
+ const gate=table==='phase_one_jobs'?` AND (NOT EXISTS(SELECT 1 FROM project_files f WHERE f.id=source_file_id AND f.source_class='PHASE ONE INTAKE') OR EXISTS(SELECT 1 FROM holding_preparations p WHERE p.source_file_id=phase_one_jobs.source_file_id AND p.status='COMPLETE'))`:'';
+ const rows=await env.DB.prepare(`SELECT id FROM ${table} WHERE (status='PENDING' OR (status IN ('QUEUED','RUNNING') AND updated_at < ?)) ${gate} LIMIT 20`).bind(new Date(Date.now()-20*60000).toISOString()).all();
  for(const row of rows.results||[]){
  const claimed=await env.DB.prepare(`UPDATE ${table} SET status='QUEUED',updated_at=? WHERE id=? AND (status='PENDING' OR updated_at < ?)`).bind(now(),row.id,new Date(Date.now()-20*60000).toISOString()).run();
  if(!claimed.meta.changes)continue;
@@ -41,11 +50,11 @@ async function register(env,source,key,path,size,category){
  await env.DB.prepare(`INSERT OR IGNORE INTO project_files(project_id,r2_key,file_name,relative_path,file_type,size_bytes,review_status,source_class,uploaded_at,updated_at) VALUES(?,?,?,?,?,? ,?,'PHASE ONE WORKING COPY',?,?)`).bind(source.project_id,key,path.split('/').pop(),path,'application/octet-stream',size,`PHASE ONE REVIEW REQUIRED: ${category}`,time,time).run();
  return (await env.DB.prepare('SELECT id FROM project_files WHERE r2_key=?').bind(key).first()).id;
 }
-async function sourceFor(env,jobId){return env.DB.prepare('SELECT f.* FROM phase_one_jobs j JOIN project_files f ON f.id=j.source_file_id WHERE j.id=?').bind(jobId).first();}
+async function sourceFor(env,jobId){return env.DB.prepare(`SELECT f.* FROM phase_one_jobs j LEFT JOIN holding_preparations p ON p.source_file_id=j.source_file_id AND p.status='COMPLETE' JOIN project_files f ON f.id=COALESCE(p.prepared_file_id,j.source_file_id) WHERE j.id=?`).bind(jobId).first();}
 async function inventory(env,job){
  const source=await sourceFor(env,job.id);if(!source||source.archived_at)throw new Error('Original unavailable');
  const pending=[];const flush=async()=>{if(pending.length){await env.DB.batch(pending.splice(0));}};
- const add=async(index,path,size,reason=null)=>{pending.push(env.DB.prepare(`INSERT OR IGNORE INTO phase_one_items(id,job_id,entry_index,original_path,size_bytes,worker,status,category,reason,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)`).bind(`${job.id}-${index}`,job.id,index,path,size,assignWorker(path),reason?'NEEDS_REVIEW':'PENDING',reason?'Needs Review':null,reason,now()));if(pending.length>=50)await flush();};
+ const add=async(index,path,size,reason=null)=>{pending.push(env.DB.prepare(`INSERT OR IGNORE INTO phase_one_items(id,job_id,entry_index,original_path,size_bytes,worker,status,category,reason,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)`).bind(`${job.id}-${source.source_class==='HOLDING PREPARED PACKAGE'?'prepared-'+source.id+'-':''}${index}`,job.id,index,path,size,assignWorker(path),reason?'NEEDS_REVIEW':'PENDING',reason?'Needs Review':null,reason,now()));if(pending.length>=50)await flush();};
  if(!/\.zip$/i.test(source.file_name))await add(-1,source.file_name,source.size_bytes);
  else{
  const reader=new ZipReader(new R2Reader(env.PROJECT_FILES,source.r2_key,source.size_bytes));let index=0,total=0;
@@ -121,6 +130,7 @@ export async function processPhaseOne(body,env,attempt=1){
  if(!['phase_one_jobs','phase_one_items'].includes(body.table))return;
  const table=body.table,row=await env.DB.prepare(`SELECT * FROM ${table} WHERE id=?`).bind(body.id).first();
  if(!row||!['PENDING','QUEUED','RUNNING'].includes(row.status))return;
+ {const sourceId=table==='phase_one_jobs'?row.source_file_id:(await env.DB.prepare('SELECT source_file_id FROM phase_one_jobs WHERE id=?').bind(row.job_id).first())?.source_file_id;const waiting=await env.DB.prepare("SELECT f.id FROM project_files f WHERE f.id=? AND f.source_class='PHASE ONE INTAKE' AND NOT EXISTS(SELECT 1 FROM holding_preparations p WHERE p.source_file_id=f.id AND p.status='COMPLETE')").bind(sourceId).first();if(waiting)return;}
  const claim=await env.DB.prepare(`UPDATE ${table} SET status='RUNNING',updated_at=? WHERE id=? AND (status IN ('PENDING','QUEUED') OR updated_at < ?)`).bind(now(),row.id,new Date(Date.now()-20*60000).toISOString()).run();
  if(!claim.meta.changes)return;
  try{if(table==='phase_one_jobs')await inventory(env,row);else await processItem(env,row);}
@@ -135,3 +145,4 @@ export async function processPhaseOne(body,env,attempt=1){
  }
  await env.DB.prepare(`UPDATE ${table} SET status=?,${table==='phase_one_jobs'?'error':'reason'}=?,updated_at=? WHERE id=?`).bind(attempt>=5?'NEEDS_REVIEW':'PENDING',error,now(),row.id).run();if(attempt<5)throw e;}
 }
+

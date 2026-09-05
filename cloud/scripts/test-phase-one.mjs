@@ -6,6 +6,8 @@ import {processPhaseOne,queuePhaseOne,safe,normalizeReview,storeStream} from '..
 const sql=new DatabaseSync(':memory:');
 sql.exec(`CREATE TABLE project_files(id INTEGER PRIMARY KEY,project_id INTEGER,r2_key TEXT UNIQUE,file_name TEXT,relative_path TEXT,file_type TEXT,size_bytes INTEGER,review_status TEXT,source_class TEXT,uploaded_at TEXT,updated_at TEXT,archived_at TEXT); CREATE TABLE project_folders(id TEXT,project_id INTEGER,folder_path TEXT UNIQUE,created_at TEXT,updated_at TEXT);`);
 sql.exec(readFileSync(new URL('../schema/0007_phase_one_review.sql',import.meta.url),'utf8'));
+sql.exec(readFileSync(new URL('../schema/0008_phase_two.sql',import.meta.url),'utf8'));
+sql.exec(readFileSync(new URL('../schema/0017_holding_preparation.sql',import.meta.url),'utf8')); 
 const DB={async batch(statements){return Promise.all(statements.map(s=>s.run()));},prepare(s){return {bind(...p){return {
  async run(){return {meta:{changes:sql.prepare(s).run(...p).changes}};},
  async first(){return sql.prepare(s).get(...p);},
@@ -31,3 +33,18 @@ sql.prepare('INSERT INTO project_files(id,project_id,r2_key,file_name,relative_p
 await queuePhaseOne(env);await processPhaseOne(sent.shift(),env);
 assert.equal(sql.prepare("SELECT count(*) n FROM phase_one_items WHERE job_id='intake-100'").get().n,5000);
 console.log('PASS: 5,000 nested archive files inventoried in bounded database batches');
+
+
+// Holding originals cannot be inventoried, including an already-delivered message.
+sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(200,3,'holding200','original.zip','Holding/original.zip',100,'PHASE ONE INTAKE')").run();
+sql.prepare("INSERT INTO phase_one_jobs(id,source_file_id,created_at,updated_at) VALUES('intake-200',200,'now','now')").run();
+await queuePhaseOne(env);assert(!sent.some(x=>x.id==='intake-200'));
+await processPhaseOne({table:'phase_one_jobs',id:'intake-200'},env);
+assert.equal(sql.prepare("SELECT status FROM phase_one_jobs WHERE id='intake-200'").get().status,'PENDING');
+objects.set('prepared200',bytes);
+sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(201,3,'prepared200','prepared.zip','Prepared/200.zip',?,'HOLDING PREPARED PACKAGE')").run(bytes.length);
+sql.prepare("UPDATE holding_preparations SET status='READY',prepared_file_id=201,updated_at='now' WHERE source_file_id=200").run();
+await queuePhaseOne(env);assert(sent.some(x=>x.id==='intake-200'));
+await processPhaseOne({table:'phase_one_jobs',id:'intake-200'},env);
+assert.equal(sql.prepare("SELECT COUNT(*) n FROM phase_one_items WHERE job_id='intake-200'").get().n,1);
+console.log('PASS: preparation gate, stale-message gate and verified-package inventory');

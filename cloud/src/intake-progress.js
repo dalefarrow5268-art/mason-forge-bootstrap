@@ -10,6 +10,7 @@ export function summarize(jobs,items,phase){
 export async function intakeProgress(env,projectId=null){
  const projects=[];const submissions=await rows(env,'SELECT * FROM phase_project_submissions WHERE (? IS NULL OR project_id=?) ORDER BY sealed_at DESC LIMIT 20',projectId,projectId);
  for(const s of submissions){
+ const preparation=await rows(env,`SELECT p.* FROM holding_preparations p WHERE p.source_file_id IN (SELECT value FROM json_each(?))`,s.source_file_ids_json);
  const phases=[];
  for(let phase=1;phase<=13;phase++){
  let jobs=[],items=[];
@@ -17,7 +18,8 @@ export async function intakeProgress(env,projectId=null){
  else if(phase<=5){const word=['','','two','three','four','five'][phase],table='phase_'+word+'_jobs',key=phase<=3?'id':'submission_id';jobs=await rows(env,`SELECT * FROM ${table} WHERE ${key}=?`,s.id);items=phase===5?jobs:await rows(env,`SELECT * FROM phase_${word}_items WHERE job_id IN (SELECT id FROM ${table} WHERE ${key}=?)`,s.id);}
  else if(phase===6||phase===7){const w=phase===6?'six':'seven';jobs=await rows(env,`SELECT * FROM phase_${w}_${phase===6?'brains':'jobs'} WHERE submission_id=?`,s.id);items=await rows(env,`SELECT * FROM phase_${w}_items WHERE submission_id=?`,s.id);}
  else{jobs=await rows(env,'SELECT * FROM project_phase_runs WHERE submission_id=? AND phase=?',s.id,phase);items=await rows(env,'SELECT * FROM project_phase_tasks WHERE submission_id=? AND phase=?',s.id,phase);}
- const p=summarize(jobs,items,phase);const at=new Date().toISOString();
+ const p=summarize(jobs,items,phase);if(phase===1&&preparation.some(x=>x.status!=='COMPLETE')){p.status=preparation.some(x=>x.status==='NEEDS_REVIEW')?'NEEDS_REVIEW':'PREPARING';p.errors=preparation.map(x=>x.error).filter(Boolean);}
+ const at=new Date().toISOString();
  if(p.status!=='WAITING'){
  const previous=await env.DB.prepare('SELECT * FROM project_phase_tracking WHERE submission_id=? AND phase=?').bind(s.id,phase).first();
  const finished=['COMPLETE','DRAFTS_READY'].includes(p.status)?at:null;
@@ -36,7 +38,7 @@ export async function intakeProgress(env,projectId=null){
  for(const p of phases)if(p.status==='NEEDS_REVIEW')blockers.push(`Phase ${p.phase}: ${p.errors[0]||'Review required before proceeding.'}`);
  const events=await rows(env,'SELECT phase,status,observed_at FROM project_phase_tracking_events WHERE submission_id=? ORDER BY id DESC LIMIT 40',s.id);
  const repairRequests=await rows(env,"SELECT * FROM project_repair_requests WHERE submission_id=? ORDER BY created_at DESC LIMIT 30",s.id);
- projects.push({repairRequests,id:s.id,projectId:s.project_id,projectName:s.project_name,createdAt:s.sealed_at,phases,blockers,events});
+ projects.push({preparation,repairRequests,id:s.id,projectId:s.project_id,projectName:s.project_name,createdAt:s.sealed_at,phases,blockers,events});
  }
  return {checkedAt:new Date().toISOString(),projects};
 }
@@ -56,3 +58,4 @@ export async function intakeDashboardRoute(request,env){
  }
  return Response.json(await intakeProgress(env),{headers:{'cache-control':'no-store'}});
 }
+

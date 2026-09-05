@@ -8,6 +8,8 @@ import {queuePhaseTwo,processPhaseTwo,sourceIds,normalizeFacts} from '../src/pha
 const sql=new DatabaseSync(':memory:');
 sql.exec(`CREATE TABLE project_files(id INTEGER PRIMARY KEY,project_id INTEGER,r2_key TEXT UNIQUE,file_name TEXT,relative_path TEXT,file_type TEXT,size_bytes INTEGER,review_status TEXT,source_class TEXT,uploaded_at TEXT,updated_at TEXT,archived_at TEXT); CREATE TABLE project_folders(id TEXT,project_id INTEGER,folder_path TEXT UNIQUE,created_at TEXT,updated_at TEXT);`);
 sql.exec(readFileSync(new URL('../schema/0007_phase_one_review.sql',import.meta.url),'utf8'));
+sql.exec(readFileSync(new URL('../schema/0008_phase_two.sql',import.meta.url),'utf8'));
+sql.exec(readFileSync(new URL('../schema/0017_holding_preparation.sql',import.meta.url),'utf8')); 
 const DB={async batch(statements){return Promise.all(statements.map(s=>s.run()));},prepare(s){return {bind(...p){return {
  async run(){return {meta:{changes:sql.prepare(s).run(...p).changes}};},
  async first(){return sql.prepare(s).get(...p);},
@@ -186,3 +188,4 @@ const events=sql.prepare('SELECT COUNT(*) n FROM project_phase_tracking_events')
 await intakeProgress(env);assert.equal(sql.prepare('SELECT COUNT(*) n FROM project_phase_tracking_events').get().n,events);
 assert.equal((await intakeDashboardRoute(new Request('https://local/api/intake-dashboard'),env)).status,401);
 console.log('PASS: 13 live phase rows, honest blocked progress, persistent nonduplicate timing events, protected dashboard');
+

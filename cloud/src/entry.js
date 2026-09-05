@@ -31,7 +31,7 @@ function background(ctx, promise, label) {
 }
 
 async function selfHeal(env, ctx, trigger) {
-  await recoverQueuedDepartmentTasks(env);
+  try { await recoverQueuedDepartmentTasks(env); } catch(error) { console.error('Department recovery failed; continuing phase dispatch', String(error?.message||error)); }
   await runtime.scheduled({ cron: trigger }, env, ctx);
   await ensureAllProjectContinuity(env);
 }
@@ -119,9 +119,10 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
-    await recoverQueuedDepartmentTasks(env);
+    try { await recoverQueuedDepartmentTasks(env); } catch(error) { console.error('Department recovery failed; continuing phase dispatch', String(error?.message||error)); }
     const result = await runtime.scheduled(event, env, ctx);
     await ensureAllProjectContinuity(env);
     return result;
   },
 };
+

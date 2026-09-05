@@ -49,6 +49,12 @@ jobs:
       - name: Test MCP and OAuth contract
         run: npm run test:connector
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install PyMuPDF==1.26.6
+      - run: python scripts/test_holding.py
+
       - name: Test phase review pipeline
         run: |
           node scripts/test-phase-intake.mjs
@@ -117,3 +123,4 @@ jobs:
         run: |
           cat runtime-verification/latest.json || true
           exit 1
+

@@ -10,7 +10,7 @@ class HoldingTests(unittest.TestCase):
   self.assertIn("EXPECTED_RELEASE=CONFIG['vars']['RELEASE_ID']",runner)
   self.assertIn("x.get('text')==EXPECTED_RELEASE",runner)
   self.assertNotIn("x.get('text')=='2026-09-05-holding-detail-tiles-v2'",runner)
-  self.assertEqual(expected,'2026-09-05-holding-vector-region-retry')
+  self.assertEqual(expected,'2026-09-05-brain-lobe-routing-v1')
 
  def test_all_pages_and_originals(self):
   with tempfile.TemporaryDirectory() as td:

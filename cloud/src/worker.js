@@ -433,11 +433,12 @@ export default {
     await kickOperations(env);
     await ensureSystemContinuity(env);
     await intakeProgress(env);
-    try { await routePendingBrainFiles(env); } catch(error) { console.error("Brain routing deferred", String(error?.message || error)); }
   },
 
-  async scheduled(_event, env) {
+  async scheduled(_event, env, ctx) {
     await ensureRuntimeSchema(env);
+    const brainRouting = routePendingBrainFiles(env).catch(error => console.error("Brain routing deferred", String(error?.message || error)));
+    if (ctx?.waitUntil) ctx.waitUntil(brainRouting); else await brainRouting;
     await queuePhaseIntake(env);
     await queueHoldingScan(env);
     await queuePhaseOne(env);

@@ -1,0 +1,57 @@
+{
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "recordedAt": "2026-09-05T23:58:51.327Z",
+  "investigatedIssueIds": [
+    "bradenton-native-scan-queue-starvation",
+    "bradenton-scan-location-structured-value",
+    "holding-queue-create-idempotency"
+  ],
+  "diagnosis": {
+    "queueStarvation": "169 Bradenton scan items had zero attempts behind 2,783 messages on the shared department queue.",
+    "validationDefect": "Four complete reviews with zero unreadable regions contained 134 findings whose location values were structured objects.",
+    "deploymentPreflight": "Cloudflare existing queue response used 'already taken' and code 11009."
+  },
+  "actualRepairs": [
+    "Routed HOLDING_SCAN messages to dedicated mason-forge-holding-scan queue with bounded concurrency 5 and preserved shared-queue fallback.",
+    "Losslessly normalized structured finding.location values before validation without changing coverage or unreadable-content rules.",
+    "Accepted only exact Cloudflare existing-queue response variants in the idempotent deployment preflight."
+  ],
+  "verification": {
+    "deploymentRun": 33999999447,
+    "deploymentConclusion": "SUCCESS",
+    "checks": [
+      "JavaScript module validation",
+      "MCP/OAuth contract",
+      "Holding tests",
+      "Phase review pipeline",
+      "Cloudflare dry run",
+      "D1 migrations",
+      "Worker deployment",
+      "live end-to-end verification"
+    ],
+    "statusCheckedAt": "2026-09-05T23:58:51.327Z",
+    "scanner": {
+      "total": 169,
+      "complete": 2,
+      "needsReview": 11,
+      "pagesComplete": 2
+    },
+    "phaseErrors": 0,
+    "repairRequests": 0,
+    "evidence": "Completion increased from zero only after the queue and location-normalization repairs reached production."
+  },
+  "preserved": [
+    "Original uploads",
+    "Prepared 169-page package",
+    "Previously completed scans and plan layers",
+    "All NEEDS_REVIEW records"
+  ],
+  "remainingBlockers": [
+    "Continue controlled retries for 11 saved NEEDS_REVIEW records; do not suppress or overwrite them.",
+    "Complete review of all 169 pages before advancing Phase One.",
+    "Verified CSI 2026 catalog is required before divisions and sections can complete.",
+    "BASK estimate delivery connection has not been verified.",
+    "Scale and quantities remain unverified; the final unpriced estimate is not complete."
+  ]
+}

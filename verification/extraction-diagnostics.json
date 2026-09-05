@@ -1,12 +1,12 @@
 {
-  "capturedAt": "2026-09-05T22:53:07.837Z",
-  "sourceCommit": "d913b7c20cddf48e89645fa8b7e6d6bca2cd239d",
+  "capturedAt": "2026-09-05T22:55:11.389Z",
+  "sourceCommit": "d660d2def60e1f87f6ad38563e4a2942470a607f",
   "health": {
     "status": "online",
     "operationalReady": true,
     "service": "Mason Forge Cloud",
     "environment": "production",
-    "releaseId": "2026-09-05-sheet-routing-json-v1",
+    "releaseId": "2026-09-05-takeoff-crew-v1",
     "database": "D1 VERIFIED",
     "projectFileStorage": "R2 VERIFIED",
     "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
@@ -26,10 +26,10 @@
     },
     "extraction": {
       "extracted": 2151,
-      "queued": 7,
+      "queued": 6,
       "retrying": 0,
       "failed": 0,
-      "pending": 870
+      "pending": 871
     },
     "staleRunningTasks": 0,
     "completedTasksWithoutOutput": 0,
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-05T22:53:08.581Z"
+    "checkedAt": "2026-09-05T22:55:11.969Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-05T22:53:09.079Z",
+    "retrievedAt": "2026-09-05T22:55:12.391Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",

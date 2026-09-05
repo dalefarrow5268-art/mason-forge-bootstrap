@@ -50,6 +50,24 @@ jobs:
           console.log('Bucket object count:',rows.length);
           const names = ['README.md','Master_Contact_System_2026-07-27_update-08_merge_ready.md','walmart_lucernex_july13_15_rfi_ccd_closeout_batch_intelligence_2026-07-29.md'];
           console.log('Matching recovery candidates:',JSON.stringify(rows.filter(x=>names.some(n=>String(x.key || x.name).endsWith(n))).map(x=>({key:x.key || x.name,size:x.size}))));
+          const targets = [
+            {id:478,size:556,sha:'a4a3e42f316fc21b41730b3f87f291074816aed6eb1bcc66134154f8be028993'},
+            {id:492,size:15330,sha:'0992d3a69dd7448198ccdbc9f631a3b1144eb7cbe1c1d8c93a076c3e005e5016'},
+            {id:496,size:8711,sha:'4f9f4fbe639193b55427ac8e6f5e25f1a267c9a684db34f98b148612359fd411'}
+          ];
+          const {createHash} = await import('node:crypto');
+          for (const target of targets) {
+            const candidates = rows.filter(x=>Number(x.size)===target.size);
+            const matches = [];
+            for (const object of candidates) {
+              const key = object.key.split('/').map(encodeURIComponent).join('/');
+              const response = await fetch(root+'/r2/buckets/mason-forge-project-files/objects/'+key,{headers:{authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN},signal:AbortSignal.timeout(30000)});
+              if (!response.ok) throw new Error('Candidate read failed: '+response.status);
+              const body = Buffer.from(await response.arrayBuffer());
+              if (body.length===target.size && createHash('sha256').update(body).digest('hex')===target.sha) matches.push(object.key);
+            }
+            console.log('Exact recovery result:',JSON.stringify({fileId:target.id,candidates:candidates.length,matches}));
+          }
           if(process.env.MASON_API_TOKEN){
             const response = await fetch('https://mason-forge-cloud.mason-forge-ssx.workers.dev/api/connector/bootstrap',{headers:{authorization:'Bearer '+process.env.MASON_API_TOKEN},signal:AbortSignal.timeout(30000)});
             console.log('Stored application credential HTTP status:',response.status);

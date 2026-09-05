@@ -34,10 +34,20 @@ jobs:
           }
           const secrets = await get('/workers/scripts/mason-forge-cloud/secrets');
           console.log('Worker credential configured:', (secrets.result || []).some(x=>x.name==='MASON_API_TOKEN'));
-          const objects = await get('/r2/buckets/mason-forge-project-files/objects?prefix=projects%2F2%2F&per_page=1000');
+          let cursor = ''; let complete = false; const allObjects = [];
+          for (let page = 0; page < 30; page++) {
+            const data = await get('/r2/buckets/mason-forge-project-files/objects?per_page=1000' + (cursor ? '&cursor='+encodeURIComponent(cursor) : ''));
+            if (!data.success || !Array.isArray(data.result)) throw new Error('R2 inventory failed');
+            allObjects.push(...data.result);
+            if (!data.result_info?.is_truncated) { complete = true; break; }
+            if (!data.result_info.cursor || data.result_info.cursor === cursor) throw new Error('R2 cursor did not advance');
+            cursor = data.result_info.cursor;
+          }
+          console.log('Bucket inventory complete:', complete);
+          const objects = {result: allObjects};
           console.log('Object response fields:',Object.keys(objects.result || {}));
           const rows = Array.isArray(objects.result) ? objects.result : objects.result?.objects || [];
-          console.log('Project 2 object count:',rows.length);
+          console.log('Bucket object count:',rows.length);
           const names = ['README.md','Master_Contact_System_2026-07-27_update-08_merge_ready.md','walmart_lucernex_july13_15_rfi_ccd_closeout_batch_intelligence_2026-07-29.md'];
           console.log('Matching recovery candidates:',JSON.stringify(rows.filter(x=>names.some(n=>String(x.key || x.name).endsWith(n))).map(x=>({key:x.key || x.name,size:x.size}))));
           if(process.env.MASON_API_TOKEN){

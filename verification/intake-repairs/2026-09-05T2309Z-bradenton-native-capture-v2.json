@@ -1,0 +1,85 @@
+{
+  "observedAt": "2026-09-05T23:09:27.711Z",
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "continuityRead": true,
+  "issuesInvestigated": [
+    {
+      "issueId": "bradenton-native-capture-entry-too-large",
+      "priorState": {
+        "preparationStatus": "READY",
+        "preparedFileId": 3064,
+        "scanUnitsExpected": 169,
+        "scanItemsRegistered": 0,
+        "staleSince": "2026-09-05T22:08:50.547537Z"
+      },
+      "diagnosis": "The v1 package contained deterministic native-capture JSON beside every preserved PDF page, but repeated vector drawing paths made some JSON entries larger than the scanner's 20 MiB review bound. The largest observed capture was 69468246 bytes, so queueHoldingScan rejected the package inventory before registering any of its 169 valid pages.",
+      "repair": {
+        "pullRequest": "https://github.com/dalefarrow5268-art/mason-forge-bootstrap/pull/25",
+        "mergeCommit": "3a5ac85fd5e77a3b29af8704540a2814e59078ec",
+        "releaseId": "2026-09-05-native-capture-v2",
+        "description": "Native capture v2 keeps text blocks, words, images, links, source identity, page coordinates and risk signals. Repeated drawing primitives are represented by a canonical SHA-256 digest, exact count, type/layer counts and bounds; the untouched PDF remains authoritative geometry. A versioned migration rebuilt Bradenton from its original upload without deleting the v1 prepared package."
+      },
+      "validation": {
+        "sourceFileId": 2514,
+        "sourceSha256": "28c5489d7caadf0e73d87077dd3d4dd6697772ece7c3cbedb25cfc2e945d7ee6",
+        "sourceUnchanged": true,
+        "files": 3,
+        "pages": 169,
+        "scanUnits": 169,
+        "geometryAndAppearanceChecks": "PASSED_ALL_169_PAGES",
+        "inventoryAndChecksums": "PASSED",
+        "largestV2CaptureBytes": 262793,
+        "largestPackageEntryBytes": 12836469,
+        "reviewLimitBytes": 20971520,
+        "localTestSuite": "PASSED",
+        "deployment": "https://github.com/dalefarrow5268-art/mason-forge-bootstrap/actions/runs/33997566093",
+        "deploymentConclusion": "SUCCESS",
+        "productionPreparation": "https://github.com/dalefarrow5268-art/mason-forge-bootstrap/actions/runs/33997596819",
+        "productionPreparationConclusion": "SUCCESS"
+      },
+      "liveProof": {
+        "preparationStatus": "SCANNING",
+        "preparedFileId": 3065,
+        "preparedSha256": "ed34ff04ae69b5df0dac7241777fe2ca2b25281aab58112dffae10c7b5fc4ae1",
+        "scanItemsRegistered": 169,
+        "scanPagesRegistered": 169,
+        "scanDone": 0,
+        "scanNeedsReview": 0,
+        "preparationError": null
+      }
+    }
+  ],
+  "phaseAndRoutingState": {
+    "phaseOne": {
+      "status": "PREPARING",
+      "percent": 33,
+      "sorted": 1,
+      "needsReview": 2,
+      "errors": []
+    },
+    "sheetRouting": {
+      "referenceOnly": ["page-00004.pdf"],
+      "regionReviewRequired": ["A2.4", "A2.5", "A3.1"],
+      "queued": 0,
+      "failed": 0
+    },
+    "repairRequests": []
+  },
+  "safety": {
+    "originalUploadsAltered": false,
+    "successfulWorkReset": false,
+    "reviewGatesBypassed": false,
+    "csiCodesInvented": false,
+    "measurementsGuessed": false,
+    "pricesAdded": false,
+    "bidInvitationsSent": false
+  },
+  "remainingBlockers": [
+    "All 169 native page reviews must finish and be saved in Mason Project Brain before Phase One may advance.",
+    "The measurable regions on A2.4, A2.5 and A3.1 require confirmation before layer preparation and takeoff.",
+    "A verified CSI 2026 catalog is required before divisions and sections can complete.",
+    "The BASK estimate-delivery connection remains unverified."
+  ],
+  "estimateStatus": "NOT_COMPLETE"
+}

@@ -1,0 +1,29 @@
+{
+  "issueId": "phase-four-nonblocking-limitations-rejected",
+  "diagnosis": "Phase Four treated ordinary current-sheet limitations and omitted off-sheet information as blocking issues, causing every completed result to enter NEEDS_REVIEW even when supported sections were found.",
+  "evidence": {
+    "diagnosticRun": 34035978800,
+    "needsReviewAtDiagnosis": 269,
+    "sampleInputSource": "SCANNER_BRAIN",
+    "commonPattern": "valid sections plus nonblocking limitations"
+  },
+  "repair": [
+    "Separate limitations from blocking issues in prompt and normalization",
+    "Omit ambiguous sections instead of guessing",
+    "Keep unreadable coverage, invalid catalog assignments and uncited claimed sections blocking",
+    "Correct report file status",
+    "Audit and requeue only rejected Bradenton Phase Four items"
+  ],
+  "preserved": [
+    "Original source files",
+    "Prior accepted work",
+    "Exact six-digit catalog gate",
+    "Citation and complete coverage gate",
+    "No quantities or pricing"
+  ],
+  "remaining": [
+    "CI",
+    "deployment",
+    "live accepted division verification"
+  ]
+}

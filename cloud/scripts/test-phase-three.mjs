@@ -1,4 +1,4 @@
-import {queuePhaseThree,processPhaseThree,normalizeDivisions,phaseThreeFormat} from '../src/phase-three-review.js';
+import {queuePhaseThree,processPhaseThree,normalizeDivisions,phaseThreeFormat,validateDivisionCatalogDocument,importDivisionCatalog} from '../src/phase-three-review.js';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
@@ -35,9 +35,14 @@ assert.equal(sql.prepare('SELECT relative_path FROM project_files WHERE id=1').g
 console.log('PASS: submission gate, review blocks, idempotent queue, five questions, citations, report, originals');
 
 sql.exec(readFileSync(new URL('../schema/0009_phase_three.sql',import.meta.url),'utf8'));
+assert.throws(()=>validateDivisionCatalogDocument({edition:'2026',licensedAccessConfirmed:true,completeCatalog:true,expectedDivisionCount:2,sourceReference:'https://www.csiresources.org/standards/masterformat2026',divisions:[{code:'03',title:'Concrete'}]}),/count/);
+assert.throws(()=>validateDivisionCatalogDocument({edition:'2026',licensedAccessConfirmed:true,completeCatalog:true,expectedDivisionCount:2,sourceReference:'https://www.csiresources.org/standards/masterformat2026',divisions:[{code:'03',title:'Concrete'},{code:'03',title:'Concrete'}]}),/Duplicate/);
 sql.exec("UPDATE phase_one_items SET category='Plans'");
 await queuePhaseThree(env);assert.equal(sql.prepare('SELECT status FROM phase_three_jobs').get().status,'WAITING_STANDARD');assert.equal(sent.length,0);
-sql.exec("INSERT INTO phase_three_catalogs VALUES('2026','test-only fixture','now'); INSERT INTO phase_three_divisions VALUES('2026','03','Test Concrete');");
+const catalogDocument={edition:'2026',licensedAccessConfirmed:true,completeCatalog:true,expectedDivisionCount:1,sourceReference:'https://www.csiresources.org/standards/masterformat2026',divisions:[{code:'03',title:'Test Concrete'}]};
+const catalogBytes=new TextEncoder().encode(JSON.stringify(catalogDocument));objects.set('catalog',catalogBytes);sql.exec("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,file_type,size_bytes,uploaded_at,updated_at) VALUES(999,13,'catalog','catalog.json','catalog.json','application/json',"+catalogBytes.length+",'now','now')");
+const catalogHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',catalogBytes)),b=>b.toString(16).padStart(2,'0')).join('');
+const imported=await importDivisionCatalog(env,'project-1',999,catalogHash);assert.equal(imported.status,'VERIFIED_CATALOG_LOADED');assert.equal(imported.divisionCount,1);
 const fixture={divisions:[{code:'03',title:'Test Concrete'}]};
 const format=phaseThreeFormat(fixture);assert.equal(format.type,'json_schema');assert.equal(format.strict,true);assert.deepEqual(format.schema.properties.divisions.items.properties.code.enum,['03']);
 assert(normalizeDivisions({divisions:[{code:'99',scope:'bad',sheet:'A1',evidence:'bad',confidence:'HIGH'}],completeReview:true},fixture).issues.length);

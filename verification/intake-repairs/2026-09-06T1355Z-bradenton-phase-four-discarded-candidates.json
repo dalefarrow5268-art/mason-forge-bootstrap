@@ -1,0 +1,37 @@
+{
+  "issueId": "phase-four-discarded-candidates-blocked",
+  "diagnosis": "Low-confidence, unsupported and wrong-division candidates were correctly excluded from accepted sections but the shared validator still converted every exclusion into a blocking issue.",
+  "evidence": {
+    "needsReviewObserved": 38,
+    "acceptedItemsObserved": 48,
+    "phaseFiveQueued": 3,
+    "verifiedDivision": "31",
+    "sampleAggregateReport": "Division 11 report contained valid sections plus repeated discarded-candidate blocking markers."
+  },
+  "repair": [
+    "Keep discarded low-confidence, unsupported and wrong-division candidates out of accepted sections",
+    "Record exclusions as nonblocking limitations",
+    "Keep incomplete coverage and missing scope/sheet/evidence on otherwise valid high-confidence claims blocking",
+    "Deduplicate normalized sections, issues and limitations",
+    "Audit and requeue only currently rejected Bradenton Phase Four items"
+  ],
+  "preserved": [
+    "Original uploads",
+    "Existing completed Phase Four items",
+    "Verified Division 31 report",
+    "Exact six-digit catalog gate",
+    "No prices or guessed quantities"
+  ],
+  "verification": [
+    "Unit tests",
+    "CI",
+    "production deployment",
+    "live NEEDS_REVIEW reduction and progress check"
+  ],
+  "remaining": [
+    "Complete remaining Phase Four divisions",
+    "Run short Phase Five scopes",
+    "Verified takeoffs",
+    "BASK estimate-delivery connection"
+  ]
+}

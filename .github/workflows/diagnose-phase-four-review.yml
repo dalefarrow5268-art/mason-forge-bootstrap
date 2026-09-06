@@ -1,4 +1,4 @@
-# diagnostic refresh: 2026-09-06T20:38Z
+# diagnostic refresh: 2026-09-06T20:40Z
 name: Diagnose Phase Four Review
 on:
   workflow_dispatch:
@@ -25,7 +25,9 @@ jobs:
           const submission='bask-bradenton-2513-v1';
           console.log('counts',JSON.stringify(await query("SELECT status,COUNT(*) count,MIN(updated_at) oldest,MAX(updated_at) newest FROM phase_four_items WHERE job_id LIKE ? GROUP BY status",[submission+'-%'])));
           console.log('jobs',JSON.stringify(await query("SELECT division_code,status,error,report_file_id,updated_at FROM phase_four_jobs WHERE submission_id=? ORDER BY division_code",[submission])));
-          console.log('target3568',JSON.stringify(await query("SELECT i.id,i.status,i.attempts,i.error,i.result_key,i.updated_at,f.relative_path,f.size_bytes,json_array_length(l.brain_keys_json) brain_key_count,length(l.brain_keys_json) brain_keys_bytes FROM phase_four_items i JOIN project_files f ON f.id=i.file_id LEFT JOIN plan_layer_jobs l ON l.plan_file_id=i.file_id WHERE i.id=?",[submission+'-03-3568'])));
+          const target3568=await query("SELECT i.id,i.status,i.attempts,i.error,i.result_key,i.updated_at,f.id file_id,f.relative_path,f.sha256,f.size_bytes,json_array_length(l.brain_keys_json) brain_key_count,length(l.brain_keys_json) brain_keys_bytes FROM phase_four_items i JOIN project_files f ON f.id=i.file_id LEFT JOIN plan_layer_jobs l ON l.plan_file_id=i.file_id WHERE i.id=?",[submission+'-03-3568']);
+          console.log('target3568',JSON.stringify(target3568));
+          if(target3568[0]?.result_key){const saved=await object(target3568[0].result_key);console.log('target3568Result',JSON.stringify({sourceFileId:saved.sourceFileId,sourcePath:saved.sourcePath,sourceSha256:saved.sourceSha256,inputSource:saved.inputSource,brainRecordCount:saved.brainRecordCount,sectionCount:Array.isArray(saved.sections)?saved.sections.length:null,issueCount:Array.isArray(saved.issues)?saved.issues.length:null,limitationCount:Array.isArray(saved.limitations)?saved.limitations.length:null,sectionCodes:Array.isArray(saved.sections)?saved.sections.map(x=>x.code):[]}));}
           const rows=await query("SELECT i.id,i.job_id,i.file_id,i.attempts,i.error,i.result_key,i.updated_at FROM phase_four_items i JOIN phase_four_jobs j ON j.id=i.job_id WHERE j.submission_id=? AND i.status='NEEDS_REVIEW' ORDER BY i.updated_at DESC LIMIT 30",[submission]);
           const categories={};const samples=[];
           for(const row of rows){let summary={id:row.id,jobId:row.job_id,fileId:row.file_id,attempts:row.attempts,error:row.error,updatedAt:row.updated_at};

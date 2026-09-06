@@ -12,7 +12,7 @@ class HoldingTests(unittest.TestCase):
   self.assertIn("EXPECTED_RELEASE=CONFIG['vars']['RELEASE_ID']",runner)
   self.assertIn("x.get('text')==EXPECTED_RELEASE",runner)
   self.assertNotIn("x.get('text')=='2026-09-05-holding-detail-tiles-v2'",runner)
-  self.assertEqual(expected,'2026-09-06-phase-one-working-queue-fallback')
+  self.assertEqual(expected,'2026-09-06-phase-one-source-provenance')
 
  def test_high_resolution_retry_preserves_package_and_exact_region(self):
   with tempfile.TemporaryDirectory() as td:

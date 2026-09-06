@@ -1,0 +1,34 @@
+name: Diagnose Phase Four Queue Consumer
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diagnose-phase-four-queue.yml']
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Inspect Phase Four queue and consumer
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node --input-type=module <<'JS'
+          const base='https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID;
+          const headers={authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN};
+          async function get(path){
+            const r=await fetch(base+path,{headers,signal:AbortSignal.timeout(30000)});
+            const d=await r.json();
+            if(!r.ok||!d.success) throw Error(JSON.stringify({path,status:r.status,errors:d.errors}));
+            return d.result;
+          }
+          const queues=await get('/queues');
+          const q=(Array.isArray(queues)?queues:[]).find(x=>x.queue_name==='mason-forge-phase-four');
+          if(!q) throw Error('mason-forge-phase-four queue not found');
+          console.log('queue',JSON.stringify({id:q.queue_id,name:q.queue_name,createdOn:q.created_on,modifiedOn:q.modified_on,settings:q.settings||null,producers:q.producers||null,consumers:q.consumers||null}));
+          const consumers=await get('/queues/'+q.queue_id+'/consumers');
+          console.log('consumers',JSON.stringify((Array.isArray(consumers)?consumers:[]).map(x=>({id:x.consumer_id,type:x.type,script:x.script_name,settings:x.settings,deadLetterQueue:x.dead_letter_queue}))));
+          JS

@@ -55,6 +55,9 @@ assert.equal(sql.prepare("SELECT COUNT(*) n FROM phase_one_items WHERE job_id='i
 console.log('PASS: preparation gate, stale-message gate and verified-package inventory');
 // Brain scan must precede Phase One. Use real ZIP handling and mocked model evidence.
 const {queueHoldingScan,processHoldingScan,validScan,scanPrompt,normalizeScan,vectorRegionPrompt}=await import('../src/holding-brain-scan.js');
+const scanSource=readFileSync(new URL('../src/holding-brain-scan.js',import.meta.url),'utf8');
+assert.match(scanSource,/i\.asset_role!='DETAIL_TILE' AND i\.attempts<3/);
+assert.match(scanSource,/LIMIT 50/);
 sql.exec(readFileSync(new URL('../schema/0018_holding_brain_scan.sql',import.meta.url),'utf8'));
 assert(!validScan({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[]}));
 assert(validScan({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[],blank:true}));

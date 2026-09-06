@@ -24,6 +24,7 @@ export class R2Reader extends Reader {
 }
 export async function queuePhaseOne(env){
  const intakePrefix=ROOT+'/';
+ const phaseOneQueue=env.PHASE_ONE_QUEUE||env.DEPARTMENT_QUEUE;
  await env.DB.prepare(`INSERT OR IGNORE INTO phase_one_jobs(id,source_file_id,created_at,updated_at) SELECT 'intake-'||id,id,?,? FROM project_files WHERE project_id=13 AND archived_at IS NULL AND substr(relative_path,1,?)=? AND COALESCE(source_class,'') NOT IN ('PHASE ONE WORKING COPY','PHASE ONE REVIEW REPORT')`).bind(now(),now(),intakePrefix.length,intakePrefix).run();
  await env.DB.prepare("INSERT OR IGNORE INTO holding_preparations(source_file_id,updated_at) SELECT j.source_file_id,? FROM phase_one_jobs j JOIN project_files f ON f.id=j.source_file_id WHERE f.source_class='PHASE ONE INTAKE' AND j.status='PENDING'").bind(now()).run();
  const ready=(await env.DB.prepare("SELECT p.* FROM holding_preparations p JOIN phase_one_jobs j ON j.source_file_id=p.source_file_id WHERE p.status='SCANNED' AND j.status!='RUNNING' AND NOT EXISTS(SELECT 1 FROM phase_one_items i WHERE i.job_id=j.id AND i.status='RUNNING')").all()).results||[];
@@ -33,6 +34,13 @@ export async function queuePhaseOne(env){
  env.DB.prepare("UPDATE phase_one_jobs SET status='PENDING',error=NULL,updated_at=? WHERE source_file_id=?").bind(now(),p.source_file_id),
  env.DB.prepare("UPDATE holding_preparations SET status='COMPLETE',updated_at=? WHERE source_file_id=? AND status='SCANNED'").bind(now(),p.source_file_id)
  ]);}
+ // Move released, zero-inventory jobs that were leased before the dedicated
+ // queue existed. The consumer's atomic claim makes a later legacy delivery a
+ // no-op after inventory begins.
+ if(env.PHASE_ONE_QUEUE){
+  const handoffs=(await env.DB.prepare("SELECT j.id FROM phase_one_jobs j JOIN holding_preparations p ON p.source_file_id=j.source_file_id WHERE j.status='QUEUED' AND p.status='COMPLETE' AND NOT EXISTS(SELECT 1 FROM phase_one_items i WHERE i.job_id=j.id) LIMIT 20").all()).results||[];
+  for(const row of handoffs)try{await phaseOneQueue.send({kind:'PHASE_ONE',table:'phase_one_jobs',id:row.id});await env.DB.prepare("UPDATE phase_one_jobs SET updated_at=? WHERE id=? AND status='QUEUED'").bind(now(),row.id).run();}catch(e){throw e;}
+ }
  await finishReports(env);
  for(const table of ['phase_one_jobs','phase_one_items']){
  const gate=table==='phase_one_jobs'?` AND (NOT EXISTS(SELECT 1 FROM project_files f WHERE f.id=source_file_id AND f.source_class='PHASE ONE INTAKE') OR EXISTS(SELECT 1 FROM holding_preparations p WHERE p.source_file_id=phase_one_jobs.source_file_id AND p.status='COMPLETE'))`:'';
@@ -42,7 +50,6 @@ export async function queuePhaseOne(env){
  for(const row of rows.results||[]){
  const claimed=await env.DB.prepare(`UPDATE ${table} SET status='QUEUED',updated_at=? WHERE id=? AND (status='PENDING' OR updated_at < ?)`).bind(now(),row.id,new Date(Date.now()-20*60000).toISOString()).run();
  if(!claimed.meta.changes)continue;
- const phaseOneQueue=env.PHASE_ONE_QUEUE||env.DEPARTMENT_QUEUE;
  try{await phaseOneQueue.send({kind:'PHASE_ONE',table,id:row.id});}catch(e){await env.DB.prepare(`UPDATE ${table} SET status='PENDING' WHERE id=? AND status='QUEUED'`).bind(row.id).run();throw e;}
  }
  }

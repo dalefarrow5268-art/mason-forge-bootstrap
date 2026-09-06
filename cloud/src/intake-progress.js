@@ -7,6 +7,12 @@ export function summarize(jobs,items,phase){
  const total=items.length,done=(counts.COMPLETE||0)+(counts.SORTED||0);const complete=['COMPLETE','DRAFTS_READY'].includes(status);
  return {phase,name:names[phase-1],status,counts,total,done,percent:complete?100:total?Math.min(99,Math.floor(done/total*100)):0,errors:[...new Set([...jobs,...items].map(x=>x.error||x.reason).filter(Boolean))].slice(0,8),outputs:items.filter(x=>x.result_key||x.findings_key||x.output_file_id).length};
 }
+export function catalogBlockers(catalog={}){
+ const blockers=[];
+ if(!catalog.divisions)blockers.push('Verified Living Schedule divisions are needed before Phase Three can complete.');
+ if(!catalog.sections)blockers.push('Verified Living Schedule sections are needed before Phase Four can complete.');
+ return blockers;
+}
 export async function intakeProgress(env,projectId=null){
  const projects=[];const submissions=await rows(env,'SELECT * FROM phase_project_submissions WHERE (? IS NULL OR project_id=?) ORDER BY sealed_at DESC LIMIT 20',projectId,projectId);
  for(const s of submissions){
@@ -38,7 +44,7 @@ export async function intakeProgress(env,projectId=null){
  phases.push({...p,startedAt:track?.first_seen_at||null,finishedAt:track?.finished_at||null,updatedAt:track?.last_changed_at||null});
  }
  const catalog=await env.DB.prepare("SELECT (SELECT COUNT(*) FROM phase_three_divisions WHERE edition='2026') divisions,(SELECT COUNT(*) FROM phase_four_sections WHERE edition='2026') sections").first();
- const blockers=[];if(!catalog.divisions||!catalog.sections)blockers.push('Verified CSI 2026 catalog is needed before divisions and sections can complete.');
+ const blockers=catalogBlockers(catalog);
  const deliveries=await rows(env,"SELECT status,COUNT(*) n FROM phase_five_estimate_outbox WHERE submission_id=? GROUP BY status",s.id);
  if(!deliveries.length||deliveries.some(x=>x.status==='WAITING_ESTIMATE_CONNECTION'))blockers.push('BASK estimate delivery connection has not been verified.');
  for(const p of phases)if(p.status==='NEEDS_REVIEW')blockers.push(`Phase ${p.phase}: ${p.errors[0]||'Review required before proceeding.'}`);

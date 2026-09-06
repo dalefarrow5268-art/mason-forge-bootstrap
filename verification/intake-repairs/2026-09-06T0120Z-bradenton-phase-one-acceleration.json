@@ -14,13 +14,14 @@
     "repairRequests": 0
   },
   "repair": {
-    "releaseId": "2026-09-06-phase-one-source-provenance",
+    "releaseId": "2026-09-06-phase-one-queue-fanout",
     "behavior": [
       "Recognize only prepared page paths that retain an exact parent PDF source-document name.",
       "Route pages from explicitly identified plan/drawing source documents to Plans.",
       "Route pages from explicitly identified geotechnical, soil, or boring source documents to Geotech.",
       "Keep the existing semantic content review for every ambiguous source document.",
-      "Continue page-level Mason Brain semantic review independently; this optimization does not mark that review complete."
+      "Continue page-level Mason Brain semantic review independently; this optimization does not mark that review complete.",
+      "Fan out each bounded Phase One message to the dedicated Phase One queue, active Holding queue, and compatibility department queue; the existing atomic claim permits exactly one processor to perform the work."
     ],
     "preservation": [
       "Original uploads and prepared page bytes are unchanged.",

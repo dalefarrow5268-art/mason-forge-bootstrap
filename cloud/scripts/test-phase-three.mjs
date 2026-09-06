@@ -1,4 +1,4 @@
-import {queuePhaseThree,processPhaseThree,normalizeDivisions} from '../src/phase-three-review.js';
+import {queuePhaseThree,processPhaseThree,normalizeDivisions,phaseThreeFormat} from '../src/phase-three-review.js';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
@@ -14,7 +14,7 @@ const DB={async batch(statements){return Promise.all(statements.map(s=>s.run()))
  };},async first(){return sql.prepare(s).get();},async all(){return {results:sql.prepare(s).all()};}};}};
 const objects=new Map(),sent=[];
 const bucket={async head(k){return objects.has(k)?{size:objects.get(k).length}:null},async get(k,o){let b=objects.get(k);if(!b)return null;if(o?.range)b=b.slice(o.range.offset,o.range.offset+o.range.length);return{size:b.length,body:new Blob([b]).stream(),async text(){return new TextDecoder().decode(b)},async arrayBuffer(){return b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength)}}},async put(k,v){objects.set(k,typeof v==='string'?new TextEncoder().encode(v):v);},async delete(k){objects.delete(k)},async createMultipartUpload(k){const parts=[];return{async uploadPart(n,b){parts[n-1]=b.slice();return{partNumber:n,etag:String(n)}},async complete(){const out=new Uint8Array(parts.reduce((n,p)=>n+p.length,0));let pos=0;for(const p of parts){out.set(p,pos);pos+=p.length;}objects.set(k,out)},async abort(){objects.delete(k)}}}};
-const env={DB,PROJECT_FILES:bucket,DEPARTMENT_QUEUE:{async send(b){sent.push(b)}}};
+const env={DB,PROJECT_FILES:bucket,PHASE_TWO_QUEUE:{async send(b){sent.push(b)}},PHASE_THREE_QUEUE:{async send(b){sent.push(b)}}};
 sql.exec(readFileSync(new URL('../schema/0008_phase_two.sql',import.meta.url),'utf8'));
 assert.equal(sourceIds('[1,1]'),null);assert.equal(sourceIds('[]'),null);
 assert.equal(normalizeFacts({findings:[{question:'Who',fact:'guess'}]}).findings.length,0);
@@ -39,9 +39,10 @@ sql.exec("UPDATE phase_one_items SET category='Plans'");
 await queuePhaseThree(env);assert.equal(sql.prepare('SELECT status FROM phase_three_jobs').get().status,'WAITING_STANDARD');assert.equal(sent.length,0);
 sql.exec("INSERT INTO phase_three_catalogs VALUES('2026','test-only fixture','now'); INSERT INTO phase_three_divisions VALUES('2026','03','Test Concrete');");
 const fixture={divisions:[{code:'03',title:'Test Concrete'}]};
+const format=phaseThreeFormat(fixture);assert.equal(format.type,'json_schema');assert.equal(format.strict,true);assert.deepEqual(format.schema.properties.divisions.items.properties.code.enum,['03']);
 assert(normalizeDivisions({divisions:[{code:'99',scope:'bad',sheet:'A1',evidence:'bad',confidence:'HIGH'}],completeReview:true},fixture).issues.length);
 await queuePhaseThree(env);assert.equal(sent.length,1);await queuePhaseThree(env);assert.equal(sent.length,1);
-globalThis.fetch=async()=>Response.json({output:[{content:[{type:'output_text',text:JSON.stringify({divisions:[{code:'03',scope:'Slab',sheet:'S1',evidence:'Concrete slab note',confidence:'HIGH'}],issues:[],completeReview:true})}]}]});
+globalThis.fetch=async(_url,options)=>{const request=JSON.parse(options.body);assert.equal(request.text.format.type,'json_schema');assert.equal(request.text.format.strict,true);return Response.json({output:[{content:[{type:'output_text',text:JSON.stringify({divisions:[{code:'03',scope:'Slab',sheet:'S1',evidence:'Concrete slab note',confidence:'HIGH'}],issues:[],completeReview:true,coverageNote:'Complete fixture review'})}]}]});};
 try{await processPhaseThree(sent.shift(),{...env,OPENAI_API_KEY:'test'});}finally{globalThis.fetch=originalFetch;}
 await queuePhaseThree(env);await queuePhaseThree(env);
 assert.equal(sql.prepare('SELECT status FROM phase_three_jobs').get().status,'READY_FOR_ESTIMATE');

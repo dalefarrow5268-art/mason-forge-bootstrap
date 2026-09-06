@@ -156,12 +156,21 @@ async function processItem(env,item){
  const source=await sourceFor(env,item.job_id);if(!source||source.archived_at)throw new Error('Original unavailable');
  if(!safe(item.original_path))throw new Error('Unsafe path');
  const key=`projects/${source.project_id}/phase-one/${item.id}`;
- await unpack(env,source,item,key);
+ const sourceCategory=source.source_class==='HOLDING PREPARED PACKAGE'?preparedSourceCategory(item.original_path):null;
+ // Preparation already materializes each verified page as a Brain scan source.
+ // Reuse that exact object instead of reopening the full prepared ZIP once per
+ // Phase One item. The source object remains untouched and the working copy is
+ // still independently stored and size-verified.
+ const suffix=`/Sources/${item.original_path}`;
+ const pageSource=sourceCategory?await env.DB.prepare("SELECT id,r2_key,size_bytes FROM project_files WHERE project_id=? AND source_class='BRAIN SCAN SOURCE' AND archived_at IS NULL AND size_bytes=? AND substr(relative_path,-?)=? ORDER BY id LIMIT 1").bind(source.project_id,item.size_bytes,suffix.length,suffix).first():null;
+ if(pageSource){
+  if(!await env.PROJECT_FILES.head(key)){const object=await env.PROJECT_FILES.get(pageSource.r2_key);if(!object||Number(object.size)!==Number(item.size_bytes))throw new Error('Verified Brain page source unavailable');const bytes=new Uint8Array(await object.arrayBuffer());if(bytes.length!==Number(item.size_bytes))throw new Error('Verified Brain page source size mismatch');await env.PROJECT_FILES.put(key,bytes);}
+  const stored=await env.PROJECT_FILES.head(key);if(!stored||Number(stored.size)!==Number(item.size_bytes))throw new Error('Phase One working-copy size mismatch');
+ }else await unpack(env,source,item,key);
  const scans=source.source_class==='HOLDING PREPARED PACKAGE'?(await env.DB.prepare("SELECT i.category,i.brain_key,i.status FROM holding_scan_items i JOIN holding_preparations p ON p.source_file_id=i.source_file_id WHERE p.prepared_file_id=? AND COALESCE(i.source_path,i.original_path)=?").bind(source.id,item.original_path).all()).results||[]:[];
  const scanned=scans.length&&scans.every(x=>x.status==='COMPLETE');
  const categoryCounts=Object.fromEntries(CATEGORIES.map(category=>[category,scans.filter(x=>x.category===category).length]));
  const category=Object.entries(categoryCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||assignWorker(item.original_path);
- const sourceCategory=source.source_class==='HOLDING PREPARED PACKAGE'?preparedSourceCategory(item.original_path):null;
  const result=sourceCategory
   ?{category:sourceCategory,reason:`Verified prepared-page provenance retained from parent source document: ${item.original_path.slice(0,item.original_path.lastIndexOf('/'))}. Page-level Mason Brain review continues independently.`}
   :scanned?{category:category==='Needs Review'?assignWorker(item.original_path):category,reason:`Detailed intake review saved in Mason Project Brain (${scans.length} overlapping regions).`}:await review(env,key,item);

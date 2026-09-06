@@ -54,11 +54,14 @@ await processPhaseOne({table:'phase_one_jobs',id:'intake-200'},env);
 assert.equal(sql.prepare("SELECT COUNT(*) n FROM phase_one_items WHERE job_id='intake-200'").get().n,1);
 console.log('PASS: preparation gate, stale-message gate and verified-package inventory');
 // Brain scan must precede Phase One. Use real ZIP handling and mocked model evidence.
-const {queueHoldingScan,processHoldingScan,validScan,scanPrompt,nativeCapturePrompt,normalizeScan,vectorRegionPrompt}=await import('../src/holding-brain-scan.js');
+const {queueHoldingScan,processHoldingScan,validScan,scanPrompt,nativeCapturePrompt,nativeCaptureGateReady,normalizeScan,vectorRegionPrompt}=await import('../src/holding-brain-scan.js');
 const scanSource=readFileSync(new URL('../src/holding-brain-scan.js',import.meta.url),'utf8');
 assert.match(scanSource,/i\.asset_role!='DETAIL_TILE' AND i\.attempts<3/);
 assert.match(scanSource,/LIMIT 100/);
 assert.match(nativeCapturePrompt(),/coordinate-preserving textBlocks and words/);
+assert(nativeCaptureGateReady([{asset_role:'NATIVE_PAGE',capture_path:'page.brain-capture/native.json'}],1));
+assert(!nativeCaptureGateReady([{asset_role:'NATIVE_PAGE',capture_path:null}],1));
+assert(!nativeCaptureGateReady([{asset_role:'SOURCE',capture_path:'capture.json'}],1));
 sql.exec(readFileSync(new URL('../schema/0018_holding_brain_scan.sql',import.meta.url),'utf8'));
 assert(!validScan({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[]}));
 assert(validScan({coverage:'COMPLETE',category:'Plans',unreadableRegions:[],findings:[],blank:true}));
@@ -89,6 +92,28 @@ await queueHoldingScan(env);assert.equal(sql.prepare('SELECT status FROM holding
 const scanned=sql.prepare('SELECT * FROM holding_scan_items WHERE source_file_id=300').get();assert.equal(scanned.status,'COMPLETE');assert(objects.has(scanned.brain_key));
 await queuePhaseOne(env);assert(sent.some(x=>x.id==='intake-300'),'only saved Brain scan releases Phase One');
 console.log('PASS: preparation is not review; complete saved Brain scan required before Phase One');
+
+// A verified native-capture package is the deterministic first scan. It releases
+// Phase One immediately while semantic sheet interpretation stays queued.
+sent.length=0;
+const nativeZip=new ZipWriter(new Uint8ArrayWriter(),{useWebWorkers:false});
+await nativeZip.add('plans/page-00001.pdf',new TextReader('preserved vector page'));
+await nativeZip.add('plans/page-00001.pdf.brain-capture/native.json',new TextReader(JSON.stringify({captureStatus:'CAPTURED_NOT_SEMANTICALLY_REVIEWED',cacheKey:'fixture',captureSha256:'abc'})));
+const nativeBytes=await nativeZip.close();objects.set('prepared350',nativeBytes);
+sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(350,3,'source350','original.zip','Holding/original.zip',100,'PHASE ONE INTAKE')").run();
+sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(351,3,'prepared350','prepared.zip','Prepared/350.zip',?,'HOLDING PREPARED PACKAGE')").run(nativeBytes.length);
+sql.prepare("INSERT INTO phase_one_jobs(id,source_file_id,created_at,updated_at) VALUES('intake-350',350,'now','now')").run();
+sql.prepare("INSERT INTO holding_preparations(source_file_id,status,prepared_file_id,units_done,scan_units_total,updated_at) VALUES(350,'READY',351,1,1,'now')").run();
+await queueHoldingScan(env);
+assert.equal(sql.prepare('SELECT status FROM holding_preparations WHERE source_file_id=350').get().status,'SCANNED');
+assert(sent.some(x=>x.kind==='HOLDING_SCAN'&&x.id.startsWith('scan-350-351-')),'semantic review continues in background');
+await queuePhaseOne(env);
+assert.equal(sql.prepare('SELECT status FROM holding_preparations WHERE source_file_id=350').get().status,'COMPLETE');
+assert(sent.some(x=>x.id==='intake-350'),'deterministic capture releases Phase One');
+sql.prepare("UPDATE holding_scan_items SET status='PENDING',updated_at='now' WHERE source_file_id=350").run();
+sent.length=0;await queueHoldingScan(env);
+assert(sent.some(x=>x.kind==='HOLDING_SCAN'&&x.id.startsWith('scan-350-351-')),'semantic review survives Phase One release');
+console.log('PASS: deterministic native capture releases phases while semantic review continues');
 
 // Detail tiles are scanner evidence, not duplicate Phase One source files.
 sent.length=0;

@@ -174,3 +174,14 @@ assert.equal(sql.prepare("SELECT status FROM holding_scan_items WHERE id='scan-4
 const highresResponse=highresCalls.find(call=>String(call.url).endsWith('/v1/responses'));assert(highresResponse);
 assert.match(String(highresResponse.body),/HIGH_RES_REGION_RETRY/);assert.doesNotMatch(String(highresResponse.body),/VECTOR_REGION_RETRY/);
 console.log('PASS: exact high-resolution override preserves successful scans and the unreadable-content gate');
+
+// A released job leased before PHASE_ONE_QUEUE existed is handed off without
+// resetting it or waiting for the general-queue lease to expire.
+const dedicated=[];env.PHASE_ONE_QUEUE={async send(body){dedicated.push(body);}};
+sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(500,3,'source500','original.zip','Holding/original.zip',100,'PHASE ONE INTAKE')").run();
+sql.prepare("INSERT INTO phase_one_jobs(id,source_file_id,status,created_at,updated_at) VALUES('intake-500',500,'QUEUED','now','now')").run();
+sql.prepare("INSERT INTO holding_preparations(source_file_id,status,updated_at) VALUES(500,'COMPLETE','now')").run();
+await queuePhaseOne(env);
+assert(dedicated.some(x=>x.kind==='PHASE_ONE'&&x.table==='phase_one_jobs'&&x.id==='intake-500'));
+assert.equal(sql.prepare("SELECT status FROM phase_one_jobs WHERE id='intake-500'").get().status,'QUEUED');
+console.log('PASS: zero-inventory legacy Phase One lease hands off to dedicated queue');

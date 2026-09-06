@@ -13,13 +13,14 @@
     "repairRequests": 0
   },
   "repair": {
-    "releaseId": "2026-09-06-phase-one-queue-handoff",
+    "releaseId": "2026-09-06-phase-one-zero-inventory-handoff",
     "behavior": [
       "Dispatch Phase One jobs and items to a dedicated Cloudflare queue.",
       "Provision that queue idempotently during deployment.",
       "Retain the general department queue as a compatibility fallback.",
       "Use bounded concurrency of 20 and retain retry/dead-letter behavior.",
-      "Reclaim queued messages into the dedicated queue after two minutes while retaining the 20-minute lease for running work."
+      "Reclaim queued messages into the dedicated queue after two minutes while retaining the 20-minute lease for running work.",
+      "Directly hand off released zero-inventory legacy jobs; the consumer's atomic claim makes any later legacy delivery a no-op."
     ],
     "preservation": [
       "The queued Phase One job is not reset or bypassed.",

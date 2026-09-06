@@ -27,14 +27,20 @@ jobs:
           if(!source||source.archived_at)throw Error('Preserved source page is unavailable');
           if(!derivative||derivative.archived_at||derivative.sha256!==derivativeSha||derivative.relative_path!==derivativePath)throw Error('Verified rendered derivative does not match');
           const current=(await query('SELECT file_id,status FROM phase_three_items WHERE id=? AND job_id=?',[item,submission])).results?.[0];
+          const time=new Date().toISOString();
           if(!current)throw Error('Target Phase Three item is missing');
           let changes=0;
           if(current.file_id===sourceFileId&&current.status==='NEEDS_REVIEW'){
-            const time=new Date().toISOString();
             const remap=await query("UPDATE phase_three_items SET file_id=?,status='PENDING',attempts=0,error=NULL,result_key=NULL,updated_at=? WHERE id=? AND job_id=? AND file_id=? AND status='NEEDS_REVIEW'",[derivativeFileId,time,item,submission,sourceFileId]);
             changes=remap.meta?.changes||0;if(changes!==1)throw Error('Targeted derivative retry was not applied');
           }
-          console.log('targeted-retry',JSON.stringify({submission,item,sourceFileId,derivativeFileId,changes,current}));
+          const live=(await query('SELECT file_id,status FROM phase_three_items WHERE id=? AND job_id=?',[item,submission])).results?.[0];
+          let jobChanges=0;
+          if(live?.file_id===derivativeFileId&&['PENDING','QUEUED','RUNNING'].includes(live.status)){
+            const resumed=await query("UPDATE phase_three_jobs SET status='RUNNING',report_file_id=NULL,updated_at=? WHERE id=? AND status='NEEDS_REVIEW'",[time,submission]);
+            jobChanges=resumed.meta?.changes||0;
+          }
+          console.log('targeted-retry',JSON.stringify({submission,item,sourceFileId,derivativeFileId,changes,jobChanges,current,live}));
           const counts=await query('SELECT status,COUNT(*) count FROM phase_three_items WHERE job_id=? GROUP BY status',[submission]);
           console.log('counts',JSON.stringify(counts.results||[]));
           try{await fetch('https://mason-forge-cloud.mason-forge-ssx.workers.dev/health',{signal:AbortSignal.timeout(15000)});}catch(e){console.log('health wakeup',String(e.message||e));}

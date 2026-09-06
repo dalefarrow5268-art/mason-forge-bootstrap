@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-06T11:25:30.776Z",
+  "projectId": 3,
+  "projectName": "Downtown Bradenton",
+  "submissionId": "bask-bradenton-2513-v1",
+  "continuityRead": {
+    "checkpointId": "checkpoint_64c5f95a-e67b-478e-b5f0-6854742105db",
+    "source": "LIVE PROJECT D1 VERIFIED STATE",
+    "verificationStatus": "VERIFIED"
+  },
+  "phaseStatus": [
+    {
+      "phase": 1,
+      "name": "File inventory & sorting",
+      "status": "COMPLETE",
+      "done": 169,
+      "total": 169
+    },
+    {
+      "phase": 2,
+      "name": "Project information",
+      "status": "COMPLETE",
+      "done": 169,
+      "total": 169
+    },
+    {
+      "phase": 3,
+      "name": "CSI divisions",
+      "status": "COMPLETE",
+      "done": 133,
+      "total": 133
+    },
+    {
+      "phase": 4,
+      "name": "CSI sections",
+      "status": "NEEDS_REVIEW",
+      "done": 0,
+      "total": 0
+    }
+  ],
+  "investigated": [
+    {
+      "issueId": "phase4-authoritative-living-schedule-hierarchy-unavailable",
+      "previousState": "OPEN",
+      "currentState": "UNCHANGED",
+      "diagnosis": "Phase Four requires the verified six-digit section hierarchy. Two preserved 29,235,330-byte Library copies are present, but authenticated materialization returned HTTP 502 for each copy.",
+      "actualRepair": "No code or data repair applied because source bytes were unavailable. No partial inventory was substituted.",
+      "verification": [
+        {
+          "sourcePath": "/Schedule System Work/SSX_LIVING_FLOW_MASTER_HANDOFF_2026-08-14_1907.zip",
+          "libraryFileId": "libfile_f5867e8bb2cc819193898109cf7427fd",
+          "result": "HTTP 502"
+        },
+        {
+          "sourcePath": "/SSX_LIVING_FLOW_MASTER_HANDOFF_2026-08-14_1907.zip",
+          "libraryFileId": "libfile_25593b300f88819184d2d2a42db02575",
+          "result": "HTTP 502"
+        },
+        {
+          "check": "Bradenton live status",
+          "result": "Phase 3 remains COMPLETE 133/133; Phase 4 remains NEEDS_REVIEW 0/0; no phase errors; no repair requests"
+        },
+        {
+          "check": "Latest 20 GitHub Actions runs",
+          "result": "All completed successfully; no new failed deployment or repair workflow found"
+        }
+      ]
+    }
+  ],
+  "remainingBlockers": [
+    "Authenticated retrieval of the authoritative Living Schedule hierarchy must succeed before the section schema/count can be verified and imported.",
+    "Phase Four sections, subsequent scopes, verified quantities/units, and the complete unpriced estimate remain unfinished.",
+    "BASK estimate-delivery connection remains unverified."
+  ],
+  "safety": {
+    "originalUploadsAltered": false,
+    "pricesAdded": false,
+    "csiCodesInvented": false,
+    "measurementsGuessed": false,
+    "reviewGatesBypassed": false,
+    "failuresSuppressed": false,
+    "bidInvitationsSent": false
+  }
+}

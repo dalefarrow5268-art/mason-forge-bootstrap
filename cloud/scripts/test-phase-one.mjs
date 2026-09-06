@@ -117,9 +117,13 @@ assert(sent.some(x=>x.id==='intake-350'),'deterministic capture releases Phase O
 await processPhaseOne({kind:'PHASE_ONE',table:'phase_one_jobs',id:'intake-350'},env);
 assert.equal(sql.prepare("SELECT COUNT(*) n FROM phase_one_items WHERE job_id='intake-350'").get().n,1,'native capture companion is Brain evidence, not a Phase One document');
 const nativeItem=sql.prepare("SELECT id FROM phase_one_items WHERE job_id='intake-350'").get();
+const nativePageBytes=new TextEncoder().encode('preserved vector page');objects.set('native-page-source',nativePageBytes);
+sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(352,3,'native-page-source','page-00001.pdf','Mason Project Brain/Intake/350/Sources/plans/Architectural Plans.pdf/page-00001.pdf',?,'BRAIN SCAN SOURCE')").run(nativePageBytes.length);
+objects.delete('prepared350');
 await processPhaseOne({kind:'PHASE_ONE',table:'phase_one_items',id:nativeItem.id},env);
 const nativeSorted=sql.prepare("SELECT status,category FROM phase_one_items WHERE id=?").get(nativeItem.id);
 assert.equal(nativeSorted.status,'SORTED');assert.equal(nativeSorted.category,'Plans');
+assert.equal(new TextDecoder().decode(objects.get(`projects/3/phase-one/${nativeItem.id}`)),'preserved vector page');
 sql.prepare("UPDATE holding_scan_items SET status='PENDING',updated_at='now' WHERE source_file_id=350").run();
 sent.length=0;await queueHoldingScan(env);
 assert(sent.some(x=>x.kind==='HOLDING_SCAN'&&x.id.startsWith('scan-350-351-')),'semantic review survives Phase One release');

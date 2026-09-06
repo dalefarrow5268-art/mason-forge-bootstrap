@@ -1,0 +1,109 @@
+{
+  "auditVersion": 1,
+  "recordedAt": "2026-09-06T20:48:00Z",
+  "projectId": 3,
+  "projectName": "Downtown Bradenton",
+  "submissionId": "bask-bradenton-2513-v1",
+  "issue": {
+    "id": "bask-bradenton-2513-v1-03-3568",
+    "type": "PHASE_FOUR_ORPHANED_DELIVERY",
+    "divisionCode": "03",
+    "fileId": 3568,
+    "sourcePath": "SSX Project Holding Folder/Phase One Project Review/3065 - prepared.zip/Plans/00001/Downtown Bradenton (2).zip/Downtown Bradenton/23-936_HAR-100- Plans.pdf/page-00044.pdf",
+    "diagnosis": [
+      "The Phase Four row remained QUEUED with zero attempts beneath a Division 03 parent that had been RUNNING since 2026-09-06T13:27:32.203Z.",
+      "The queue was present, active, produced by mason-forge-cloud, and consumed by mason-forge-cloud with batch size 1 and max concurrency 50.",
+      "After targeted redelivery, the row was claimed but a redundant model rerun remained RUNNING.",
+      "A pre-existing R2 result was intact and matched source file 3568 and its source path; it came from SCANNER_BRAIN with one complete Brain record."
+    ],
+    "savedResult": {
+      "resultKey": "projects/3/phase-four/bask-bradenton-2513-v1-03-3568.json",
+      "inputSource": "SCANNER_BRAIN",
+      "brainRecordCount": 1,
+      "sectionCodes": [
+        "03 30 00",
+        "03 31 00",
+        "03 45 00",
+        "03 21 00",
+        "03 60 00"
+      ],
+      "sectionCount": 5,
+      "issueCount": 5,
+      "finalStatus": "NEEDS_REVIEW",
+      "reason": "The saved result contains five explicit unreadable or incomplete evidence issues; review gates were preserved."
+    }
+  },
+  "repairs": [
+    {
+      "pullRequest": 93,
+      "commit": "6425a377fb4e7dc37324899a97659bc8113f5ce6",
+      "action": "Returned only item bask-bradenton-2513-v1-03-3568 from QUEUED to PENDING under its stale Division 03 parent.",
+      "verificationRun": 34057630263,
+      "verification": "Item selected exactly once; post-action counts were COMPLETE 423, NEEDS_REVIEW 51, PENDING 1."
+    },
+    {
+      "pullRequest": 95,
+      "commit": "47f292d97437803cb73ccfcc85665c45f69fbddc",
+      "action": "Added bounded direct recovery through the existing processPhaseFour reviewer for zero-attempt items beneath parents stale over one hour.",
+      "deploymentRun": 34058052082,
+      "verification": "Deployment succeeded and item 3568 advanced from zero-attempt QUEUED to attempt 1 RUNNING."
+    },
+    {
+      "pullRequest": 98,
+      "commit": "39eaf4eb71b07d84ea85576a9488bae0312890fe",
+      "action": "Added provenance- and catalog-validated reconciliation of saved Phase Four results before any redundant model rerun.",
+      "deploymentRun": 34058884356,
+      "verification": "Deployment succeeded; item 3568 restored to NEEDS_REVIEW from its validated saved result."
+    }
+  ],
+  "diagnostics": [
+    {
+      "pullRequest": 94,
+      "run": 34057905138,
+      "result": "Phase Four queue and worker consumer binding verified active; max concurrency 50."
+    },
+    {
+      "pullRequest": 96,
+      "run": 34058671397,
+      "result": "Item 3568 verified RUNNING at attempt 1 with one Brain key and saved result key."
+    },
+    {
+      "pullRequest": 97,
+      "run": 34058772575,
+      "result": "Saved result verified against source file/path; five catalog-valid Division 03 sections and five evidence issues."
+    }
+  ],
+  "liveVerification": {
+    "checkedAt": "2026-09-06T20:47:38.734Z",
+    "phase4": {
+      "status": "NEEDS_REVIEW",
+      "total": 475,
+      "complete": 423,
+      "needsReview": 52,
+      "queued": 0,
+      "running": 0,
+      "percent": 89
+    },
+    "phase5": {
+      "status": "NEEDS_REVIEW",
+      "total": 143,
+      "readyForEstimate": 142,
+      "needsReview": 1,
+      "percent": 99
+    },
+    "repairRequests": 0,
+    "takeoffWorkers": 0,
+    "takeoffsStarted": false
+  },
+  "remainingBlockers": [
+    "Phase Four has 52 evidence-review holds caused by unreadable or incomplete plan evidence; none were suppressed.",
+    "Phase Five has one short-scope hold for 06 41 00 Architectural Wood Casework: scope must be one short line with valid source references.",
+    "BASK estimate-delivery connection remains unverified.",
+    "Phases 6 through 13 remain waiting; verified takeoffs and the final unpriced estimate have not started."
+  ],
+  "safeguards": [
+    "No original upload, accepted result, catalog code, quantity, unit, price, or bid invitation was altered or invented.",
+    "No review gate was bypassed.",
+    "Duplicate queue messages remain harmless because processPhaseFour uses an atomic claim and terminal rows are ignored."
+  ]
+}

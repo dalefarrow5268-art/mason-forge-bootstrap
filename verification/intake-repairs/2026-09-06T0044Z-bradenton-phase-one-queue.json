@@ -13,7 +13,7 @@
     "repairRequests": 0
   },
   "repair": {
-    "releaseId": "2026-09-06-phase-one-capture-filter",
+    "releaseId": "2026-09-06-phase-one-working-queue-fallback",
     "behavior": [
       "Dispatch Phase One jobs and items to a dedicated Cloudflare queue.",
       "Provision that queue idempotently during deployment.",
@@ -21,7 +21,8 @@
       "Use bounded concurrency of 20 and retain retry/dead-letter behavior.",
       "Reclaim queued messages into the dedicated queue after two minutes while retaining the 20-minute lease for running work.",
       "Directly hand off released zero-inventory legacy jobs; the consumer's atomic claim makes any later legacy delivery a no-op.",
-      "Exclude native capture JSON companions from Phase One document inventory and rebuild contaminated inventories from the preserved package while archiving prior item records."
+      "Exclude native capture JSON companions from Phase One document inventory and rebuild contaminated inventories from the preserved package while archiving prior item records.",
+      "Route Phase One through the proven active Holding queue when available after the newly attached Phase One consumer delivered zero messages; retain the dedicated and general queues as fallbacks."
     ],
     "preservation": [
       "The queued Phase One job is not reset or bypassed.",

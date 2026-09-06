@@ -1,0 +1,47 @@
+{
+  "recordedAt": "2026-09-06T00:31:11Z",
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "issueId": "bradenton-capture-gate-conflation-20260906",
+  "diagnosis": "The verified native-capture-v2 package had completed deterministic capture for all 169 pages, but holding_preparations remained SCANNING because the release gate incorrectly waited for slower model-based semantic reviews of every page.",
+  "observedBeforeRepair": {
+    "nativeCaptureUnitsDone": 169,
+    "nativeCaptureUnitsTotal": 169,
+    "semanticReviewsComplete": 19,
+    "semanticReviewsNeedsReview": 1,
+    "preparationStatus": "SCANNING",
+    "phaseOnePercent": 33,
+    "phaseErrors": 0,
+    "repairRequests": 0
+  },
+  "repair": {
+    "releaseId": "2026-09-06-separate-capture-review",
+    "behavior": [
+      "Treat a verified native package with one coordinate-preserving capture per page as completion of the deterministic first-scan gate.",
+      "Reconcile existing native packages from SCANNING to SCANNED without changing any scan-item review result.",
+      "Continue semantic page reviews in the background after SCANNED and COMPLETE preparation states.",
+      "Keep non-native and incomplete capture packages behind the existing semantic coverage gate."
+    ],
+    "preservation": [
+      "Original uploads are unchanged.",
+      "All completed semantic Brain records are retained.",
+      "NEEDS_REVIEW records remain visible and are not suppressed.",
+      "Scale and quantity verification requirements remain unchanged."
+    ]
+  },
+  "verification": {
+    "javascriptSyntaxCheck": "PASS",
+    "phaseOneTestSuite": "PASS",
+    "newAssertions": [
+      "Verified native capture releases Phase One immediately.",
+      "Missing capture or non-native source does not use the fast gate.",
+      "Semantic review remains queued after Phase One release."
+    ]
+  },
+  "remainingBlockers": [
+    "Production deployment and live reconciliation must pass before the Phase One advance is claimed.",
+    "Verified CSI 2026 catalog is required before divisions and sections can complete.",
+    "BASK estimate-delivery connection remains unverified.",
+    "No quantity may enter the estimate until its drawing scale and takeoff evidence are verified."
+  ]
+}

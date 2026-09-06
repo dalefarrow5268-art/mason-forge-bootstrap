@@ -20,7 +20,7 @@ export async function queuePhaseFour(env){
  }
  const rows=(await env.DB.prepare("SELECT i.id FROM phase_four_items i JOIN phase_four_jobs j ON j.id=i.job_id JOIN phase_three_jobs p ON p.id=j.submission_id WHERE p.status='READY_FOR_ESTIMATE' AND j.status='RUNNING' AND (i.status='PENDING' OR (i.status IN ('QUEUED','RUNNING') AND i.updated_at < ?)) LIMIT 20").bind(stale()).all()).results||[];
  for(const row of rows){const claim=await env.DB.prepare("UPDATE phase_four_items SET status='QUEUED',updated_at=? WHERE id=? AND (status='PENDING' OR updated_at < ?)").bind(now(),row.id,stale()).run();if(!claim.meta.changes)continue;
- try{await env.DEPARTMENT_QUEUE.send({kind:'PHASE_FOUR',id:row.id});}catch(e){await env.DB.prepare("UPDATE phase_four_items SET status='PENDING' WHERE id=? AND status='QUEUED'").bind(row.id).run();throw e;}}
+ try{await (env.PHASE_FOUR_QUEUE || env.DEPARTMENT_QUEUE).send({kind:'PHASE_FOUR',id:row.id});}catch(e){await env.DB.prepare("UPDATE phase_four_items SET status='PENDING' WHERE id=? AND status='QUEUED'").bind(row.id).run();throw e;}}
  await finishPhaseFour(env);
 }
 export function normalizeSections(data,catalog){

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import {ZipWriter,Uint8ArrayWriter,TextReader} from '@zip.js/zip.js';
-import {queuePhaseTwo,processPhaseTwo,sourceIds,normalizeFacts} from '../src/phase-two-review.js';
+import {queuePhaseTwo,processPhaseTwo,sourceIds,normalizeFacts,phaseTwoFormat} from '../src/phase-two-review.js';
 assert.match(readFileSync(new URL('../src/phase-two-review.js',import.meta.url),'utf8'),/\[env\.PHASE_ONE_QUEUE,env\.HOLDING_SCAN_QUEUE,env\.DEPARTMENT_QUEUE\]/);
 const sql=new DatabaseSync(':memory:');
 sql.exec(`CREATE TABLE project_files(id INTEGER PRIMARY KEY,project_id INTEGER,r2_key TEXT UNIQUE,file_name TEXT,relative_path TEXT,file_type TEXT,size_bytes INTEGER,review_status TEXT,source_class TEXT,uploaded_at TEXT,updated_at TEXT,archived_at TEXT); CREATE TABLE project_folders(id TEXT,project_id INTEGER,folder_path TEXT UNIQUE,created_at TEXT,updated_at TEXT);`);
@@ -18,6 +18,7 @@ const env={DB,PROJECT_FILES:bucket,DEPARTMENT_QUEUE:{async send(b){sent.push(b)}
 sql.exec(readFileSync(new URL('../schema/0008_phase_two.sql',import.meta.url),'utf8'));
 assert.equal(sourceIds('[1,1]'),null);assert.equal(sourceIds('[]'),null);
 assert.equal(normalizeFacts({findings:[{question:'Who',fact:'guess'}]}).findings.length,0);
+const format=phaseTwoFormat();assert.equal(format.type,'json_schema');assert.equal(format.strict,true);assert.equal(format.schema.additionalProperties,false);assert.equal(format.schema.properties.findings.maxItems,30);
 sql.exec(`INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes) VALUES(1,13,'original','submission.zip','SSX Project Holding Folder/Phase One Project Review/Test/submission.zip',12);
 INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes) VALUES(2,13,'copy','project.txt','SSX Project Holding Folder/Phase One Project Review/1/Docs/project.txt',12);
 INSERT INTO phase_one_jobs VALUES('p1',1,'COMPLETE','now','now',NULL);
@@ -27,7 +28,7 @@ await queuePhaseTwo(env);assert.equal(sent.length,0,'unresolved review blocks ph
 sql.exec("UPDATE phase_one_items SET status='SORTED'");await queuePhaseTwo(env);assert.equal(sent.length,1);await queuePhaseTwo(env);assert.equal(sent.length,1,'no duplicate queue');
 objects.set('copy',new TextEncoder().encode('Test project'));
 const originalFetch=globalThis.fetch;
-globalThis.fetch=async()=>Response.json({output:[{content:[{type:'output_text',text:JSON.stringify({findings:['Who','What','Where','When','Why'].map(q=>({question:q,field:q,fact:'Explicit source fact '+q,quote:'source excerpt',location:'section 1'})),limitations:[]})}]}]});
+globalThis.fetch=async(_url,options)=>{const request=JSON.parse(options.body);assert.equal(request.text.format.type,'json_schema');assert.equal(request.text.format.strict,true);return Response.json({output:[{content:[{type:'output_text',text:JSON.stringify({findings:['Who','What','Where','When','Why'].map(q=>({question:q,field:q,fact:'Explicit source fact '+q,quote:'source excerpt',location:'section 1'})),limitations:[]})}]}]});};
 try{await processPhaseTwo(sent.shift(),{...env,OPENAI_API_KEY:'test'});}finally{globalThis.fetch=originalFetch;}
 await queuePhaseTwo(env);assert.equal(sql.prepare('SELECT status FROM phase_two_jobs').get().status,'COMPLETE');
 const report=JSON.parse(new TextDecoder().decode(objects.get('projects/13/phase-two/project-1/project-information.json')));assert.equal(report.sections.Who[0].sourceFileId,2);assert.deepEqual(report.missingInformation,[]);

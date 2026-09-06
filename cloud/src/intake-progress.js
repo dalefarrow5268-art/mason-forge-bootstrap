@@ -1,10 +1,13 @@
 const names=['File inventory & sorting','Project information','CSI divisions','CSI sections','Short scope lines','Mason Project Brain','Reports & recommendations','Sheet review & RFIs','Verified takeoffs','Final quality review','Corrections & recheck','Final unpriced estimate','Bid packages & sub sourcing'];
 const rows=async(env,sql,...args)=>(await env.DB.prepare(sql).bind(...args).all()).results||[];
-export function summarize(jobs,items,phase){
+export function summarize(jobs,items,phase,{upstreamComplete=true}={}){
  const counts={};for(const x of items)counts[x.status]=(counts[x.status]||0)+1;
  let status=!jobs.length?'WAITING':jobs.every(x=>['COMPLETE','READY_FOR_ESTIMATE'].includes(x.status))?'COMPLETE':jobs.some(x=>/NEEDS_REVIEW|WAITING_REVIEW|WAITING_STANDARD|FAILED/.test(x.status))?'NEEDS_REVIEW':jobs.some(x=>x.status==='DRAFTS_READY')?'DRAFTS_READY':jobs.some(x=>['RUNNING','INVENTORIED'].includes(x.status))?'RUNNING':'QUEUED';
  if(phase===1&&items.some(x=>x.status==='NEEDS_REVIEW'))status='NEEDS_REVIEW';
- const total=items.length,done=(counts.COMPLETE||0)+(counts.SORTED||0);const complete=['COMPLETE','DRAFTS_READY'].includes(status);
+ // Phase Five streams sections while Phase Four is still discovering them.
+ // Accepted jobs are complete work, but not proof that every section has arrived.
+ if(phase===5&&status==='COMPLETE'&&!upstreamComplete)status='RUNNING';
+ const total=items.length,done=(counts.COMPLETE||0)+(counts.SORTED||0)+(phase===5?(counts.READY_FOR_ESTIMATE||0):0);const complete=['COMPLETE','DRAFTS_READY'].includes(status);
  return {phase,name:names[phase-1],status,counts,total,done,percent:complete?100:total?Math.min(99,Math.floor(done/total*100)):0,errors:[...new Set([...jobs,...items].map(x=>x.error||x.reason).filter(Boolean))].slice(0,8),outputs:items.filter(x=>x.result_key||x.findings_key||x.output_file_id).length};
 }
 export function catalogBlockers(catalog={}){
@@ -30,7 +33,7 @@ export async function intakeProgress(env,projectId=null){
  else if(phase<=5){const word=['','','two','three','four','five'][phase],table='phase_'+word+'_jobs',key=phase<=3?'id':'submission_id';jobs=await rows(env,`SELECT * FROM ${table} WHERE ${key}=?`,s.id);items=phase===5?jobs:await rows(env,`SELECT * FROM phase_${word}_items WHERE job_id IN (SELECT id FROM ${table} WHERE ${key}=?)`,s.id);}
  else if(phase===6||phase===7){const w=phase===6?'six':'seven';jobs=await rows(env,`SELECT * FROM phase_${w}_${phase===6?'brains':'jobs'} WHERE submission_id=?`,s.id);items=await rows(env,`SELECT * FROM phase_${w}_items WHERE submission_id=?`,s.id);}
  else{jobs=await rows(env,'SELECT * FROM project_phase_runs WHERE submission_id=? AND phase=?',s.id,phase);items=await rows(env,'SELECT * FROM project_phase_tasks WHERE submission_id=? AND phase=?',s.id,phase);}
- const p=summarize(jobs,items,phase);if(phase===1&&preparation.some(x=>x.status!=='COMPLETE')){p.status=preparation.some(x=>x.status==='NEEDS_REVIEW')?'NEEDS_REVIEW':'PREPARING';p.errors=preparation.map(x=>x.error).filter(Boolean);}
+ const p=summarize(jobs,items,phase,{upstreamComplete:phase!==5||(phases[2]?.status==='COMPLETE'&&phases[3]?.status==='COMPLETE')});if(phase===1&&preparation.some(x=>x.status!=='COMPLETE')){p.status=preparation.some(x=>x.status==='NEEDS_REVIEW')?'NEEDS_REVIEW':'PREPARING';p.errors=preparation.map(x=>x.error).filter(Boolean);}
  const at=new Date().toISOString();
  if(p.status!=='WAITING'){
  const previous=await env.DB.prepare('SELECT * FROM project_phase_tracking WHERE submission_id=? AND phase=?').bind(s.id,phase).first();

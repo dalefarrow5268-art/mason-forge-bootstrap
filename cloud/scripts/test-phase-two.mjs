@@ -28,9 +28,10 @@ await queuePhaseTwo(env);assert.equal(sent.length,0,'unresolved review blocks ph
 sql.exec("UPDATE phase_one_items SET status='SORTED'");await queuePhaseTwo(env);assert.equal(sent.length,1);await queuePhaseTwo(env);assert.equal(sent.length,1,'no duplicate queue');
 objects.set('copy',new TextEncoder().encode('Test project'));
 const originalFetch=globalThis.fetch;
-globalThis.fetch=async(_url,options)=>{const request=JSON.parse(options.body);assert.equal(request.text.format.type,'json_schema');assert.equal(request.text.format.strict,true);assert.equal(request.max_output_tokens,12000);return Response.json({output:[{content:[{type:'output_text',text:JSON.stringify({findings:['Who','What','Where','When','Why'].map(q=>({question:q,field:q,fact:'Explicit source fact '+q,quote:'source excerpt',location:'section 1'})),limitations:[]})}]}]});};
+globalThis.fetch=async(_url,options)=>{const request=JSON.parse(options.body);assert.equal(request.text.format.type,'json_schema');assert.equal(request.text.format.strict,true);assert.equal(request.max_output_tokens,12000);return Response.json({output:[{content:[{type:'output_text',text:JSON.stringify({findings:['Who','What','Where','When','Why'].map(q=>({question:q,field:q,fact:'Explicit source fact '+q,quote:'source excerpt',location:'section 1'})),limitations:['Owner is not stated on this individual sheet']})}]}]});};
 try{await processPhaseTwo(sent.shift(),{...env,OPENAI_API_KEY:'test'});}finally{globalThis.fetch=originalFetch;}
 await queuePhaseTwo(env);assert.equal(sql.prepare('SELECT status FROM phase_two_jobs').get().status,'COMPLETE');
 const report=JSON.parse(new TextDecoder().decode(objects.get('projects/13/phase-two/project-1/project-information.json')));assert.equal(report.sections.Who[0].sourceFileId,2);assert.deepEqual(report.missingInformation,[]);
+assert.equal(report.reviewIssues.length,1);assert.deepEqual(report.blockingIssues,[]);assert.equal(sql.prepare('SELECT status FROM phase_two_jobs').get().status,'COMPLETE');
 assert.equal(sql.prepare('SELECT relative_path FROM project_files WHERE id=1').get().relative_path,'SSX Project Holding Folder/Phase One Project Review/Test/submission.zip');
 console.log('PASS: submission gate, review blocks, idempotent queue, five questions, citations, report, originals');

@@ -53,20 +53,20 @@ export async function processPhaseTwo(body,env){
 export async function finishPhaseTwo(env){
  const jobs=(await env.DB.prepare("SELECT j.*,s.project_id,s.project_name FROM phase_two_jobs j JOIN phase_project_submissions s ON s.id=j.id WHERE j.status='RUNNING' AND NOT EXISTS(SELECT 1 FROM phase_two_items i WHERE i.job_id=j.id AND i.status IN ('PENDING','QUEUED','RUNNING')) LIMIT 2").all()).results||[];
  for(const job of jobs){const items=(await env.DB.prepare('SELECT * FROM phase_two_items WHERE job_id=? ORDER BY file_id').bind(job.id).all()).results||[];if(!items.length)continue;
- const sections=Object.fromEntries(QUESTIONS.map(q=>[q,[]])),sources=[],issues=[],variants=new Map();let omitted=0;
- for(const item of items){if(item.status!=='COMPLETE'){issues.push({sourceFileId:item.file_id,error:item.error});continue;}
+ const sections=Object.fromEntries(QUESTIONS.map(q=>[q,[]])),sources=[],blockingIssues=[],reviewNotes=[],variants=new Map();let omitted=0;
+ for(const item of items){if(item.status!=='COMPLETE'){blockingIssues.push({sourceFileId:item.file_id,error:item.error||'Source review did not complete'});continue;}
  const obj=await env.PROJECT_FILES.get(item.findings_key);if(!obj)throw new Error('Evidence result missing');const data=JSON.parse(await obj.text());sources.push({fileId:item.file_id,path:data.sourcePath,evidenceKey:item.findings_key});
- for(const limit of data.limitations||[])issues.push({sourceFileId:item.file_id,limitation:limit});
+ for(const limit of data.limitations||[])reviewNotes.push({sourceFileId:item.file_id,limitation:limit});
  for(const fact of data.findings){const evidence={...fact,sourceFileId:item.file_id,sourcePath:data.sourcePath};if(sections[fact.question].length<100)sections[fact.question].push(evidence);else omitted++;
  const key=fact.question+':'+fact.field.toLowerCase();if(!variants.has(key)&&variants.size<1000)variants.set(key,new Map());const values=variants.get(key);if(values&&values.size<10)values.set(fact.fact.toLowerCase(),evidence);}
  }
  const conflicts=[...variants].filter(([,v])=>v.size>1).map(([field,v])=>({field,note:'Different source statements; compare context and revisions before treating as a conflict.',statements:[...v.values()]}));
- const missing=QUESTIONS.filter(q=>!sections[q].length),report={project:job.project_name,submissionId:job.id,completedAt:now(),sections,missingInformation:missing,possibleConflicts:conflicts,reviewIssues:issues,sources,summaryOmittedFindings:omitted,note:'Source-backed extraction, not independent verification. Full per-file evidence is retained. Missing facts are not guessed. Phase Three starts only after a clean COMPLETE result and a verified division catalog.'};
+ const missing=QUESTIONS.filter(q=>!sections[q].length),report={project:job.project_name,submissionId:job.id,completedAt:now(),sections,missingInformation:missing,possibleConflicts:conflicts,reviewIssues:reviewNotes,blockingIssues,sources,summaryOmittedFindings:omitted,note:'Source-backed extraction, not independent verification. Full per-file evidence and limitations are retained. Per-sheet absence is a review note, not a project-level failure when the complete set supplies the required category. Missing categories and incomplete source reviews remain blocking. Possible conflicts are retained for later source comparison and are not silently resolved. Phase Three starts only after a clean COMPLETE result and a verified division catalog.'};
  const text=JSON.stringify(report,null,2),key=`projects/${job.project_id}/phase-two/${job.id}/project-information.json`,folder=`SSX Project Holding Folder/Phase Two Project Information/${job.project_name.replace(/[^\w .()-]/g,'_')} - ${job.id}`,time=now();
  await env.PROJECT_FILES.put(key,text);
  await env.DB.prepare('INSERT OR IGNORE INTO project_folders(id,project_id,folder_path,created_at,updated_at) VALUES(?,?,?,?,?)').bind(crypto.randomUUID(),job.project_id,folder,time,time).run();
  await env.DB.prepare("INSERT OR IGNORE INTO project_files(project_id,r2_key,file_name,relative_path,file_type,size_bytes,review_status,source_class,uploaded_at,updated_at) VALUES(?,?,?,?,?,?,'PHASE TWO REVIEW REQUIRED: PROJECT INFORMATION','PHASE TWO REPORT',?,?)").bind(job.project_id,key,'Project Information.json',folder+'/Project Information.json','application/json',new TextEncoder().encode(text).length,time,time).run();
  const file=await env.DB.prepare('SELECT id FROM project_files WHERE r2_key=?').bind(key).first();
- await env.DB.prepare('UPDATE phase_two_jobs SET status=?,report_file_id=?,updated_at=? WHERE id=?').bind(issues.length||missing.length||conflicts.length?'NEEDS_REVIEW':'COMPLETE',file.id,time,job.id).run();
+ await env.DB.prepare('UPDATE phase_two_jobs SET status=?,report_file_id=?,updated_at=? WHERE id=?').bind(blockingIssues.length||missing.length?'NEEDS_REVIEW':'COMPLETE',file.id,time,job.id).run();
  }
 }

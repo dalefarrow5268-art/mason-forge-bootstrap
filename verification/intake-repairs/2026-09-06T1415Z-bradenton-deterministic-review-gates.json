@@ -1,0 +1,52 @@
+{
+  "issueId": "phase-four-five-narrative-caveats-blocked-readable-evidence",
+  "diagnosis": "Phase Four and Phase Five trusted model-written caveats as workflow stop conditions. Readable scanner evidence with exact sheet citations was rejected when ordinary dimensions, specifications, or referenced details lived on another sheet.",
+  "observed": {
+    "scannerPagesComplete": 169,
+    "phaseFour": {
+      "total": 475,
+      "complete": 137,
+      "needsReview": 61,
+      "queued": 275,
+      "running": 2
+    },
+    "phaseFive": {
+      "total": 3,
+      "needsReview": 1,
+      "queued": 2
+    },
+    "takeoff": "WAITING"
+  },
+  "repair": [
+    "Use verified scanner coverage as the Phase Four readability authority",
+    "Keep explicit unreadable/truncated fallback evidence blocking",
+    "Validate accepted section codes, confidence, scope, sheet and citations deterministically",
+    "Record narrative caveats as nonblocking limitations",
+    "Validate Phase Five one-sentence scopes and evidence indexes deterministically",
+    "Add a dedicated Phase Five queue",
+    "Increase Phase Four concurrency from 20 to 50 and dispatch batch from 20 to 50",
+    "Audit and retry only rejected Bradenton Phase Four and Phase Five work"
+  ],
+  "preserved": [
+    "169 original prepared pages",
+    "137 completed Phase Four items",
+    "accepted section evidence",
+    "three Phase Five jobs",
+    "no pricing",
+    "no guessed quantities",
+    "citation gates"
+  ],
+  "verification": [
+    "Phase Four unit tests",
+    "Phase Five unit tests",
+    "CI",
+    "production deployment",
+    "live queue and review-count check"
+  ],
+  "remaining": [
+    "Complete Phase Four",
+    "complete short scopes",
+    "open verified takeoffs",
+    "verify BASK estimate delivery"
+  ]
+}

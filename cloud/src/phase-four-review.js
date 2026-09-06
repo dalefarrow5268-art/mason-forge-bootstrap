@@ -19,14 +19,14 @@ export async function queuePhaseFour(env){
  for(let i=0;i<ids.length;i+=50)await env.DB.batch(ids.slice(i,i+50).map(id=>env.DB.prepare('INSERT OR IGNORE INTO phase_four_items(id,job_id,file_id,updated_at) VALUES(?,?,?,?)').bind(`${job.id}-${id}`,job.id,id,now())));
  await env.DB.prepare("UPDATE phase_four_jobs SET status='RUNNING',catalog_json=?,updated_at=? WHERE id=? AND status='WAITING_STANDARD'").bind(JSON.stringify(catalog),now(),job.id).run();
  }
- const rows=(await env.DB.prepare("SELECT i.id FROM phase_four_items i JOIN phase_four_jobs j ON j.id=i.job_id JOIN phase_three_jobs p ON p.id=j.submission_id WHERE p.status='READY_FOR_ESTIMATE' AND j.status='RUNNING' AND (i.status='PENDING' OR (i.status IN ('QUEUED','RUNNING') AND i.updated_at < ?)) LIMIT 20").bind(stale()).all()).results||[];
+ const rows=(await env.DB.prepare("SELECT i.id FROM phase_four_items i JOIN phase_four_jobs j ON j.id=i.job_id JOIN phase_three_jobs p ON p.id=j.submission_id WHERE p.status='READY_FOR_ESTIMATE' AND j.status='RUNNING' AND (i.status='PENDING' OR (i.status IN ('QUEUED','RUNNING') AND i.updated_at < ?)) LIMIT 50").bind(stale()).all()).results||[];
  for(const row of rows){const claim=await env.DB.prepare("UPDATE phase_four_items SET status='QUEUED',updated_at=? WHERE id=? AND (status='PENDING' OR updated_at < ?)").bind(now(),row.id,stale()).run();if(!claim.meta.changes)continue;
  try{await (env.PHASE_FOUR_QUEUE || env.DEPARTMENT_QUEUE).send({kind:'PHASE_FOUR',id:row.id});}catch(e){await env.DB.prepare("UPDATE phase_four_items SET status='PENDING' WHERE id=? AND status='QUEUED'").bind(row.id).run();throw e;}}
  await finishPhaseFour(env);
 }
-export function normalizeSections(data,catalog){
+export function normalizeSections(data,catalog,{coverageVerified=false}={}){
  if(!Array.isArray(data?.sections))throw new Error('Invalid section review response');
- const allowed=new Map(catalog.sections.map(s=>[s.code,s.title])),issues=(Array.isArray(data.issues)?data.issues:[]).map(x=>String(x).slice(0,500)),limitations=(Array.isArray(data.limitations)?data.limitations:[]).map(x=>String(x).slice(0,500)),sections=[];
+ const allowed=new Map(catalog.sections.map(s=>[s.code,s.title])),rawIssues=(Array.isArray(data.issues)?data.issues:[]).map(x=>String(x).slice(0,500)),issues=[],limitations=[...(Array.isArray(data.limitations)?data.limitations:[]).map(x=>String(x).slice(0,500)),...rawIssues],sections=[];
  for(const s of data.sections){
   const code=String(s?.code||'').slice(0,50),validCode=/^\d{2} \d{2} \d{2}$/.test(code)&&code.slice(0,2)===catalog.division&&allowed.has(code);
   if(!validCode){limitations.push(`Omitted unsupported or wrong-division candidate: ${code||'missing code'}`);continue;}
@@ -34,9 +34,12 @@ export function normalizeSections(data,catalog){
   if(!['scope','sheet','evidence'].every(k=>typeof s[k]==='string'&&s[k].trim())){issues.push(`Supported section claim missing scope, sheet or evidence: ${code}`);continue;}
   sections.push({code,title:allowed.get(code),divisionCode:catalog.division,scope:s.scope.slice(0,1000),sheet:s.sheet.slice(0,200),evidence:s.evidence.slice(0,1000)});
  }
- if(data.completeReview!==true)issues.push('Section review coverage is incomplete or unconfirmed');
+ const coverageIssues=rawIssues.filter(x=>/unreadable|illegible|truncat|cropp|coverage\s+(?:is\s+)?incomplete|too small|not readable/i.test(x));
+ if(!coverageVerified)issues.push(...coverageIssues);
+ if(!coverageVerified&&data.completeReview!==true&&!rawIssues.length)issues.push('Section review coverage is incomplete or unconfirmed');
  return {sections:[...new Map(sections.map(s=>[`${s.code}|${s.sheet}|${s.evidence}`,s])).values()],issues:[...new Set(issues)],limitations:[...new Set(limitations)],coverageNote:String(data.coverageNote||'').slice(0,1000)};
 }
+
 async function analyze(env,file,catalog){
  if(file.size_bytes>20*1024**2)throw new Error('Plan exceeds 20 MiB content-review limit');
  if(JSON.stringify(catalog.sections).length>180000)throw new Error('Division catalog requires smaller review batches');
@@ -44,7 +47,7 @@ async function analyze(env,file,catalog){
  const brain=await loadCompleteSheetBrain(env,file.id);let uploadedFileId=null,content,inputSource='SCANNER_BRAIN';
  if(brain)content=[{type:'input_text',text:prompt},{type:'input_text',text:`Verified complete scanner evidence with preserved page coordinates and source provenance: ${brain.serialized}`}];
  else{inputSource='ORIGINAL_PDF_FALLBACK';const object=await env.PROJECT_FILES.get(file.r2_key);if(!object)throw new Error('Plan unavailable');const input=await fileInputContent(env,file,new Uint8Array(await object.arrayBuffer()));uploadedFileId=input.uploadedFileId;content=[{type:'input_text',text:prompt},...input.content];}
- try{const r=await fetch('https://api.openai.com/v1/responses',{method:'POST',signal:AbortSignal.timeout(120000),headers:{Authorization:`Bearer ${env.OPENAI_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:env.OPENAI_DOCUMENT_MODEL||env.OPENAI_MODEL||'gpt-5-mini',store:false,input:[{role:'user',content}],text:{format:{type:'json_object'}},max_output_tokens:12000})});const data=await r.json();if(!r.ok)throw new Error(`Section review service returned ${r.status}`);return {...normalizeSections(JSON.parse(extractOutputText(data)),catalog),inputSource,brainRecordCount:brain?.brainKeys.length||0};
+ try{const r=await fetch('https://api.openai.com/v1/responses',{method:'POST',signal:AbortSignal.timeout(120000),headers:{Authorization:`Bearer ${env.OPENAI_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:env.OPENAI_DOCUMENT_MODEL||env.OPENAI_MODEL||'gpt-5-mini',store:false,input:[{role:'user',content}],text:{format:{type:'json_object'}},max_output_tokens:12000})});const data=await r.json();if(!r.ok)throw new Error(`Section review service returned ${r.status}`);return {...normalizeSections(JSON.parse(extractOutputText(data)),catalog,{coverageVerified:Boolean(brain)}),inputSource,brainRecordCount:brain?.brainKeys.length||0};
  }finally{if(uploadedFileId)await deleteOpenAIFile(env,uploadedFileId);}
 }
 export async function processPhaseFour(body,env){

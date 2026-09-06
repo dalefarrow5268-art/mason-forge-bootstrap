@@ -15,6 +15,19 @@ export function assignWorker(path){
  if(/\.(pdf|docx?|xlsx?|txt|csv|md)$/i.test(path))return 'Documents';
  return 'Needs Review';
 }
+// Prepared pages retain the exact parent document path from the verified
+// intake manifest. When that parent document explicitly identifies itself as
+// a plan set or geotechnical report, Phase One can route every preserved page
+// with that source provenance; page-level semantic review still continues in
+// Mason Brain and is not replaced or waived.
+export function preparedSourceCategory(path){
+ const match=String(path||'').match(/(?:^|\/)([^/]+\.pdf)\/page-\d{5}\.pdf$/i);
+ if(!match)return null;
+ const source=match[1];
+ if(/geo.?tech|geo report|soil|boring/i.test(source))return 'Geotech';
+ if(/plans?|drawings?/i.test(source))return 'Plans';
+ return null;
+}
 const ROOT='SSX Project Holding Folder/Phase One Project Review';
 const now=()=>new Date().toISOString();
 export const safe=p=>typeof p==='string'&&p.length<1200&&!/[\\\x00-\x1f]/.test(p)&&!p.startsWith('/')&&!/^[a-z]:/i.test(p)&&p.split('/').every(s=>s&&s!=='.'&&s!=='..');
@@ -147,7 +160,10 @@ async function processItem(env,item){
  const scanned=scans.length&&scans.every(x=>x.status==='COMPLETE');
  const categoryCounts=Object.fromEntries(CATEGORIES.map(category=>[category,scans.filter(x=>x.category===category).length]));
  const category=Object.entries(categoryCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||assignWorker(item.original_path);
- const result=scanned?{category:category==='Needs Review'?assignWorker(item.original_path):category,reason:`Detailed intake review saved in Mason Project Brain (${scans.length} overlapping regions).`}:await review(env,key,item);
+ const sourceCategory=source.source_class==='HOLDING PREPARED PACKAGE'?preparedSourceCategory(item.original_path):null;
+ const result=sourceCategory
+  ?{category:sourceCategory,reason:`Verified prepared-page provenance retained from parent source document: ${item.original_path.slice(0,item.original_path.lastIndexOf('/'))}. Page-level Mason Brain review continues independently.`}
+  :scanned?{category:category==='Needs Review'?assignWorker(item.original_path):category,reason:`Detailed intake review saved in Mason Project Brain (${scans.length} overlapping regions).`}:await review(env,key,item);
  const path=`${ROOT}/${source.id} - ${source.file_name.replace(/[^\w .()-]/g,'_')}/${result.category}/${item.original_path}`;
  const fileId=await register(env,source,key,path,item.size_bytes,result.category);
  await env.DB.prepare("UPDATE phase_one_items SET status=?,category=?,reason=?,output_file_id=?,updated_at=? WHERE id=?").bind(result.category==='Needs Review'?'NEEDS_REVIEW':'SORTED',result.category,result.reason,fileId,now(),item.id).run();

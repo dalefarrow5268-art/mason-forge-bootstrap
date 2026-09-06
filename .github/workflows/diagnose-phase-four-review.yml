@@ -1,3 +1,4 @@
+# diagnostic refresh: 2026-09-06T13:54Z
 name: Diagnose Phase Four Review
 on:
   workflow_dispatch:

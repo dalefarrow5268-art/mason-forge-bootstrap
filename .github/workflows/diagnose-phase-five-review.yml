@@ -1,0 +1,61 @@
+name: Diagnose Phase Five Review
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diagnose-phase-five-review.yml']
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Inspect sanitized Bradenton Phase Five results
+        env:
+          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node --input-type=module <<'JS'
+          const base='https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID;
+          const headers={authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN};
+          async function query(sql,params=[]){
+            const r=await fetch(base+'/d1/database/736f655b-889d-4fb2-8948-0a396d39436f/query',{
+              method:'POST',headers:{...headers,'content-type':'application/json'},
+              body:JSON.stringify({sql,params}),signal:AbortSignal.timeout(30000)
+            });
+            const d=await r.json();
+            if(!r.ok||!d.success) throw Error(JSON.stringify({status:r.status,errors:d.errors}));
+            return d.result?.[0]?.results||[];
+          }
+          async function object(key){
+            const url=base+'/r2/buckets/mason-forge-project-files/objects/'+key.split('/').map(encodeURIComponent).join('/');
+            const r=await fetch(url,{headers,signal:AbortSignal.timeout(30000)});
+            if(!r.ok) throw Error('R2 read '+r.status);
+            return r.json();
+          }
+          const submission='bask-bradenton-2513-v1';
+          console.log('counts',JSON.stringify(await query(
+            "SELECT status,COUNT(*) count,MIN(updated_at) oldest,MAX(updated_at) newest FROM phase_five_jobs WHERE submission_id=? GROUP BY status",
+            [submission]
+          )));
+          const rows=await query(
+            "SELECT id,section_code,status,attempts,error,result_key,updated_at FROM phase_five_jobs WHERE submission_id=? AND status='NEEDS_REVIEW' ORDER BY updated_at DESC",
+            [submission]
+          );
+          const samples=[];
+          for(const row of rows){
+            const summary={id:row.id,sectionCode:row.section_code,status:row.status,attempts:row.attempts,error:row.error,updatedAt:row.updated_at};
+            if(row.result_key){
+              try{
+                const result=await object(row.result_key);
+                summary.savedIssues=Array.isArray(result.issues)?result.issues:[];
+                summary.validLineCount=Array.isArray(result.lines)?result.lines.length:null;
+                summary.validLineLengths=Array.isArray(result.lines)?result.lines.map(x=>typeof x.text==='string'?x.text.length:null):[];
+                summary.validLineReferenceCounts=Array.isArray(result.lines)?result.lines.map(x=>Array.isArray(x.evidence)?x.evidence.length:null):[];
+              }catch(e){summary.resultReadError=String(e.message||e).slice(0,200);}
+            }
+            samples.push(summary);
+          }
+          console.log('samples',JSON.stringify(samples));
+          JS

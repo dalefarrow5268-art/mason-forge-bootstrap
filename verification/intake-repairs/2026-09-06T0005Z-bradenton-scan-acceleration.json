@@ -1,0 +1,35 @@
+{
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "issueId": "bradenton-scan-throughput-and-native-retry",
+  "investigatedAt": "2026-09-06T00:04:17.184Z",
+  "observed": {
+    "scanTotal": 169,
+    "scanComplete": 3,
+    "scanNeedsReview": 15,
+    "pagesComplete": 3,
+    "phaseOnePercent": 33,
+    "phaseErrors": 0,
+    "repairRequests": 0
+  },
+  "diagnosis": [
+    "The dedicated scanner consumer was bounded at concurrency 5 while 169 native pages require review.",
+    "The retry selector accepted NEEDS_REVIEW detail tiles only, leaving native pages rejected by the repaired structured-location defect in a terminal state."
+  ],
+  "repair": [
+    "Increase only the dedicated Holding scanner consumer from concurrency 5 to 10; preserve the general department queue at 5.",
+    "Permit any saved NEEDS_REVIEW scan with fewer than three attempts to retry through all unchanged coverage and readability gates.",
+    "Increase each scheduler dispatch batch from 10 to 50 so consumer capacity is not starved."
+  ],
+  "safety": [
+    "No review is marked complete by this repair.",
+    "Unreadable and partial reviews still fail closed.",
+    "Original uploads, completed scans, and saved failed reviews remain preserved.",
+    "No CSI codes, scale, measurements, quantities, units, or prices are inferred."
+  ],
+  "verificationRequired": [
+    "All scanner and phase tests pass.",
+    "Production deploys and verifies successfully.",
+    "Completed Bradenton scans continue increasing and retry attempts remain bounded."
+  ]
+}

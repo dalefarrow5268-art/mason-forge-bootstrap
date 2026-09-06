@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Requeue affected Phase Three sheets after verified deployment
+      - name: Retry verified Bradenton Phase Three derivatives after deployment
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -19,9 +19,22 @@ jobs:
           node --input-type=module <<'JS'
           const base='https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID;
           async function query(sql,params=[]){const r=await fetch(base+'/d1/database/736f655b-889d-4fb2-8948-0a396d39436f/query',{method:'POST',headers:{authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN,'content-type':'application/json'},body:JSON.stringify({sql,params}),signal:AbortSignal.timeout(30000)});const d=await r.json();if(!r.ok||!d.success)throw Error(JSON.stringify({status:r.status,errors:d.errors}));return d.result?.[0]||{};}
-          const submission='bask-bradenton-2513-v1',time=new Date().toISOString();
-          const result=await query("UPDATE phase_three_items SET status='PENDING',error=NULL,updated_at=? WHERE job_id=? AND status='NEEDS_REVIEW' AND EXISTS(SELECT 1 FROM phase_three_jobs j WHERE j.id=? AND j.status='RUNNING')",[time,submission,submission]);
-          console.log('requeued',JSON.stringify({changes:result.meta?.changes||0,submission,time}));
+          const submission='bask-bradenton-2513-v1',item='bask-bradenton-2513-v1-3321',sourceFileId=3321,derivativeFileId=4025;
+          const derivativeSha='02fb43e3dfe7cab6b7fbd93cd75081c419a3ab985c16361f20a597905b679046';
+          const derivativePath='SSX Project Holding Folder/Phase Three Derived Review/page-00058-phase-three-150dpi.png';
+          const source=(await query('SELECT id,archived_at FROM project_files WHERE id=?',[sourceFileId])).results?.[0];
+          const derivative=(await query('SELECT id,sha256,relative_path,archived_at FROM project_files WHERE id=?',[derivativeFileId])).results?.[0];
+          if(!source||source.archived_at)throw Error('Preserved source page is unavailable');
+          if(!derivative||derivative.archived_at||derivative.sha256!==derivativeSha||derivative.relative_path!==derivativePath)throw Error('Verified rendered derivative does not match');
+          const current=(await query('SELECT file_id,status FROM phase_three_items WHERE id=? AND job_id=?',[item,submission])).results?.[0];
+          if(!current)throw Error('Target Phase Three item is missing');
+          let changes=0;
+          if(current.file_id===sourceFileId&&current.status==='NEEDS_REVIEW'){
+            const time=new Date().toISOString();
+            const remap=await query("UPDATE phase_three_items SET file_id=?,status='PENDING',attempts=0,error=NULL,result_key=NULL,updated_at=? WHERE id=? AND job_id=? AND file_id=? AND status='NEEDS_REVIEW'",[derivativeFileId,time,item,submission,sourceFileId]);
+            changes=remap.meta?.changes||0;if(changes!==1)throw Error('Targeted derivative retry was not applied');
+          }
+          console.log('targeted-retry',JSON.stringify({submission,item,sourceFileId,derivativeFileId,changes,current}));
           const counts=await query('SELECT status,COUNT(*) count FROM phase_three_items WHERE job_id=? GROUP BY status',[submission]);
           console.log('counts',JSON.stringify(counts.results||[]));
           try{await fetch('https://mason-forge-cloud.mason-forge-ssx.workers.dev/health',{signal:AbortSignal.timeout(15000)});}catch(e){console.log('health wakeup',String(e.message||e));}

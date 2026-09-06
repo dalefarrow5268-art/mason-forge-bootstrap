@@ -43,5 +43,22 @@
     "The complete verified Living Schedule section hierarchy must be exposed to the Phase Four worker. The currently connected summary inventory must not be substituted for the user's full approximately 72,000-record source.",
     "The BASK estimate delivery connection remains unverified.",
     "The final unpriced estimate is not yet complete."
-  ]
+  ],
+  "livingScheduleDiscovery": {
+    "checkedAt": "2026-09-06T08:58:00Z",
+    "libraryFolder": "/Schedule System Work",
+    "authoritativeCandidate": {
+      "name": "SSX_LIVING_FLOW_MASTER_HANDOFF_2026-08-14_1907.zip",
+      "sizeBytes": 29235330,
+      "libraryFileId": "libfile_f5867e8bb2cc819193898109cf7427fd"
+    },
+    "verifiedFacts": [
+      "The exact 29 MB master handoff exists in the named Schedule System Work folder.",
+      "SSX project file 1948 is a separate 1 MB Living Flow web application package with 38 files and does not itself contain the 72,000-record hierarchy.",
+      "Project 13 exposes 4,103 virtual folders, including 102 CSI hierarchy folders, which is not the asserted full hierarchy."
+    ],
+    "accessAttempt": "Two authenticated materialization attempts returned HTTP 502 before bytes were available for schema/count/hash inspection.",
+    "status": "TRANSIENTLY_BLOCKED",
+    "nextAction": "Retry materialization, then prove the record count, schema, uniqueness, division coverage, and provenance before wiring Phase Four."
+  }
 }

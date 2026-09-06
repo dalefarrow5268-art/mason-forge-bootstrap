@@ -1,0 +1,44 @@
+{
+  "checkedAt": "2026-09-06T12:07:53.804Z",
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "issueId": "phase-pipeline-throughput-20260906",
+  "diagnosis": [
+    "Phase Four used the shared department queue limited to five concurrent consumers.",
+    "Phase Four dispatched at most 20 items per scheduler pass.",
+    "Phase Five required every project division to finish before accepting any verified division output."
+  ],
+  "repair": [
+    "Add dedicated Phase Four queue with max concurrency 20.",
+    "Route Phase Four messages to the dedicated queue with shared-queue fallback.",
+    "Allow Phase Five to consume each fully verified READY_FOR_ESTIMATE division independently."
+  ],
+  "preservedGates": [
+    "Phase Four only writes estimate outbox rows for issue-free division reports.",
+    "Phase Five still requires cited source evidence and an existing, unarchived source file.",
+    "No sections, scopes, quantities or prices are invented."
+  ],
+  "before": {
+    "phase4": {
+      "total": 475,
+      "queued": 290,
+      "needsReview": 10,
+      "pending": 175,
+      "done": 0
+    },
+    "phase5": "WAITING",
+    "takeoffSummary": []
+  },
+  "remaining": [
+    "CI verification",
+    "production deployment",
+    "live throughput verification",
+    "Phase Four review items remain gated",
+    "BASK estimate delivery connection remains unverified"
+  ],
+  "openSourceEvaluation": [
+    "Benchmark PDF-native vector/text extraction before model review.",
+    "Use OCR only for raster regions and preserve plan coordinates.",
+    "Do not use IFC tooling unless an IFC source file exists."
+  ]
+}

@@ -1,12 +1,12 @@
 {
-  "capturedAt": "2026-09-06T12:01:05.727Z",
-  "sourceCommit": "40d847fdcee8575c04d80c8f01220ea6a1940a70",
+  "capturedAt": "2026-09-06T12:21:47.843Z",
+  "sourceCommit": "61179cc4795825f47b0be1b7c12f576395b7c5fb",
   "health": {
     "status": "online",
     "operationalReady": true,
     "service": "Mason Forge Cloud",
     "environment": "production",
-    "releaseId": "2026-09-06-phase-four-living-sections",
+    "releaseId": "2026-09-06-phase-pipeline-throughput",
     "database": "D1 VERIFIED",
     "projectFileStorage": "R2 VERIFIED",
     "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-06T12:01:06.252Z"
+    "checkedAt": "2026-09-06T12:21:48.775Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-06T12:01:06.720Z",
+    "retrievedAt": "2026-09-06T12:21:49.182Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",

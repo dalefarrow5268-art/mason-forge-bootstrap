@@ -53,6 +53,9 @@ const imported=await importDivisionCatalog(env,'project-1',999,catalogHash);asse
 const fixture={divisions:[{code:'03',title:'Test Concrete'}]};
 const format=phaseThreeFormat(fixture);assert.equal(format.type,'json_schema');assert.equal(format.strict,true);assert.deepEqual(format.schema.properties.divisions.items.properties.code.enum,['03']);
 assert(normalizeDivisions({divisions:[{code:'99',scope:'bad',sheet:'A1',evidence:'bad',confidence:'HIGH'}],completeReview:true},fixture).issues.length);
+assert.deepEqual(normalizeDivisions({divisions:[{code:'03',scope:'possible',sheet:'A1',evidence:'uncertain',confidence:'LOW'}],issues:[],completeReview:true,coverageNote:'Current sheet fully reviewed'},fixture),{divisions:[],issues:[],coverageNote:'Current sheet fully reviewed'});
+assert.equal(normalizeDivisions({divisions:[],issues:[],completeReview:true,coverageNote:'No supported work on current sheet'},fixture).issues.length,0);
+assert.match(normalizeDivisions({divisions:[],issues:[],completeReview:false},fixture).issues[0],/Current sheet/);
 await queuePhaseThree(env);assert.equal(sent.length,1);await queuePhaseThree(env);assert.equal(sent.length,1);
 globalThis.fetch=async(_url,options)=>{const request=JSON.parse(options.body);assert.equal(request.text.format.type,'json_schema');assert.equal(request.text.format.strict,true);return Response.json({output:[{content:[{type:'output_text',text:JSON.stringify({divisions:[{code:'03',scope:'Slab',sheet:'S1',evidence:'Concrete slab note',confidence:'HIGH'}],issues:[],completeReview:true,coverageNote:'Complete fixture review'})}]}]});};
 try{await processPhaseThree(sent.shift(),{...env,OPENAI_API_KEY:'test'});}finally{globalThis.fetch=originalFetch;}

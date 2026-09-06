@@ -22,16 +22,33 @@
     "Exact six-digit catalog gate",
     "No prices or guessed quantities"
   ],
-  "verification": [
-    "Unit tests",
-    "CI",
-    "production deployment",
-    "live NEEDS_REVIEW reduction and progress check"
-  ],
+  "verification": {
+    "pullRequest": 83,
+    "mergeCommit": "1a59d006547cc27e5cb1b48281b7fde39a6eb0ba",
+    "ciRuns": [
+      34037683727,
+      34037683737
+    ],
+    "deploymentRun": 34037751788,
+    "deploymentConclusion": "success",
+    "liveBefore": {
+      "complete": 48,
+      "needsReview": 38
+    },
+    "liveAfter": {
+      "complete": 70,
+      "needsReview": 3,
+      "queued": 400,
+      "running": 2,
+      "phaseFiveQueued": 3
+    },
+    "verifiedAt": "2026-09-06T14:04:00Z"
+  },
   "remaining": [
+    "Investigate the three residual review failures without weakening coverage or citation gates",
     "Complete remaining Phase Four divisions",
     "Run short Phase Five scopes",
-    "Verified takeoffs",
-    "BASK estimate-delivery connection"
+    "Run verified takeoffs",
+    "Verify BASK estimate-delivery connection"
   ]
 }

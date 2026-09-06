@@ -1,18 +1,18 @@
 {
-  "capturedAt": "2026-09-06T01:02:24.285Z",
-  "sourceCommit": "785656502cc6a0321b0470d93c99f1c28857bbdb",
+  "capturedAt": "2026-09-06T01:10:47.881Z",
+  "sourceCommit": "c8cb56754f8a1e57b1d6cc2f4d461b6056345c89",
   "health": {
     "status": "online",
     "operationalReady": true,
     "service": "Mason Forge Cloud",
     "environment": "production",
-    "releaseId": "2026-09-06-phase-one-capture-filter",
+    "releaseId": "2026-09-06-phase-one-working-queue-fallback",
     "database": "D1 VERIFIED",
     "projectFileStorage": "R2 VERIFIED",
     "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
     "openai": "CONFIGURED",
     "projects": 13,
-    "files": 3258,
+    "files": 3276,
     "taskTotals": {
       "COMPLETED": 1845
     },
@@ -26,16 +26,16 @@
     },
     "extraction": {
       "extracted": 2155,
-      "queued": 1,
+      "queued": 0,
       "retrying": 0,
       "failed": 0,
-      "pending": 1102
+      "pending": 1121
     },
     "staleRunningTasks": 0,
     "completedTasksWithoutOutput": 0,
     "duplicateOutputTasks": 0,
     "countsReconcile": true,
-    "projectFileTotal": 3258,
+    "projectFileTotal": 3276,
     "projectTaskTotal": 1845,
     "r2Samples": [
       {
@@ -80,7 +80,7 @@
       {
         "id": 3,
         "name": "Bask Development",
-        "file_count": 837,
+        "file_count": 855,
         "queued_tasks": 0,
         "running_tasks": 0,
         "blocked_tasks": 0,
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-06T01:02:25.198Z"
+    "checkedAt": "2026-09-06T01:10:48.891Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-06T01:02:25.928Z",
+    "retrievedAt": "2026-09-06T01:10:49.429Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",
@@ -400,7 +400,7 @@
         "client": null,
         "status": "INTAKE",
         "review_status": "NEEDS REVIEW",
-        "file_count": 837,
+        "file_count": 855,
         "running_tasks": 0,
         "queued_tasks": 0,
         "completed_tasks": 160,

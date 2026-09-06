@@ -27,10 +27,15 @@ export async function queuePhaseFour(env){
 export function normalizeSections(data,catalog){
  if(!Array.isArray(data?.sections))throw new Error('Invalid section review response');
  const allowed=new Map(catalog.sections.map(s=>[s.code,s.title])),issues=(Array.isArray(data.issues)?data.issues:[]).map(x=>String(x).slice(0,500)),limitations=(Array.isArray(data.limitations)?data.limitations:[]).map(x=>String(x).slice(0,500)),sections=[];
- for(const s of data.sections){if(!/^\d{2} \d{2} \d{2}$/.test(s.code)||s.code.slice(0,2)!==catalog.division||!allowed.has(s.code)||s.confidence!=='HIGH'||!['scope','sheet','evidence'].every(k=>typeof s[k]==='string'&&s[k].trim())){issues.push('Unresolved, unsupported or wrong-division section assignment');continue;}
- sections.push({code:s.code,title:allowed.get(s.code),divisionCode:catalog.division,scope:s.scope.slice(0,1000),sheet:s.sheet.slice(0,200),evidence:s.evidence.slice(0,1000)});}
+ for(const s of data.sections){
+  const code=String(s?.code||'').slice(0,50),validCode=/^\d{2} \d{2} \d{2}$/.test(code)&&code.slice(0,2)===catalog.division&&allowed.has(code);
+  if(!validCode){limitations.push(`Omitted unsupported or wrong-division candidate: ${code||'missing code'}`);continue;}
+  if(s.confidence!=='HIGH'){limitations.push(`Omitted ambiguous low-confidence candidate: ${code}`);continue;}
+  if(!['scope','sheet','evidence'].every(k=>typeof s[k]==='string'&&s[k].trim())){issues.push(`Supported section claim missing scope, sheet or evidence: ${code}`);continue;}
+  sections.push({code,title:allowed.get(code),divisionCode:catalog.division,scope:s.scope.slice(0,1000),sheet:s.sheet.slice(0,200),evidence:s.evidence.slice(0,1000)});
+ }
  if(data.completeReview!==true)issues.push('Section review coverage is incomplete or unconfirmed');
- return {sections,issues,limitations,coverageNote:String(data.coverageNote||'').slice(0,1000)};
+ return {sections:[...new Map(sections.map(s=>[`${s.code}|${s.sheet}|${s.evidence}`,s])).values()],issues:[...new Set(issues)],limitations:[...new Set(limitations)],coverageNote:String(data.coverageNote||'').slice(0,1000)};
 }
 async function analyze(env,file,catalog){
  if(file.size_bytes>20*1024**2)throw new Error('Plan exceeds 20 MiB content-review limit');

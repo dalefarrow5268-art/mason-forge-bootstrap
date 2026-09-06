@@ -1,0 +1,112 @@
+{
+  "checkedAt": "2026-09-06T17:17:51.718Z",
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "continuityRead": {
+    "projectCheckpoint": "checkpoint_64c5f95a-e67b-478e-b5f0-6854742105db",
+    "priorRepositoryAudit": "verification/intake-repairs/2026-09-06T1618Z-bradenton-intake-progress.json",
+    "note": "Legacy project continuity predates intake phase processing; fresh phaseProgress is authoritative for this check."
+  },
+  "projectsChecked": [
+    3,
+    13,
+    10,
+    7,
+    5,
+    4,
+    2
+  ],
+  "otherProjectsWithSubmissions": [],
+  "requestedRepairIds": [],
+  "observed": {
+    "phase1": {
+      "status": "COMPLETE",
+      "done": 169,
+      "total": 169
+    },
+    "phase2": {
+      "status": "COMPLETE",
+      "done": 169,
+      "total": 169
+    },
+    "phase3": {
+      "status": "COMPLETE",
+      "done": 133,
+      "total": 133
+    },
+    "phase4": {
+      "status": "NEEDS_REVIEW",
+      "counts": {
+        "COMPLETE": 376,
+        "QUEUED": 54,
+        "NEEDS_REVIEW": 44,
+        "RUNNING": 1
+      },
+      "done": 376,
+      "total": 475,
+      "percent": 79
+    },
+    "phase5": {
+      "status": "NEEDS_REVIEW",
+      "counts": {
+        "READY_FOR_ESTIMATE": 28,
+        "NEEDS_REVIEW": 1
+      },
+      "done": 28,
+      "total": 29,
+      "percent": 96,
+      "error": "Scope must be one short line with valid source references"
+    },
+    "phases6Through13": "WAITING",
+    "takeoffCrewCount": 0,
+    "repairRequestCount": 0
+  },
+  "changeSincePriorAudit": {
+    "phase4Complete": "+73",
+    "phase4Queued": "-78",
+    "phase4NeedsReview": "+4",
+    "phase5ReadyForEstimate": "+8",
+    "conclusion": "Workers are active; queued work is not stale. The four additional Phase Four holds require source-level readability/evidence review."
+  },
+  "issuesInvestigated": [
+    {
+      "id": "phase-four-queue-staleness-check-20260906T1717Z",
+      "diagnosis": "Not stale. Live counts advanced from 303 complete and 132 queued at 16:07Z to 376 complete, 54 queued, and 1 running at 17:17Z.",
+      "repair": null,
+      "verification": "Fresh SSX Cloud Connector V3 phaseProgress."
+    },
+    {
+      "id": "phase-four-readable-coverage-residuals",
+      "diagnosis": "44 items are held for review; the prior audit verified this category contains explicit unreadable schedule and note evidence.",
+      "repair": null,
+      "remaining": "Retain review holds and inspect source-level evidence. Do not suppress, guess, or blanket-retry."
+    },
+    {
+      "id": "phase-five-short-line-or-reference-rejection",
+      "diagnosis": "One unchanged rejected scope remains. The connector does not expose the exact failed job or rejected result.",
+      "repair": null,
+      "remaining": "Exact rejected line and source references are required before any content repair."
+    },
+    {
+      "id": "bask-estimate-delivery-connection",
+      "diagnosis": "Connection remains unverified.",
+      "repair": null,
+      "remaining": "Verify the intended BASK estimate delivery target before delivery."
+    }
+  ],
+  "preservation": [
+    "Original uploads unchanged",
+    "376 accepted Phase Four reviews preserved",
+    "28 accepted Phase Five scope lines preserved",
+    "Citation, readability, quantity, and no-invention gates unchanged",
+    "No prices or bid invitations produced"
+  ],
+  "remainingBlockers": [
+    "44 Phase Four source-readability/evidence holds",
+    "One Phase Five invalid short line or source reference",
+    "54 Phase Four jobs still queued with one running",
+    "No takeoff crew runs; verified quantities and units are not complete",
+    "BASK estimate delivery connection is unverified"
+  ],
+  "notificationReason": "Phase Four crossed 75% and Phase Five reached 28 accepted scope lines; active processing verified with no new repair request."
+}

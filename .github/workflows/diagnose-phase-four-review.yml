@@ -1,0 +1,35 @@
+name: Diagnose Phase Four Review
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diagnose-phase-four-review.yml']
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Inspect sanitized Bradenton Phase Four results
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node --input-type=module <<'JS'
+          const base='https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID;
+          const headers={authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN};
+          async function query(sql,params=[]){const r=await fetch(base+'/d1/database/736f655b-889d-4fb2-8948-0a396d39436f/query',{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify({sql,params}),signal:AbortSignal.timeout(30000)});const d=await r.json();if(!r.ok||!d.success)throw Error(JSON.stringify({status:r.status,errors:d.errors}));return d.result?.[0]?.results||[];}
+          async function object(key){const url=base+'/r2/buckets/mason-forge-project-files/objects/'+key.split('/').map(encodeURIComponent).join('/');const r=await fetch(url,{headers,signal:AbortSignal.timeout(30000)});if(!r.ok)throw Error('R2 read '+r.status);return r.json();}
+          const submission='bask-bradenton-2513-v1';
+          console.log('counts',JSON.stringify(await query("SELECT status,COUNT(*) count,MIN(updated_at) oldest,MAX(updated_at) newest FROM phase_four_items WHERE job_id LIKE ? GROUP BY status",[submission+'-%'])));
+          console.log('jobs',JSON.stringify(await query("SELECT division_code,status,error,report_file_id,updated_at FROM phase_four_jobs WHERE submission_id=? ORDER BY division_code",[submission])));
+          const rows=await query("SELECT i.id,i.job_id,i.file_id,i.attempts,i.error,i.result_key,i.updated_at FROM phase_four_items i JOIN phase_four_jobs j ON j.id=i.job_id WHERE j.submission_id=? AND i.status='NEEDS_REVIEW' ORDER BY i.updated_at DESC LIMIT 30",[submission]);
+          const categories={};const samples=[];
+          for(const row of rows){let summary={id:row.id,jobId:row.job_id,fileId:row.file_id,attempts:row.attempts,error:row.error,updatedAt:row.updated_at};
+            if(row.result_key){try{const result=await object(row.result_key);summary.issues=result.issues||[];summary.sectionCount=Array.isArray(result.sections)?result.sections.length:null;summary.inputSource=result.inputSource||'LEGACY_UNKNOWN';summary.brainRecordCount=result.brainRecordCount||0;summary.completeReview=result.issues?.length===0;for(const issue of summary.issues){const k=String(issue).slice(0,300);categories[k]=(categories[k]||0)+1;}}catch(e){summary.resultReadError=String(e.message||e).slice(0,200);}}
+            samples.push(summary);
+          }
+          console.log('issueCategories',JSON.stringify(categories));
+          console.log('samples',JSON.stringify(samples));
+          JS

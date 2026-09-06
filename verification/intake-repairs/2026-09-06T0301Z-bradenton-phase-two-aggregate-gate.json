@@ -13,7 +13,7 @@
   },
   "diagnosis": "The closer promoted every per-sheet limitation to a project-level blocking issue and treated lexical variations as blocking conflicts. A sheet-specific absence such as no owner on one drawing therefore guaranteed NEEDS_REVIEW even when the complete source set supplied all five required categories.",
   "repair": "Retain every limitation as a review note and every possible conflict for later source comparison. Block only when a source review failed to complete or a required Who/What/Where/When/Why category is missing across the complete set. No evidence is deleted, resolved, guessed or suppressed.",
-  "verification": "Pending regression tests and production deployment",
+  "verification": "Aggregate classification repair deployed successfully via Actions run 34008041341. Live verification found that an already-saved NEEDS_REVIEW job also requires explicit safe reevaluation; that follow-up is pending deployment.",
   "remainingBlockers": [
     "Verified MasterFormat 2026 division catalog with source reference is required before Phase Three can run.",
     "BASK estimate-delivery connection remains unverified."

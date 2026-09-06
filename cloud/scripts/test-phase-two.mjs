@@ -33,5 +33,6 @@ try{await processPhaseTwo(sent.shift(),{...env,OPENAI_API_KEY:'test'});}finally{
 await queuePhaseTwo(env);assert.equal(sql.prepare('SELECT status FROM phase_two_jobs').get().status,'COMPLETE');
 const report=JSON.parse(new TextDecoder().decode(objects.get('projects/13/phase-two/project-1/project-information.json')));assert.equal(report.sections.Who[0].sourceFileId,2);assert.deepEqual(report.missingInformation,[]);
 assert.equal(report.reviewIssues.length,1);assert.deepEqual(report.blockingIssues,[]);assert.equal(sql.prepare('SELECT status FROM phase_two_jobs').get().status,'COMPLETE');
+sql.exec("UPDATE phase_two_jobs SET status='NEEDS_REVIEW'");await queuePhaseTwo(env);assert.equal(sql.prepare('SELECT status FROM phase_two_jobs').get().status,'COMPLETE','completed evidence can be safely reevaluated after an aggregate-gate repair');
 assert.equal(sql.prepare('SELECT relative_path FROM project_files WHERE id=1').get().relative_path,'SSX Project Holding Folder/Phase One Project Review/Test/submission.zip');
 console.log('PASS: submission gate, review blocks, idempotent queue, five questions, citations, report, originals');

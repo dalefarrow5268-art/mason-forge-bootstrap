@@ -51,7 +51,7 @@ export async function processPhaseTwo(body,env){
  }catch(e){const terminal=row.attempts+1>=5;await env.DB.prepare('UPDATE phase_two_items SET status=?,error=?,updated_at=? WHERE id=?').bind(terminal?'NEEDS_REVIEW':'PENDING',String(e.message||e).slice(0,500),now(),row.id).run();if(!terminal)throw e;}
 }
 export async function finishPhaseTwo(env){
- const jobs=(await env.DB.prepare("SELECT j.*,s.project_id,s.project_name FROM phase_two_jobs j JOIN phase_project_submissions s ON s.id=j.id WHERE j.status='RUNNING' AND NOT EXISTS(SELECT 1 FROM phase_two_items i WHERE i.job_id=j.id AND i.status IN ('PENDING','QUEUED','RUNNING')) LIMIT 2").all()).results||[];
+ const jobs=(await env.DB.prepare("SELECT j.*,s.project_id,s.project_name FROM phase_two_jobs j JOIN phase_project_submissions s ON s.id=j.id WHERE j.status IN ('RUNNING','NEEDS_REVIEW') AND NOT EXISTS(SELECT 1 FROM phase_two_items i WHERE i.job_id=j.id AND i.status IN ('PENDING','QUEUED','RUNNING')) LIMIT 2").all()).results||[];
  for(const job of jobs){const items=(await env.DB.prepare('SELECT * FROM phase_two_items WHERE job_id=? ORDER BY file_id').bind(job.id).all()).results||[];if(!items.length)continue;
  const sections=Object.fromEntries(QUESTIONS.map(q=>[q,[]])),sources=[],blockingIssues=[],reviewNotes=[],variants=new Map();let omitted=0;
  for(const item of items){if(item.status!=='COMPLETE'){blockingIssues.push({sourceFileId:item.file_id,error:item.error||'Source review did not complete'});continue;}

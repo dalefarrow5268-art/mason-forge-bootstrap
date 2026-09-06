@@ -40,7 +40,8 @@ export async function queuePhaseOne(env){
  for(const row of rows.results||[]){
  const claimed=await env.DB.prepare(`UPDATE ${table} SET status='QUEUED',updated_at=? WHERE id=? AND (status='PENDING' OR updated_at < ?)`).bind(now(),row.id,new Date(Date.now()-20*60000).toISOString()).run();
  if(!claimed.meta.changes)continue;
- try{await env.DEPARTMENT_QUEUE.send({kind:'PHASE_ONE',table,id:row.id});}catch(e){await env.DB.prepare(`UPDATE ${table} SET status='PENDING' WHERE id=? AND status='QUEUED'`).bind(row.id).run();throw e;}
+ const phaseOneQueue=env.PHASE_ONE_QUEUE||env.DEPARTMENT_QUEUE;
+ try{await phaseOneQueue.send({kind:'PHASE_ONE',table,id:row.id});}catch(e){await env.DB.prepare(`UPDATE ${table} SET status='PENDING' WHERE id=? AND status='QUEUED'`).bind(row.id).run();throw e;}
  }
  }
 }

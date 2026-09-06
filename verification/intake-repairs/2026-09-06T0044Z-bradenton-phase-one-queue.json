@@ -1,0 +1,41 @@
+{
+  "recordedAt": "2026-09-06T00:44:00Z",
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "issueId": "bradenton-phase-one-general-queue-starvation-20260906",
+  "diagnosis": "After the native-capture gate was repaired, Phase One was correctly released but remained QUEUED with zero inventory. Phase One still shared the general department queue, the same starvation class previously proven for the Holding scanner.",
+  "observedBeforeRepair": {
+    "preparationStatus": "COMPLETE",
+    "phaseOneStatus": "QUEUED",
+    "phaseOneInventoryTotal": 0,
+    "semanticReviewsComplete": 26,
+    "phaseErrors": 0,
+    "repairRequests": 0
+  },
+  "repair": {
+    "releaseId": "2026-09-06-dedicated-phase-one-queue",
+    "behavior": [
+      "Dispatch Phase One jobs and items to a dedicated Cloudflare queue.",
+      "Provision that queue idempotently during deployment.",
+      "Retain the general department queue as a compatibility fallback.",
+      "Use bounded concurrency of 20 and retain retry/dead-letter behavior."
+    ],
+    "preservation": [
+      "The queued Phase One job is not reset or bypassed.",
+      "Original uploads and existing Brain records remain unchanged.",
+      "All review, scale, quantity, and CSI gates remain enforced."
+    ]
+  },
+  "verification": {
+    "javascriptSyntaxCheck": "PASS",
+    "holdingTests": "PASS (7 tests)",
+    "phaseOneTests": "PASS",
+    "production": "PENDING DEPLOYMENT"
+  },
+  "remainingBlockers": [
+    "Production deployment and a live Phase One attempt must be verified.",
+    "Verified CSI 2026 catalog remains required.",
+    "BASK estimate-delivery connection remains unverified.",
+    "Quantities must remain blank until their source scale and takeoff evidence are verified."
+  ]
+}

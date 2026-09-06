@@ -3,6 +3,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import {ZipWriter,Uint8ArrayWriter,TextReader} from '@zip.js/zip.js';
 import {processPhaseOne,queuePhaseOne,safe,normalizeReview,storeStream} from '../src/phase-one-review.js';
+assert.match(readFileSync(new URL('../src/phase-one-review.js',import.meta.url),'utf8'),/env\.PHASE_ONE_QUEUE\|\|env\.DEPARTMENT_QUEUE/);
 const sql=new DatabaseSync(':memory:');
 sql.exec(`CREATE TABLE project_files(id INTEGER PRIMARY KEY,project_id INTEGER,r2_key TEXT UNIQUE,file_name TEXT,relative_path TEXT,file_type TEXT,size_bytes INTEGER,review_status TEXT,source_class TEXT,uploaded_at TEXT,updated_at TEXT,archived_at TEXT); CREATE TABLE project_folders(id TEXT,project_id INTEGER,folder_path TEXT UNIQUE,created_at TEXT,updated_at TEXT);`);
 sql.exec(readFileSync(new URL('../schema/0007_phase_one_review.sql',import.meta.url),'utf8'));

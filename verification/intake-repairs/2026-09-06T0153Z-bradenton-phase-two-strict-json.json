@@ -16,7 +16,10 @@
     "phaseTwoTests": "passed",
     "phaseOneRegressionTests": "passed",
     "holdingTests": "7 passed",
-    "production": "pending deployment"
+    "strictSchemaProductionDeployment": "passed via Actions run 34005146865",
+    "strictSchemaLiveResult": "13 of 169 complete; no new malformed JSON after deployment",
+    "followupIssue": "One response was structurally valid but incomplete because it reached max_output_tokens.",
+    "followupRepair": "Raise the bounded response cap from 5,000 to 12,000 tokens and require concise evidence fields; pending deployment."
   },
   "remainingBlockers": [
     "Phase Two must complete and resolve any evidence review issues before later phases run.",

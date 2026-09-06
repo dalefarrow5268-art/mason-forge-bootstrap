@@ -14,12 +14,13 @@
     "repairRequests": 0
   },
   "repair": {
-    "releaseId": "2026-09-06-phase-one-brain-source-reuse",
+    "releaseId": "2026-09-06-phase-one-bounded-drain",
     "behavior": [
       "Match only an exact project, source class, byte size, and full /Sources/ path suffix.",
       "Read the already-materialized verified page object rather than reopen the full prepared ZIP.",
       "Write an independent Phase One working copy and verify its stored byte size.",
-      "Fall back to the existing ZIP extraction path when an exact verified page source is unavailable."
+      "Fall back to the existing ZIP extraction path when an exact verified page source is unavailable.",
+      "Drain at most 20 provenance-qualified pages inside each scheduler or health pass using the same atomic claim as queue consumers."
     ],
     "preservation": [
       "The Brain source object and original upload remain unchanged.",

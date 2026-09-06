@@ -12,15 +12,18 @@ export async function eligibleFiles(env,submission){
  return [...new Set(items.map(i=>i.output_file_id))];
 }
 export async function queuePhaseTwo(env){
+ const phaseTwoQueues=[env.PHASE_ONE_QUEUE,env.HOLDING_SCAN_QUEUE,env.DEPARTMENT_QUEUE].filter((queue,index,all)=>queue&&all.indexOf(queue)===index);
+ const sendPhaseTwo=async body=>{const sent=await Promise.allSettled(phaseTwoQueues.map(queue=>queue.send(body)));if(!sent.some(result=>result.status==='fulfilled'))throw sent[0]?.reason||new Error('No Phase Two queue available');};
  const submissions=(await env.DB.prepare('SELECT s.* FROM phase_project_submissions s LEFT JOIN phase_two_jobs j ON j.id=s.id WHERE j.id IS NULL AND length(trim(s.sealed_at))>0 ORDER BY COALESCE(s.checked_at,0) LIMIT 5').all()).results||[];
  for(const s of submissions){await env.DB.prepare('UPDATE phase_project_submissions SET checked_at=? WHERE id=?').bind(now(),s.id).run();const files=await eligibleFiles(env,s);if(!files)continue;
  // Populate before activation so interruption cannot leave a partially admitted project running.
  for(let i=0;i<files.length;i+=50)await env.DB.batch(files.slice(i,i+50).map(id=>env.DB.prepare('INSERT OR IGNORE INTO phase_two_items(id,job_id,file_id,updated_at) VALUES(?,?,?,?)').bind(`${s.id}-${id}`,s.id,id,now())));
  await env.DB.prepare("INSERT OR IGNORE INTO phase_two_jobs(id,status,created_at,updated_at) VALUES(?,'RUNNING',?,?)").bind(s.id,now(),now()).run();
  }
- const rows=(await env.DB.prepare("SELECT i.id FROM phase_two_items i JOIN phase_two_jobs j ON j.id=i.job_id WHERE j.status='RUNNING' AND (i.status='PENDING' OR (i.status IN ('QUEUED','RUNNING') AND i.updated_at < ?)) LIMIT 20").bind(new Date(Date.now()-20*60000).toISOString()).all()).results||[];
- for(const row of rows){const changed=await env.DB.prepare("UPDATE phase_two_items SET status='QUEUED',updated_at=? WHERE id=? AND (status='PENDING' OR updated_at < ?)").bind(now(),row.id,new Date(Date.now()-20*60000).toISOString()).run();if(!changed.meta.changes)continue;
- try{await env.DEPARTMENT_QUEUE.send({kind:'PHASE_TWO',id:row.id});}catch(e){await env.DB.prepare("UPDATE phase_two_items SET status='PENDING' WHERE id=? AND status='QUEUED'").bind(row.id).run();throw e;}}
+ const cutoff=new Date(Date.now()-2*60000).toISOString();
+ const rows=(await env.DB.prepare("SELECT i.id FROM phase_two_items i JOIN phase_two_jobs j ON j.id=i.job_id WHERE j.status='RUNNING' AND (i.status='PENDING' OR (i.status='QUEUED' AND i.updated_at < ?) OR (i.status='RUNNING' AND i.updated_at < ?)) LIMIT 20").bind(cutoff,new Date(Date.now()-20*60000).toISOString()).all()).results||[];
+ for(const row of rows){const changed=await env.DB.prepare("UPDATE phase_two_items SET status='QUEUED',updated_at=? WHERE id=? AND (status='PENDING' OR (status='QUEUED' AND updated_at < ?) OR (status='RUNNING' AND updated_at < ?))").bind(now(),row.id,cutoff,new Date(Date.now()-20*60000).toISOString()).run();if(!changed.meta.changes)continue;
+ try{await sendPhaseTwo({kind:'PHASE_TWO',id:row.id});}catch(e){await env.DB.prepare("UPDATE phase_two_items SET status='PENDING' WHERE id=? AND status='QUEUED'").bind(row.id).run();throw e;}}
  await finishPhaseTwo(env);
 }
 export function normalizeFacts(data){

@@ -1,0 +1,39 @@
+{
+  "recordedAt": "2026-09-06T01:48:45.836Z",
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "issueId": "bradenton-phase-two-department-queue-starvation-20260906",
+  "diagnosis": "Phase Two admitted all 169 verified Phase One outputs but every item remained QUEUED with zero attempts because dispatch used only the inactive department queue.",
+  "observedBeforeRepair": {
+    "phaseOneStatus": "COMPLETE",
+    "phaseOneSorted": 169,
+    "phaseTwoStatus": "RUNNING",
+    "phaseTwoQueued": 169,
+    "phaseTwoComplete": 0,
+    "repairRequests": 0
+  },
+  "repair": {
+    "releaseId": "2026-09-06-phase-two-active-queues",
+    "behavior": [
+      "Fan out Phase Two messages to the configured Phase One, Holding, and department queue consumers.",
+      "Use the existing atomic Phase Two item claim so exactly one consumer performs each review.",
+      "Reissue queued work after a two-minute delivery window while retaining a 20-minute running lease."
+    ],
+    "preservation": [
+      "All 169 Phase One outputs remain unchanged.",
+      "No project fact is accepted without a quote and source location.",
+      "Missing project information is not guessed.",
+      "No CSI code, quantity, scale, price, or estimate result is added."
+    ]
+  },
+  "verification": {
+    "status": "PENDING DEPLOYMENT",
+    "required": ["JavaScript syntax check", "Phase Two suite", "production deployment", "live Phase Two attempt"]
+  },
+  "remainingBlockers": [
+    "Live Phase Two throughput must be verified.",
+    "Verified CSI 2026 catalog remains required before Phase Three can complete.",
+    "BASK estimate-delivery connection remains unverified.",
+    "Takeoff quantities require verified scale and source evidence."
+  ]
+}

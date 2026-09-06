@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import {ZipWriter,Uint8ArrayWriter,TextReader} from '@zip.js/zip.js';
-import {processPhaseOne,queuePhaseOne,safe,normalizeReview,storeStream,preparedSourceCategory} from '../src/phase-one-review.js';
+import {processPhaseOne,queuePhaseOne,safe,normalizeReview,storeStream,preparedSourceCategory,drainPreparedProvenance} from '../src/phase-one-review.js';
 assert.match(readFileSync(new URL('../src/phase-one-review.js',import.meta.url),'utf8'),/\[env\.PHASE_ONE_QUEUE,env\.HOLDING_SCAN_QUEUE,env\.DEPARTMENT_QUEUE\]/);
 assert.equal(preparedSourceCategory('00001/project/Architectural Plans.pdf/page-00001.pdf'),'Plans');
 assert.equal(preparedSourceCategory('00003/project/Hotel Geo Report.pdf/page-00034.pdf'),'Geotech');
@@ -124,6 +124,7 @@ await processPhaseOne({kind:'PHASE_ONE',table:'phase_one_items',id:nativeItem.id
 const nativeSorted=sql.prepare("SELECT status,category FROM phase_one_items WHERE id=?").get(nativeItem.id);
 assert.equal(nativeSorted.status,'SORTED');assert.equal(nativeSorted.category,'Plans');
 assert.equal(new TextDecoder().decode(objects.get(`projects/3/phase-one/${nativeItem.id}`)),'preserved vector page');
+assert.equal(await drainPreparedProvenance(env),0,'completed provenance item is not drained twice');
 sql.prepare("UPDATE holding_scan_items SET status='PENDING',updated_at='now' WHERE source_file_id=350").run();
 sent.length=0;await queueHoldingScan(env);
 assert(sent.some(x=>x.kind==='HOLDING_SCAN'&&x.id.startsWith('scan-350-351-')),'semantic review survives Phase One release');

@@ -111,6 +111,8 @@ assert(sent.some(x=>x.kind==='HOLDING_SCAN'&&x.id.startsWith('scan-350-351-')),'
 await queuePhaseOne(env);
 assert.equal(sql.prepare('SELECT status FROM holding_preparations WHERE source_file_id=350').get().status,'COMPLETE');
 assert(sent.some(x=>x.id==='intake-350'),'deterministic capture releases Phase One');
+await processPhaseOne({kind:'PHASE_ONE',table:'phase_one_jobs',id:'intake-350'},env);
+assert.equal(sql.prepare("SELECT COUNT(*) n FROM phase_one_items WHERE job_id='intake-350'").get().n,1,'native capture companion is Brain evidence, not a Phase One document');
 sql.prepare("UPDATE holding_scan_items SET status='PENDING',updated_at='now' WHERE source_file_id=350").run();
 sent.length=0;await queueHoldingScan(env);
 assert(sent.some(x=>x.kind==='HOLDING_SCAN'&&x.id.startsWith('scan-350-351-')),'semantic review survives Phase One release');

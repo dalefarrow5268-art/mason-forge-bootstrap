@@ -34,6 +34,15 @@ export async function queuePhaseOne(env){
  env.DB.prepare("UPDATE phase_one_jobs SET status='PENDING',error=NULL,updated_at=? WHERE source_file_id=?").bind(now(),p.source_file_id),
  env.DB.prepare("UPDATE holding_preparations SET status='COMPLETE',updated_at=? WHERE source_file_id=? AND status='SCANNED'").bind(now(),p.source_file_id)
  ]);}
+ // Native capture JSON files are Brain evidence beside their source pages, not
+ // independent Phase One documents. Repair inventories created before that
+ // distinction existed while retaining their records in the superseded ledger.
+ const contaminated=(await env.DB.prepare("SELECT j.id,j.source_file_id FROM phase_one_jobs j JOIN holding_preparations p ON p.source_file_id=j.source_file_id WHERE p.status='COMPLETE' AND j.status!='RUNNING' AND EXISTS(SELECT 1 FROM phase_one_items i WHERE i.job_id=j.id AND i.original_path LIKE '%.brain-capture/%') AND NOT EXISTS(SELECT 1 FROM phase_one_items i WHERE i.job_id=j.id AND i.status='RUNNING') LIMIT 3").all()).results||[];
+ for(const job of contaminated)await env.DB.batch([
+  env.DB.prepare("INSERT OR IGNORE INTO holding_superseded_items(item_id,source_file_id,record_json,archived_at) SELECT i.id,?,json_object('id',i.id,'job_id',i.job_id,'entry_index',i.entry_index,'original_path',i.original_path,'size_bytes',i.size_bytes,'status',i.status,'worker',i.worker,'category',i.category,'reason',i.reason,'output_file_id',i.output_file_id,'updated_at',i.updated_at),? FROM phase_one_items i WHERE i.job_id=?").bind(job.source_file_id,now(),job.id),
+  env.DB.prepare('DELETE FROM phase_one_items WHERE job_id=?').bind(job.id),
+  env.DB.prepare("UPDATE phase_one_jobs SET status='PENDING',error=NULL,updated_at=? WHERE id=?").bind(now(),job.id)
+ ]);
  // Move released, zero-inventory jobs that were leased before the dedicated
  // queue existed. The consumer's atomic claim makes a later legacy delivery a
  // no-op after inventory begins.
@@ -72,7 +81,7 @@ async function inventory(env,job){
  const reader=new ZipReader(new R2Reader(env.PROJECT_FILES,source.r2_key,source.size_bytes));let index=0,total=0;
  try{for await(const e of reader.getEntriesGenerator()){
  const i=index++;if(index>50000)throw new Error('More than 50,000 archive entries; staff review needed');if(e.directory)continue;
- if(e.filename.includes('.brain-scan/'))continue;
+ if(e.filename.includes('.brain-scan/')||e.filename.includes('.brain-capture/'))continue;
  total+=e.uncompressedSize;if(total>1024**4)throw new Error('Expanded archive exceeds 1 TiB review limit');
  const reason=!safe(e.filename)?'Unsafe archive path':e.encrypted?'Password-protected entry':e.symlink?'Symbolic link':e.uncompressedSize>64*1024**3?'Entry exceeds 64 GiB automated unpack limit':e.uncompressedSize>Math.max(1024**3,e.compressedSize*1000)?'Extreme compression ratio':null;
  await add(i,e.filename,e.uncompressedSize,reason);

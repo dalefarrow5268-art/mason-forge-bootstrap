@@ -33,6 +33,12 @@ export function normalizeScopes(data, evidence) {
  return {lines, issues:[...new Set(issues)], limitations:[...new Set(limitations)]};
 }
 
+export function shouldRetryFormatIssues(issues, attemptNumber, maxAttempts=3) {
+ return Number.isInteger(attemptNumber) && attemptNumber < maxAttempts &&
+  Array.isArray(issues) && issues.length > 0 &&
+  issues.every(issue => issue === 'Scope must be one short line with valid source references');
+}
+
 export async function queuePhaseFive(env) {
  const rows = (await env.DB.prepare(`SELECT o.id,o.submission_id,o.section_code FROM phase_four_estimate_outbox o WHERE ${ready}`).all()).results || [];
  for (const row of rows) await env.DB.prepare(`INSERT OR IGNORE INTO phase_five_jobs(id,submission_id,section_code,updated_at) VALUES(?,?,?,?)`).bind(row.id,row.submission_id,row.section_code,now()).run();
@@ -75,8 +81,13 @@ export async function processPhaseFive(body, env) {
   });
   if (!response.ok) throw new Error(`Scope review service returned ${response.status}`);
   const result = normalizeScopes(JSON.parse(extractOutputText(await response.json())),evidence);
-  const key = `projects/${row.project_id}/phase-five/${row.id}/scopes.json`;
-  await env.PROJECT_FILES.put(key,JSON.stringify({submissionId:row.submission_id,sectionCode:row.section_code,sectionTitle:row.section_title,...result,estimateStatus:'WAITING_ESTIMATE_CONNECTION'}));
+  const attemptNumber = row.attempts + 1;
+  const key = `projects/${row.project_id}/phase-five/${row.id}/attempt-${attemptNumber}.json`;
+  await env.PROJECT_FILES.put(key,JSON.stringify({submissionId:row.submission_id,sectionCode:row.section_code,sectionTitle:row.section_title,attempt:attemptNumber,...result,estimateStatus:'WAITING_ESTIMATE_CONNECTION'}));
+  if (shouldRetryFormatIssues(result.issues,attemptNumber)) {
+   await env.DB.prepare(`UPDATE phase_five_jobs SET status='PENDING',result_key=?,error=?,updated_at=? WHERE id=?`).bind(key,result.issues.join('; ').slice(0,1000),now(),row.id).run();
+   return;
+  }
   const writes = [];
   if (!result.issues.length) result.lines.forEach((line,index) => writes.push(env.DB.prepare(`INSERT OR IGNORE INTO phase_five_estimate_outbox(id,submission_id,section_code,scope_text,evidence_json,result_key,created_at) VALUES(?,?,?,?,?,?,?)`).bind(`${row.id}-${index}`,row.submission_id,row.section_code,line.text,JSON.stringify(line.evidence),key,now())));
   writes.push(env.DB.prepare(`UPDATE phase_five_jobs SET status=?,result_key=?,error=?,updated_at=? WHERE id=?`).bind(result.issues.length?'NEEDS_REVIEW':'READY_FOR_ESTIMATE',key,result.issues.length?result.issues.join('; ').slice(0,1000):null,now(),row.id));

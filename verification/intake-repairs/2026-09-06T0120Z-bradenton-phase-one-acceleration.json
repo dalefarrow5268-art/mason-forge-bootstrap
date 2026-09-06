@@ -1,0 +1,46 @@
+{
+  "recordedAt": "2026-09-06T01:20:03.181Z",
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "issueId": "bradenton-phase-one-per-page-ai-latency-20260906",
+  "diagnosis": "The queue repair restored Phase One, but each prepared page still repeated a general AI file-category call even though the verified preparation manifest retained its exact parent source-document identity. That duplicated work was unnecessary for explicitly named plan sets and the geotechnical report.",
+  "observedBeforeRepair": {
+    "phaseOneStatus": "RUNNING",
+    "phaseOneTotal": 169,
+    "phaseOneSorted": 21,
+    "phaseOneQueued": 148,
+    "semanticReviewsComplete": 52,
+    "semanticNeedsReview": 4,
+    "repairRequests": 0
+  },
+  "repair": {
+    "releaseId": "2026-09-06-phase-one-source-provenance",
+    "behavior": [
+      "Recognize only prepared page paths that retain an exact parent PDF source-document name.",
+      "Route pages from explicitly identified plan/drawing source documents to Plans.",
+      "Route pages from explicitly identified geotechnical, soil, or boring source documents to Geotech.",
+      "Keep the existing semantic content review for every ambiguous source document.",
+      "Continue page-level Mason Brain semantic review independently; this optimization does not mark that review complete."
+    ],
+    "preservation": [
+      "Original uploads and prepared page bytes are unchanged.",
+      "Previously sorted pages and completed Brain records are unchanged.",
+      "No sheet type, scale, quantity, CSI code, price, or takeoff result is inferred by this Phase One routing optimization."
+    ]
+  },
+  "verification": {
+    "status": "PENDING DEPLOYMENT",
+    "required": [
+      "JavaScript syntax check",
+      "Phase One unit/integration suite",
+      "Holding worker suite",
+      "Production deployment",
+      "Live corrected 169-page Phase One completion"
+    ]
+  },
+  "remainingBlockers": [
+    "Verified CSI 2026 catalog remains required.",
+    "BASK estimate-delivery connection remains unverified.",
+    "Takeoff quantities require verified scale and source evidence."
+  ]
+}

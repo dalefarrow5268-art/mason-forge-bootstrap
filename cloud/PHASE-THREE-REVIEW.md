@@ -10,6 +10,8 @@ The supplied URL https://bask-downtown-bradenton-estimate.dalemoongate.chatgpt.s
 ## Authoritative catalog input
 Load the user's verified MasterFormat 2026 division-level data into phase_three_divisions (edition, two-digit code, exact title), then register its source_reference and verified_at in phase_three_catalogs for edition 2026. Load the complete catalog before marking it verified. No catalog has been inferred from older editions or seeded from model knowledge. Snapshot the verified catalog with each job.
 
+The authenticated import route is `POST /api/project-phases/<submission>/catalogs/2026/import`. It accepts only a registered project JSON file reference and its SHA-256. The JSON must explicitly identify edition 2026, confirm licensed access and complete-catalog coverage, declare an exact row count, provide an HTTPS source reference, and contain unique two-digit codes with titles. The loader hashes the preserved project file, validates every row, replaces the edition atomically, records provenance, audits the import, and reopens only an empty catalog-blocked Phase Three job. It never accepts catalog rows directly in the request.
+
 CSI confirms the 2026 release here: https://www.csiresources.org/standards/masterformat2026
 Official data-access reference: https://theconstructionstandard.com/masterformat-2026-pdf-download
 

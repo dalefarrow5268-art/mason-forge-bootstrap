@@ -1,0 +1,275 @@
+{
+  "checkedAt": "2026-09-06T16:07:31.641Z",
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "continuityRead": {
+    "projectCheckpoint": "checkpoint_64c5f95a-e67b-478e-b5f0-6854742105db",
+    "projectCheckpointUpdatedAt": "2026-09-04T20:46:56.514Z",
+    "systemCheckpoint": "checkpoint_bf35671f-9b1a-4964-a848-0c9605ebc6ab",
+    "latestRepositoryAudit": "verification/intake-repairs/2026-09-06T1415Z-bradenton-deterministic-review-gates.json",
+    "note": "Legacy continuity task counters predate intake processing. Fresh phaseProgress was used."
+  },
+  "projectsChecked": [
+    3,
+    13,
+    10,
+    7,
+    5,
+    4,
+    2
+  ],
+  "otherProjectsWithSubmissions": [],
+  "requestedRepairIds": [],
+  "observed": [
+    {
+      "phase": 1,
+      "status": "COMPLETE",
+      "counts": {
+        "SORTED": 169
+      },
+      "done": 169,
+      "total": 169,
+      "percent": 100,
+      "errors": []
+    },
+    {
+      "phase": 2,
+      "status": "COMPLETE",
+      "counts": {
+        "COMPLETE": 169
+      },
+      "done": 169,
+      "total": 169,
+      "percent": 100,
+      "errors": []
+    },
+    {
+      "phase": 3,
+      "status": "COMPLETE",
+      "counts": {
+        "COMPLETE": 133
+      },
+      "done": 133,
+      "total": 133,
+      "percent": 100,
+      "errors": []
+    },
+    {
+      "phase": 4,
+      "status": "NEEDS_REVIEW",
+      "counts": {
+        "COMPLETE": 303,
+        "NEEDS_REVIEW": 40,
+        "QUEUED": 132
+      },
+      "done": 303,
+      "total": 475,
+      "percent": 63,
+      "errors": []
+    },
+    {
+      "phase": 5,
+      "status": "NEEDS_REVIEW",
+      "counts": {
+        "NEEDS_REVIEW": 1,
+        "READY_FOR_ESTIMATE": 20
+      },
+      "done": 0,
+      "total": 21,
+      "percent": 0,
+      "errors": [
+        "Scope must be one short line with valid source references"
+      ]
+    },
+    {
+      "phase": 6,
+      "status": "WAITING",
+      "counts": {},
+      "done": 0,
+      "total": 0,
+      "percent": 0,
+      "errors": []
+    },
+    {
+      "phase": 7,
+      "status": "WAITING",
+      "counts": {},
+      "done": 0,
+      "total": 0,
+      "percent": 0,
+      "errors": []
+    },
+    {
+      "phase": 8,
+      "status": "WAITING",
+      "counts": {},
+      "done": 0,
+      "total": 0,
+      "percent": 0,
+      "errors": []
+    },
+    {
+      "phase": 9,
+      "status": "WAITING",
+      "counts": {},
+      "done": 0,
+      "total": 0,
+      "percent": 0,
+      "errors": []
+    },
+    {
+      "phase": 10,
+      "status": "WAITING",
+      "counts": {},
+      "done": 0,
+      "total": 0,
+      "percent": 0,
+      "errors": []
+    },
+    {
+      "phase": 11,
+      "status": "WAITING",
+      "counts": {},
+      "done": 0,
+      "total": 0,
+      "percent": 0,
+      "errors": []
+    },
+    {
+      "phase": 12,
+      "status": "WAITING",
+      "counts": {},
+      "done": 0,
+      "total": 0,
+      "percent": 0,
+      "errors": []
+    },
+    {
+      "phase": 13,
+      "status": "WAITING",
+      "counts": {},
+      "done": 0,
+      "total": 0,
+      "percent": 0,
+      "errors": []
+    }
+  ],
+  "issuesInvestigated": [
+    {
+      "id": "phase-five-accepted-progress-and-premature-completion",
+      "diagnosis": "summarize omitted READY_FOR_ESTIMATE from done. Streaming accepted section jobs could mark Phase Five COMPLETE while Phase Four still discovers sections.",
+      "repair": "Count accepted Phase Five section jobs as done; report RUNNING instead of COMPLETE until Phase Three and Four summaries are complete. Display/tracking only; worker eligibility and source data unchanged.",
+      "verification": "Local unit and mocked intakeProgress integration tests passed; CI and deployment pending."
+    },
+    {
+      "id": "phase-four-readable-coverage-residuals",
+      "diagnosis": "40 review items at checkpoint. Saved Division 23 report file 4046 contains explicit unreadable schedule entries and general notes, not merely missing off-sheet details. Examples reference file IDs 3391,3398,3403,3629,3630.",
+      "repair": null,
+      "remaining": "Needs source-level readable evidence review; no blanket retry or error suppression performed."
+    },
+    {
+      "id": "phase-five-short-line-or-reference-rejection",
+      "diagnosis": "One Phase Five job reports Scope must be one short line with valid source references. Actual code rejects empty/multiline/over-180-character scope or invalid zero-based evidence references. Status does not expose failed job ID or result. Exact failed line not retrieved.",
+      "repair": null,
+      "remaining": "Inspect exact rejected result before a content repair; validation unchanged."
+    },
+    {
+      "id": "ci-missing-phase-five-test-34039931888",
+      "diagnosis": "Failed CI job 101504718235 could not find test-phase-five-review.mjs on intermediate branch commit. Later main CI and deployment pass; not an active defect.",
+      "repair": "Already resolved by prior PR84; no repeated repair."
+    }
+  ],
+  "actions": {
+    "latestTenRuns": [
+      {
+        "at": "2026-09-06T15:45:53Z",
+        "conclusion": "success",
+        "id": 34043130064,
+        "name": "Verify Holding Live Progress",
+        "status": "completed"
+      },
+      {
+        "at": "2026-09-06T15:42:02Z",
+        "conclusion": "success",
+        "id": 34043108954,
+        "name": "Prepare Holding Files",
+        "status": "completed"
+      },
+      {
+        "at": "2026-09-06T15:35:04Z",
+        "conclusion": "success",
+        "id": 34042753924,
+        "name": "Prepare Plan Measuring Layers",
+        "status": "completed"
+      },
+      {
+        "at": "2026-09-06T14:49:15Z",
+        "conclusion": "success",
+        "id": 34040340083,
+        "name": "Mason Forge Bootstrap CI",
+        "status": "completed"
+      },
+      {
+        "at": "2026-09-06T14:48:43Z",
+        "conclusion": "success",
+        "id": 34040107595,
+        "name": "Verify Holding Live Progress",
+        "status": "completed"
+      },
+      {
+        "at": "2026-09-06T14:47:46Z",
+        "conclusion": "success",
+        "id": 34040085404,
+        "name": "Verify Holding Live Progress",
+        "status": "completed"
+      },
+      {
+        "at": "2026-09-06T14:44:03Z",
+        "conclusion": "success",
+        "id": 34040085375,
+        "name": "Approve Bradenton Measurable Regions",
+        "status": "completed"
+      },
+      {
+        "at": "2026-09-06T14:44:18Z",
+        "conclusion": "success",
+        "id": 34040085371,
+        "name": "Prepare Holding Files",
+        "status": "completed"
+      },
+      {
+        "at": "2026-09-06T14:44:15Z",
+        "conclusion": "success",
+        "id": 34040085367,
+        "name": "Prepare Plan Measuring Layers",
+        "status": "completed"
+      },
+      {
+        "at": "2026-09-06T14:44:07Z",
+        "conclusion": "success",
+        "id": 34040085357,
+        "name": "Retry Bradenton Phase Three",
+        "status": "completed"
+      }
+    ],
+    "verifiedPriorDeploy": 34040039334
+  },
+  "remainingBlockers": [
+    "Phase Four residual source readability review",
+    "One Phase Five invalid short line or source reference",
+    "Complete remaining section and scope work",
+    "No takeoff crew runs registered; verified quantities/units and full unpriced estimate not complete",
+    "BASK estimate delivery connection unverified"
+  ],
+  "preserved": [
+    "Original files",
+    "Previously accepted work",
+    "All citation/readability/quantity gates",
+    "Separate Takeoff & Estimate prototype"
+  ],
+  "verification": {
+    "status": "LOCAL_TESTED_AWAITING_CI",
+    "release": "2026-09-06-intake-scope-progress"
+  },
+  "notificationReason": "Verified display repair when deployed; residual original-content readability blockers retained."
+}

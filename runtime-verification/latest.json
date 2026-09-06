@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "startedAt": "2026-09-06T10:27:57.390Z",
-  "completedAt": "2026-09-06T10:28:01.417Z",
+  "startedAt": "2026-09-06T10:35:45.300Z",
+  "completedAt": "2026-09-06T10:35:48.849Z",
   "success": true,
   "worker": {
     "attempt": 1,
@@ -11,7 +11,7 @@
       "operationalReady": true,
       "service": "Mason Forge Cloud",
       "environment": "production",
-      "releaseId": "2026-09-06-phase-three-page58-render",
+      "releaseId": "2026-09-06-phase-three-parent-resume",
       "database": "D1 VERIFIED",
       "projectFileStorage": "R2 VERIFIED",
       "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
@@ -204,16 +204,16 @@
           "canceled_tasks": 0
         }
       ],
-      "checkedAt": "2026-09-06T10:27:57.934Z"
+      "checkedAt": "2026-09-06T10:35:45.761Z"
     },
     "errors": []
   },
   "dashboardSamples": [
     {
-      "capturedAt": "2026-09-06T10:27:58.612Z",
+      "capturedAt": "2026-09-06T10:35:46.261Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-09-06T10:27:58.509Z",
+        "retrievedAt": "2026-09-06T10:35:46.214Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
@@ -477,10 +477,10 @@
       "projectFiles": 3640
     },
     {
-      "capturedAt": "2026-09-06T10:28:00.813Z",
+      "capturedAt": "2026-09-06T10:35:48.391Z",
       "httpStatus": 200,
       "data": {
-        "retrievedAt": "2026-09-06T10:28:00.762Z",
+        "retrievedAt": "2026-09-06T10:35:48.366Z",
         "continuity": {
           "scope_type": "system",
           "scope_id": "mason-forge",
@@ -1586,6 +1586,6 @@
     }
   },
   "errors": [],
-  "sourceCommit": "94ef6428bc9e104817650e12fb425d654e4746b8",
-  "workflowRunId": "34027459978"
+  "sourceCommit": "0935f1e1455fc650365d3ad799a4ab6ca272c3e2",
+  "workflowRunId": "34027822370"
 }

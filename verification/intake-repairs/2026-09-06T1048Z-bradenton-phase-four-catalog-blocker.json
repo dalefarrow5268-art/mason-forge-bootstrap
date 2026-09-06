@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-06T10:48:00Z",
+  "project": {
+    "projectId": 3,
+    "projectName": "Downtown Bradenton",
+    "submissionId": "bask-bradenton-2513-v1"
+  },
+  "milestone": {
+    "phase1": {
+      "status": "COMPLETE",
+      "done": 169,
+      "total": 169
+    },
+    "phase2": {
+      "status": "COMPLETE",
+      "done": 169,
+      "total": 169
+    },
+    "phase3": {
+      "status": "COMPLETE",
+      "done": 133,
+      "total": 133,
+      "percent": 100,
+      "finishedAt": "2026-09-06T10:45:16.337Z"
+    },
+    "phase4": {
+      "status": "NEEDS_REVIEW",
+      "done": 0,
+      "total": 0,
+      "reason": "Verified Living Schedule sections are needed before Phase Four can complete."
+    }
+  },
+  "phaseThreeReport": {
+    "projectFileId": 4024,
+    "relativePath": "SSX Project Holding Folder/Phase Three Division Review/Downtown Bradenton - bask-bradenton-2513-v1/Division Review.json",
+    "sizeBytes": 349136,
+    "downloadedSha256": "9be137d76cfdf06b9d879cf5e2cdd9631dcec38095dd09e587fd2674ed31e747",
+    "edition": "2026",
+    "catalogSource": "Living Schedule permanent inventory | project:13 | SFC-DIV-000015..SFC-DIV-000064",
+    "applicableDivisionCount": 22,
+    "applicableDivisionCodes": [
+      "00",
+      "01",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10",
+      "11",
+      "12",
+      "14",
+      "21",
+      "22",
+      "23",
+      "26",
+      "27",
+      "28",
+      "31",
+      "32",
+      "33"
+    ],
+    "issues": [],
+    "estimateStatus": "WAITING_ESTIMATE_CONNECTION"
+  },
+  "issue": {
+    "id": "phase4-authoritative-living-schedule-sections",
+    "state": "BLOCKING",
+    "diagnosis": "Phase Four has no verified section catalog. The connector exposes 432 SEC summary records, but continuity and Dale identify those as an indexed subset of the approximately 72,000-section/activity Living Schedule hierarchy.",
+    "investigatedSources": [
+      {
+        "path": "/Schedule System Work/SSX_LIVING_FLOW_MASTER_HANDOFF_2026-08-14_1907.zip",
+        "sizeBytes": 29235330,
+        "result": "HTTP 502 during fresh authenticated materialization"
+      },
+      {
+        "path": "/SSX_LIVING_FLOW_MASTER_HANDOFF_2026-08-14_1907.zip",
+        "sizeBytes": 29235330,
+        "result": "HTTP 502 during fresh authenticated materialization"
+      },
+      {
+        "projectId": 13,
+        "fileId": 750,
+        "path": "SSX Scheduling System/SSX Schedule System V10 8.5.26.zip",
+        "sizeBytes": 5105842,
+        "sha256": "b093693f0ec4b012c03ac0b28e8d15c6c9a17e895c3415452e7f22f2f4e23f9e",
+        "result": "Verified download; 84 files consisting of UI assets/code, not the section hierarchy"
+      },
+      {
+        "projectId": 13,
+        "fileId": 1948,
+        "path": "SSX/Living Flow Schedule/LATEST VERSION - LOCKED/2026-08-17 6-16 PM/SSX_LIVING_FLOW_LATEST_VERSION_LOCKED_2026-08-17_1816.zip",
+        "result": "Previously verified as the Living Flow web app package, not the full hierarchy"
+      }
+    ],
+    "rejectedSubstitution": "The 432 SEC summary records were not loaded as the complete section catalog.",
+    "requiredNextVerification": [
+      "Retrieve authoritative archive bytes",
+      "Verify archive SHA and integrity",
+      "Inventory record schema and actual record count",
+      "Verify unique six-digit section codes and division mapping separately from activities",
+      "Load only verified section records with source provenance and idempotency",
+      "Resume Phase Four through the normal queue"
+    ]
+  },
+  "otherProjects": {
+    "checkedProjectIds": [
+      2,
+      4,
+      5,
+      7,
+      10,
+      13
+    ],
+    "submissionsFound": 0,
+    "note": "Bradenton is the only current phaseProgress submission among projects with registered files checked in this run."
+  },
+  "repairRequests": [],
+  "remainingBlockers": [
+    "Authoritative Living Schedule hierarchy retrieval",
+    "BASK estimate-delivery connection",
+    "Later verified takeoff quantities and units",
+    "Final UNPRICED estimate"
+  ],
+  "safety": {
+    "codesInvented": false,
+    "measurementsGuessed": false,
+    "pricesAdded": false,
+    "bidInvitationsSent": false,
+    "originalUploadsChanged": false,
+    "reviewGatesBypassed": false
+  }
+}

@@ -1,7 +1,41 @@
 import {fileInputContent,deleteOpenAIFile,extractOutputText} from './document-extractor.js';
 const now=()=>new Date().toISOString();
+const FULFILLMENT_CATALOG_PROJECT_ID=13;
+const FULFILLMENT_DIVISION_ROOT='SSX Fulfillment Center/01 CSI Divisions/';
+export function validateFulfillmentDivisionRows(rows){
+ if(!Array.isArray(rows)||rows.length!==50)throw new Error(`Living Schedule division index must contain exactly 50 active divisions; found ${Array.isArray(rows)?rows.length:0}`);
+ const seen=new Set(),divisions=[];
+ for(const row of rows){
+  const code=String(row?.csi_code||''),name=String(row?.item_name||'').trim(),inventory=String(row?.inventory_number||''),folder=String(row?.folder_path||'');
+  if(!/^\d{2}$/.test(code)||Number(code)>49)throw new Error(`Invalid Living Schedule division code: ${code||'(missing)'}`);
+  if(seen.has(code))throw new Error(`Duplicate Living Schedule division code: ${code}`);seen.add(code);
+  if(!/^SFC-DIV-\d{6}$/.test(inventory))throw new Error(`Invalid permanent division inventory number for ${code}`);
+  if(!name.startsWith(`${code} `)||!name.slice(3).trim())throw new Error(`Living Schedule division ${code} is missing its registered title`);
+  if(!folder.startsWith(FULFILLMENT_DIVISION_ROOT))throw new Error(`Living Schedule division ${code} is outside the verified fulfillment root`);
+  divisions.push({code,title:name.slice(3).trim(),inventoryNumber:inventory});
+ }
+ for(let i=0;i<50;i++){const code=String(i).padStart(2,'0');if(!seen.has(code))throw new Error(`Living Schedule division ${code} is missing`);}
+ divisions.sort((a,b)=>a.code.localeCompare(b.code));return divisions;
+}
+export async function syncDivisionCatalogFromFulfillment(env){
+ let rows;
+ try{rows=(await env.DB.prepare("SELECT inventory_number,csi_code,item_name,folder_path FROM fulfillment_inventory WHERE project_id=? AND item_type='DIV' AND status='ACTIVE' AND archived_at IS NULL ORDER BY csi_code").bind(FULFILLMENT_CATALOG_PROJECT_ID).all()).results||[];}
+ catch(e){if(/no such table/i.test(String(e?.message||e)))return null;throw e;}
+ if(!rows.length)return null;
+ const divisions=validateFulfillmentDivisionRows(rows),verifiedAt=now();
+ const source=`Living Schedule permanent inventory | project:${FULFILLMENT_CATALOG_PROJECT_ID} | ${divisions[0].inventoryNumber}..${divisions.at(-1).inventoryNumber}`;
+ await env.DB.batch([
+  env.DB.prepare("DELETE FROM phase_three_divisions WHERE edition='2026'").bind(),
+  ...divisions.map(row=>env.DB.prepare("INSERT INTO phase_three_divisions(edition,code,title) VALUES('2026',?,?)").bind(row.code,row.title)),
+  env.DB.prepare("INSERT OR REPLACE INTO phase_three_catalogs(edition,source_reference,verified_at) VALUES('2026',?,?)").bind(source,verifiedAt),
+  env.DB.prepare("UPDATE phase_three_jobs SET status='WAITING_STANDARD',catalog_json=NULL,updated_at=? WHERE status='NEEDS_REVIEW' AND NOT EXISTS(SELECT 1 FROM phase_three_items WHERE job_id=phase_three_jobs.id)").bind(verifiedAt)
+ ]);
+ return {edition:'2026',source,verifiedAt,divisions:divisions.map(({code,title})=>({code,title}))};
+}
 export async function divisionCatalog(env){
- const meta=await env.DB.prepare("SELECT * FROM phase_three_catalogs WHERE edition='2026' AND length(trim(verified_at))>0 AND length(trim(source_reference))>0").first();if(!meta)return null;
+ let meta=await env.DB.prepare("SELECT * FROM phase_three_catalogs WHERE edition='2026' AND length(trim(verified_at))>0 AND length(trim(source_reference))>0").first();
+ if(!meta){const synced=await syncDivisionCatalogFromFulfillment(env);if(synced)return synced;meta=await env.DB.prepare("SELECT * FROM phase_three_catalogs WHERE edition='2026' AND length(trim(verified_at))>0 AND length(trim(source_reference))>0").first();}
+ if(!meta)return null;
  const rows=(await env.DB.prepare("SELECT code,title FROM phase_three_divisions WHERE edition='2026' ORDER BY code").all()).results||[];
  if(!rows.length||rows.some(r=>!/^\d{2}$/.test(r.code)||Number(r.code)>49||!r.title?.trim()))return null;
  return {edition:'2026',source:meta.source_reference,verifiedAt:meta.verified_at,divisions:rows};

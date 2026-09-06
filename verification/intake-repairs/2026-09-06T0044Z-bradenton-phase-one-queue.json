@@ -13,14 +13,15 @@
     "repairRequests": 0
   },
   "repair": {
-    "releaseId": "2026-09-06-phase-one-zero-inventory-handoff",
+    "releaseId": "2026-09-06-phase-one-capture-filter",
     "behavior": [
       "Dispatch Phase One jobs and items to a dedicated Cloudflare queue.",
       "Provision that queue idempotently during deployment.",
       "Retain the general department queue as a compatibility fallback.",
       "Use bounded concurrency of 20 and retain retry/dead-letter behavior.",
       "Reclaim queued messages into the dedicated queue after two minutes while retaining the 20-minute lease for running work.",
-      "Directly hand off released zero-inventory legacy jobs; the consumer's atomic claim makes any later legacy delivery a no-op."
+      "Directly hand off released zero-inventory legacy jobs; the consumer's atomic claim makes any later legacy delivery a no-op.",
+      "Exclude native capture JSON companions from Phase One document inventory and rebuild contaminated inventories from the preserved package while archiving prior item records."
     ],
     "preservation": [
       "The queued Phase One job is not reset or bypassed.",

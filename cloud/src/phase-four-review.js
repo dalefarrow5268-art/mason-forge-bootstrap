@@ -1,6 +1,6 @@
 import {fileInputContent,deleteOpenAIFile,extractOutputText} from './document-extractor.js';
 import {loadCompleteSheetBrain} from './sheet-brain-evidence.js';
-const now=()=>new Date().toISOString(),stale=()=>new Date(Date.now()-20*60000).toISOString();
+const now=()=>new Date().toISOString(),stale=()=>new Date(Date.now()-20*60000).toISOString(),orphaned=()=>new Date(Date.now()-60*60000).toISOString();
 export async function sectionCatalog(env,division){
  const meta=await env.DB.prepare("SELECT * FROM phase_four_catalogs WHERE edition='2026' AND length(trim(verified_at))>0 AND length(trim(source_reference))>0").first();if(!meta)return null;
  const sections=(await env.DB.prepare("SELECT code,title FROM phase_four_sections WHERE edition='2026' AND division_code=? ORDER BY code").bind(division).all()).results||[];
@@ -19,6 +19,8 @@ export async function queuePhaseFour(env){
  for(let i=0;i<ids.length;i+=50)await env.DB.batch(ids.slice(i,i+50).map(id=>env.DB.prepare('INSERT OR IGNORE INTO phase_four_items(id,job_id,file_id,updated_at) VALUES(?,?,?,?)').bind(`${job.id}-${id}`,job.id,id,now())));
  await env.DB.prepare("UPDATE phase_four_jobs SET status='RUNNING',catalog_json=?,updated_at=? WHERE id=? AND status='WAITING_STANDARD'").bind(JSON.stringify(catalog),now(),job.id).run();
  }
+ const orphan=await env.DB.prepare("SELECT i.id FROM phase_four_items i JOIN phase_four_jobs j ON j.id=i.job_id JOIN phase_three_jobs p ON p.id=j.submission_id WHERE p.status='READY_FOR_ESTIMATE' AND j.status='RUNNING' AND j.updated_at < ? AND i.attempts=0 AND i.status IN ('PENDING','QUEUED') ORDER BY j.updated_at,i.updated_at LIMIT 1").bind(orphaned()).first();
+ if(orphan){try{console.warn('Directly recovering orphaned Phase Four delivery',orphan.id);await processPhaseFour({id:orphan.id},env);}catch(e){console.error('Direct Phase Four orphan recovery retry',orphan.id,String(e?.message||e));}}
  const rows=(await env.DB.prepare("SELECT i.id FROM phase_four_items i JOIN phase_four_jobs j ON j.id=i.job_id JOIN phase_three_jobs p ON p.id=j.submission_id WHERE p.status='READY_FOR_ESTIMATE' AND j.status='RUNNING' AND (i.status='PENDING' OR (i.status IN ('QUEUED','RUNNING') AND i.updated_at < ?)) LIMIT 50").bind(stale()).all()).results||[];
  for(const row of rows){const claim=await env.DB.prepare("UPDATE phase_four_items SET status='QUEUED',updated_at=? WHERE id=? AND (status='PENDING' OR updated_at < ?)").bind(now(),row.id,stale()).run();if(!claim.meta.changes)continue;
  try{await (env.PHASE_FOUR_QUEUE || env.DEPARTMENT_QUEUE).send({kind:'PHASE_FOUR',id:row.id});}catch(e){await env.DB.prepare("UPDATE phase_four_items SET status='PENDING' WHERE id=? AND status='QUEUED'").bind(row.id).run();throw e;}}

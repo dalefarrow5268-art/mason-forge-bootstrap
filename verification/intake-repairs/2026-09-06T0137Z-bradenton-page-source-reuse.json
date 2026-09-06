@@ -1,0 +1,43 @@
+{
+  "recordedAt": "2026-09-06T01:37:15.910Z",
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "issueId": "bradenton-phase-one-repeated-package-read-20260906",
+  "diagnosis": "Phase One reopened the 184347652-byte prepared ZIP for every page even though the same verified page bytes had already been materialized as individual BRAIN SCAN SOURCE objects. The repeated archive reads remained the dominant Phase One latency after category AI calls were removed.",
+  "observedBeforeRepair": {
+    "phaseOneStatus": "RUNNING",
+    "phaseOneTotal": 169,
+    "phaseOneSorted": 60,
+    "phaseOneQueued": 109,
+    "individualPageSourcesFound": 280,
+    "brainScanSourceRecords": 613,
+    "repairRequests": 0
+  },
+  "repair": {
+    "releaseId": "2026-09-06-phase-one-brain-source-reuse",
+    "behavior": [
+      "Match only an exact project, source class, byte size, and full /Sources/ path suffix.",
+      "Read the already-materialized verified page object rather than reopen the full prepared ZIP.",
+      "Write an independent Phase One working copy and verify its stored byte size.",
+      "Fall back to the existing ZIP extraction path when an exact verified page source is unavailable."
+    ],
+    "preservation": [
+      "The Brain source object and original upload remain unchanged.",
+      "Existing sorted pages and semantic Brain records remain unchanged.",
+      "No category is inferred unless the verified parent source identity already qualifies for deterministic routing.",
+      "No scale, quantity, CSI code, price, or estimate result is added."
+    ]
+  },
+  "verification": {
+    "javascriptSyntaxCheck": "PASS",
+    "phaseOneIntegrationSuite": "PASS including package-unavailable Brain-source reuse",
+    "holdingSuite": "PASS (7 tests)",
+    "production": "PENDING DEPLOYMENT"
+  },
+  "remainingBlockers": [
+    "Production deployment and live throughput improvement must be verified.",
+    "Verified CSI 2026 catalog remains required.",
+    "BASK estimate-delivery connection remains unverified.",
+    "Takeoff quantities require verified scale and source evidence."
+  ]
+}

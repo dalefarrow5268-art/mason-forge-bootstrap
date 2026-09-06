@@ -1,0 +1,35 @@
+name: Retry Bradenton Phase Five
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ['Deploy Mason Forge Cloud']
+    types: [completed]
+permissions:
+  contents: read
+jobs:
+  retry:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Requeue format-only first-attempt holds
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node --input-type=module <<'JS'
+          const base='https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID;
+          const headers={authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN,'content-type':'application/json'};
+          async function query(sql,params=[]){
+            const r=await fetch(base+'/d1/database/736f655b-889d-4fb2-8948-0a396d39436f/query',{method:'POST',headers,body:JSON.stringify({sql,params}),signal:AbortSignal.timeout(30000)});
+            const d=await r.json();
+            if(!r.ok||!d.success) throw Error(JSON.stringify({status:r.status,errors:d.errors}));
+            return d.result?.[0]||{};
+          }
+          const submission='bask-bradenton-2513-v1';
+          const stamp=new Date().toISOString();
+          const updated=await query("UPDATE phase_five_jobs SET status='PENDING',error='Bounded retry scheduled after format-only rejection',updated_at=? WHERE submission_id=? AND status='NEEDS_REVIEW' AND attempts<3 AND error='Scope must be one short line with valid source references'",[stamp,submission]);
+          console.log('requeued',updated.meta?.changes||0);
+          const counts=await query("SELECT status,COUNT(*) count FROM phase_five_jobs WHERE submission_id=? GROUP BY status",[submission]);
+          console.log('counts',JSON.stringify(counts.results||[]));
+          JS

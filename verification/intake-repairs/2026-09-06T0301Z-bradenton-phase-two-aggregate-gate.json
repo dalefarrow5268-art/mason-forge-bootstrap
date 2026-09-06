@@ -1,0 +1,21 @@
+{
+  "submissionId": "bask-bradenton-2513-v1",
+  "projectId": 3,
+  "observedAt": "2026-09-06T03:01:01.398Z",
+  "issueId": "phase-two-aggregate-false-review",
+  "state": "NEEDS_REVIEW after 169 of 169 source reviews completed with zero item errors",
+  "evidence": {
+    "requiredCategoriesMissing": [],
+    "sourcesReviewed": 169,
+    "reviewNotesRetained": 888,
+    "possibleConflictsRetained": 148,
+    "omittedSummaryFindingsRetainedInPerFileEvidence": 2501
+  },
+  "diagnosis": "The closer promoted every per-sheet limitation to a project-level blocking issue and treated lexical variations as blocking conflicts. A sheet-specific absence such as no owner on one drawing therefore guaranteed NEEDS_REVIEW even when the complete source set supplied all five required categories.",
+  "repair": "Retain every limitation as a review note and every possible conflict for later source comparison. Block only when a source review failed to complete or a required Who/What/Where/When/Why category is missing across the complete set. No evidence is deleted, resolved, guessed or suppressed.",
+  "verification": "Pending regression tests and production deployment",
+  "remainingBlockers": [
+    "Verified MasterFormat 2026 division catalog with source reference is required before Phase Three can run.",
+    "BASK estimate-delivery connection remains unverified."
+  ]
+}

@@ -76,6 +76,7 @@ export async function queuePhaseOne(env){
  try{await sendPhaseOne({kind:'PHASE_ONE',table,id:row.id});}catch(e){await env.DB.prepare(`UPDATE ${table} SET status='PENDING' WHERE id=? AND status='QUEUED'`).bind(row.id).run();throw e;}
  }
  }
+ await drainPreparedProvenance(env);
 }
 export async function register(env,source,key,path,size,category){
  const folder=path.slice(0,path.lastIndexOf('/')),time=now();
@@ -177,6 +178,17 @@ async function processItem(env,item){
  const path=`${ROOT}/${source.id} - ${source.file_name.replace(/[^\w .()-]/g,'_')}/${result.category}/${item.original_path}`;
  const fileId=await register(env,source,key,path,item.size_bytes,result.category);
  await env.DB.prepare("UPDATE phase_one_items SET status=?,category=?,reason=?,output_file_id=?,updated_at=? WHERE id=?").bind(result.category==='Needs Review'?'NEEDS_REVIEW':'SORTED',result.category,result.reason,fileId,now(),item.id).run();
+}
+// Queue delivery is durable but should not serialize deterministic routing.
+// Drain a bounded number of already-provenance-qualified pages during each
+// scheduler/health pass. processPhaseOne retains the same atomic claim used by
+// queue consumers, so an arriving queue message becomes a harmless no-op.
+export async function drainPreparedProvenance(env,limit=20){
+ const rows=(await env.DB.prepare("SELECT i.id,i.original_path FROM phase_one_items i JOIN phase_one_jobs j ON j.id=i.job_id JOIN holding_preparations p ON p.source_file_id=j.source_file_id JOIN project_files f ON f.id=p.prepared_file_id WHERE i.status IN ('PENDING','QUEUED') AND p.status='COMPLETE' AND f.source_class='HOLDING PREPARED PACKAGE' ORDER BY i.entry_index LIMIT 100").all()).results||[];
+ const eligible=rows.filter(row=>preparedSourceCategory(row.original_path)).slice(0,Math.max(0,Math.min(20,Number(limit)||0)));
+ let completed=0;
+ for(const row of eligible){try{await processPhaseOne({kind:'PHASE_ONE',table:'phase_one_items',id:row.id},env,1);completed++;}catch(error){console.error('Bounded Phase One provenance drain deferred',row.id,String(error));}}
+ return completed;
 }
 export async function processPhaseOne(body,env,attempt=1){
  if(!['phase_one_jobs','phase_one_items'].includes(body.table))return;

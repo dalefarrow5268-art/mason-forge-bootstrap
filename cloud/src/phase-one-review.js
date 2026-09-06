@@ -36,7 +36,9 @@ export async function queuePhaseOne(env){
  await finishReports(env);
  for(const table of ['phase_one_jobs','phase_one_items']){
  const gate=table==='phase_one_jobs'?` AND (NOT EXISTS(SELECT 1 FROM project_files f WHERE f.id=source_file_id AND f.source_class='PHASE ONE INTAKE') OR EXISTS(SELECT 1 FROM holding_preparations p WHERE p.source_file_id=phase_one_jobs.source_file_id AND p.status='COMPLETE'))`:'';
- const rows=await env.DB.prepare(`SELECT id FROM ${table} WHERE (status='PENDING' OR (status IN ('QUEUED','RUNNING') AND updated_at < ?)) ${gate} LIMIT 20`).bind(new Date(Date.now()-20*60000).toISOString()).all();
+ const runningCutoff=new Date(Date.now()-20*60000).toISOString();
+ const queuedCutoff=new Date(Date.now()-(env.PHASE_ONE_QUEUE?2:20)*60000).toISOString();
+ const rows=await env.DB.prepare(`SELECT id FROM ${table} WHERE (status='PENDING' OR (status='QUEUED' AND updated_at < ?) OR (status='RUNNING' AND updated_at < ?)) ${gate} LIMIT 20`).bind(queuedCutoff,runningCutoff).all();
  for(const row of rows.results||[]){
  const claimed=await env.DB.prepare(`UPDATE ${table} SET status='QUEUED',updated_at=? WHERE id=? AND (status='PENDING' OR updated_at < ?)`).bind(now(),row.id,new Date(Date.now()-20*60000).toISOString()).run();
  if(!claimed.meta.changes)continue;

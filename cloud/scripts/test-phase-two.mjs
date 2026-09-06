@@ -3,7 +3,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import {ZipWriter,Uint8ArrayWriter,TextReader} from '@zip.js/zip.js';
 import {queuePhaseTwo,processPhaseTwo,sourceIds,normalizeFacts,phaseTwoFormat} from '../src/phase-two-review.js';
-assert.match(readFileSync(new URL('../src/phase-two-review.js',import.meta.url),'utf8'),/\[env\.PHASE_ONE_QUEUE,env\.HOLDING_SCAN_QUEUE,env\.DEPARTMENT_QUEUE\]/);
+assert.match(readFileSync(new URL('../src/phase-two-review.js',import.meta.url),'utf8'),/env\.PHASE_TWO_QUEUE\?\[env\.PHASE_TWO_QUEUE\]/);
 const sql=new DatabaseSync(':memory:');
 sql.exec(`CREATE TABLE project_files(id INTEGER PRIMARY KEY,project_id INTEGER,r2_key TEXT UNIQUE,file_name TEXT,relative_path TEXT,file_type TEXT,size_bytes INTEGER,review_status TEXT,source_class TEXT,uploaded_at TEXT,updated_at TEXT,archived_at TEXT); CREATE TABLE project_folders(id TEXT,project_id INTEGER,folder_path TEXT UNIQUE,created_at TEXT,updated_at TEXT);`);
 sql.exec(readFileSync(new URL('../schema/0007_phase_one_review.sql',import.meta.url),'utf8'));
@@ -14,7 +14,7 @@ const DB={async batch(statements){return Promise.all(statements.map(s=>s.run()))
  };},async all(){return {results:sql.prepare(s).all()};}};}};
 const objects=new Map(),sent=[];
 const bucket={async head(k){return objects.has(k)?{size:objects.get(k).length}:null},async get(k,o){let b=objects.get(k);if(!b)return null;if(o?.range)b=b.slice(o.range.offset,o.range.offset+o.range.length);return{size:b.length,body:new Blob([b]).stream(),async text(){return new TextDecoder().decode(b)},async arrayBuffer(){return b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength)}}},async put(k,v){objects.set(k,typeof v==='string'?new TextEncoder().encode(v):v);},async delete(k){objects.delete(k)},async createMultipartUpload(k){const parts=[];return{async uploadPart(n,b){parts[n-1]=b.slice();return{partNumber:n,etag:String(n)}},async complete(){const out=new Uint8Array(parts.reduce((n,p)=>n+p.length,0));let pos=0;for(const p of parts){out.set(p,pos);pos+=p.length;}objects.set(k,out)},async abort(){objects.delete(k)}}}};
-const env={DB,PROJECT_FILES:bucket,DEPARTMENT_QUEUE:{async send(b){sent.push(b)}}};
+const env={DB,PROJECT_FILES:bucket,PHASE_TWO_QUEUE:{async send(b){sent.push(b)}}};
 sql.exec(readFileSync(new URL('../schema/0008_phase_two.sql',import.meta.url),'utf8'));
 assert.equal(sourceIds('[1,1]'),null);assert.equal(sourceIds('[]'),null);
 assert.equal(normalizeFacts({findings:[{question:'Who',fact:'guess'}]}).findings.length,0);

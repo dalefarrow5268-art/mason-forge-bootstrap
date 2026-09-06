@@ -2,11 +2,14 @@ import { extractOutputText } from './document-extractor.js';
 const now = () => new Date().toISOString();
 const stale = () => new Date(Date.now() - 20 * 60 * 1000).toISOString();
 
-// Advance only after EVERY division has a finished section review.
-const ready = `EXISTS(SELECT 1 FROM phase_three_jobs p WHERE p.id=o.submission_id AND p.status='READY_FOR_ESTIMATE')
- AND NOT EXISTS(SELECT 1 FROM phase_three_estimate_outbox d
- LEFT JOIN phase_four_jobs j ON j.id=d.id
- WHERE d.submission_id=o.submission_id AND (j.id IS NULL OR j.status!='READY_FOR_ESTIMATE'))`;
+// Stream each fully reviewed division into scope building as soon as its
+// evidence-backed section rows exist. Other divisions remain independently gated.
+const ready = `EXISTS(
+ SELECT 1 FROM phase_four_jobs j
+ WHERE j.id=o.parent_outbox_id
+   AND j.submission_id=o.submission_id
+   AND j.status='READY_FOR_ESTIMATE'
+)`;
 
 export function normalizeScopes(data, evidence) {
  const issues = Array.isArray(data.issues) ? data.issues.map(String) : ['Missing review issues field'];

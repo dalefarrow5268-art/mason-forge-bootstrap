@@ -3,7 +3,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import {ZipWriter,Uint8ArrayWriter,TextReader} from '@zip.js/zip.js';
 import {processPhaseOne,queuePhaseOne,safe,normalizeReview,storeStream,preparedSourceCategory} from '../src/phase-one-review.js';
-assert.match(readFileSync(new URL('../src/phase-one-review.js',import.meta.url),'utf8'),/env\.HOLDING_SCAN_QUEUE\|\|env\.PHASE_ONE_QUEUE\|\|env\.DEPARTMENT_QUEUE/);
+assert.match(readFileSync(new URL('../src/phase-one-review.js',import.meta.url),'utf8'),/\[env\.PHASE_ONE_QUEUE,env\.HOLDING_SCAN_QUEUE,env\.DEPARTMENT_QUEUE\]/);
 assert.equal(preparedSourceCategory('00001/project/Architectural Plans.pdf/page-00001.pdf'),'Plans');
 assert.equal(preparedSourceCategory('00003/project/Hotel Geo Report.pdf/page-00034.pdf'),'Geotech');
 assert.equal(preparedSourceCategory('00002/project/meeting-minutes.pdf/page-00001.pdf'),null);

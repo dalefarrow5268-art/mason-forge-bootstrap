@@ -1,6 +1,7 @@
 import {checkScale} from './scale-gate.js';
 import {calculateQuantity} from './quantity-engine.js';
 import {now,readSource,audit,text} from './project-phase-common.js';
+import {importDivisionCatalog} from './phase-three-review.js';
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json','cache-control':'no-store'}});
 export async function projectPhaseRoute(request,env){
  const url=new URL(request.url);if(!url.pathname.startsWith('/api/project-phases/'))return null;
@@ -10,7 +11,7 @@ export async function projectPhaseRoute(request,env){
  if(request.method==='GET'&&parts.length===1){
   const phases={};
   for(const [phase,table,key] of [[2,'phase_two_jobs','id'],[3,'phase_three_jobs','id'],[4,'phase_four_jobs','submission_id'],[5,'phase_five_jobs','submission_id'],[6,'phase_six_brains','submission_id'],[7,'phase_seven_jobs','submission_id']])phases[phase]=(await env.DB.prepare(`SELECT status,COUNT(*) count FROM ${table} WHERE ${key}=? GROUP BY status`).bind(submission).all()).results||[];
-  return json({submission,phases,completionPhases:(await env.DB.prepare('SELECT * FROM project_phase_runs WHERE submission_id=? ORDER BY phase').bind(submission).all()).results,
+  return json({submission,phases,phaseThreeCatalog:await env.DB.prepare("SELECT edition,source_reference,verified_at FROM phase_three_catalogs WHERE edition='2026'").first(),completionPhases:(await env.DB.prepare('SELECT * FROM project_phase_runs WHERE submission_id=? ORDER BY phase').bind(submission).all()).results,
    blockedTasks:(await env.DB.prepare("SELECT id,phase,file_id,page,status,error FROM project_phase_tasks WHERE submission_id=? AND status NOT IN ('COMPLETE','PENDING','QUEUED','RUNNING') ORDER BY phase LIMIT 100").bind(submission).all()).results,
    openIssues:(await env.DB.prepare("SELECT * FROM project_review_issues WHERE submission_id=? AND status='OPEN' LIMIT 100").bind(submission).all()).results});
  }
@@ -20,6 +21,11 @@ export async function projectPhaseRoute(request,env){
  const finalized=await env.DB.prepare("SELECT status FROM project_phase_runs WHERE submission_id=? AND phase=12 AND status='COMPLETE'").bind(submission).first();
  if(finalized&&resource!=='candidates')return json({error:'Final estimate is immutable; register a new submission revision for changes'},409);
  try{
+  if(resource==='catalogs'&&id==='2026'&&action==='import'){
+   const result=await importDivisionCatalog(env,submission,Number(body.sourceFileId),String(body.sourceSha256||''));
+   await audit(env,submission,'IMPORT_PHASE_THREE_CATALOG','2026',result);
+   return json(result);
+  }
   // A mixed sheet must have its measurable and reference regions approved
   // before the measuring-layer builder can receive it; the approval is audited.
   if(resource==='layers'&&action==='regions'){

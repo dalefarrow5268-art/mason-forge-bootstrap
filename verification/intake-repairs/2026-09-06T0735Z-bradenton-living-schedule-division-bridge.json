@@ -1,0 +1,54 @@
+{
+  "recordedAt": "2026-09-06T07:35:00Z",
+  "submissionId": "bask-bradenton-2513-v1",
+  "projectId": 3,
+  "issueId": "phase-three-living-schedule-division-bridge",
+  "priorContinuity": {
+    "phase1": "COMPLETE 169/169",
+    "phase2": "COMPLETE 169/169",
+    "phase3": "NEEDS_REVIEW 0/0",
+    "repairRequests": 0
+  },
+  "diagnosis": "Phase Three only read phase_three_catalogs/phase_three_divisions. The existing permanent Fulfillment Center division index was not connected, so an empty Phase Three job stayed NEEDS_REVIEW and incorrectly advertised a duplicate catalog requirement.",
+  "verifiedSource": {
+    "projectId": 13,
+    "table": "fulfillment_inventory",
+    "itemType": "DIV",
+    "status": "ACTIVE",
+    "recordCount": 50,
+    "codeCoverage": "00-49",
+    "root": "SSX Fulfillment Center/01 CSI Divisions",
+    "firstInventoryNumber": "SFC-DIV-000015",
+    "lastInventoryNumber": "SFC-DIV-000064"
+  },
+  "additionalInventoryFinding": {
+    "activeRecordsExposedByCurrentConnector": 6617,
+    "sectionIndexRecords": 432,
+    "activityRecords": 292,
+    "note": "Dale reports an approximately 72,000-record Living Schedule hierarchy. That larger source is not exposed by the current fulfillment_inventory connector response and was not modified by this repair. Phase Four requires continued source-location and validation work."
+  },
+  "repair": [
+    "Validate exactly 50 active permanent DIV records with unique complete 00-49 coverage.",
+    "Require SFC-DIV permanent inventory numbers, registered titles, and verified Fulfillment Center folder root.",
+    "Synchronize the verified division index into Phase Three's catalog tables only when the phase catalog is absent.",
+    "Reopen only empty NEEDS_REVIEW Phase Three jobs; preserve all completed items and review gates."
+  ],
+  "verification": {
+    "nodeSyntax": "PASS",
+    "phaseThreeRegression": "PASS",
+    "assertions": [
+      "complete 50-division Living Schedule validation",
+      "missing division rejection",
+      "automatic catalog synchronization",
+      "Phase Three queue transition",
+      "strict code validation and evidence report",
+      "duplicate-safe estimate outbox"
+    ]
+  },
+  "remainingBlockers": [
+    "Production deployment and live Phase Three transition must be verified after merge.",
+    "Locate and validate the full approximately 72,000-record Living Schedule source before Phase Four; do not substitute the 432-record summary.",
+    "Verify BASK estimate delivery connection before final estimate delivery.",
+    "Quantities and units remain subject to scale/evidence verification."
+  ]
+}

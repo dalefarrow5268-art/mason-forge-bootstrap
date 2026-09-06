@@ -1,0 +1,22 @@
+{
+  "submissionId": "bask-bradenton-2513-v1",
+  "projectId": 3,
+  "observedAt": "2026-09-06T05:45:00Z",
+  "issueId": "phase-three-verified-catalog-import",
+  "diagnosis": [
+    "Phase Two is COMPLETE for all 169 sheets.",
+    "Phase Three is NEEDS_REVIEW because no verified MasterFormat 2026 catalog is loaded.",
+    "CSI confirms the 2026 edition, but the full catalog is licensed and no public unauthenticated API or free download is available.",
+    "The worker had no controlled production path for loading a licensed catalog export."
+  ],
+  "repair": [
+    "Add an authenticated, project-file-backed catalog import route.",
+    "Require preserved source bytes, SHA-256 match, edition 2026, licensed-access confirmation, complete-catalog confirmation, declared row count, HTTPS source reference, unique two-digit codes, and exact titles.",
+    "Load the catalog atomically, preserve provenance, audit the action, and reopen only an empty catalog-blocked Phase Three job."
+  ],
+  "verification": "Pending regression tests and production deployment.",
+  "remainingBlockers": [
+    "A licensed MasterFormat 2026 export has not been supplied or found in Dale's authorized browser session.",
+    "BASK estimate-delivery connection remains unverified."
+  ]
+}

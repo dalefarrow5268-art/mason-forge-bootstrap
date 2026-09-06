@@ -1,18 +1,18 @@
 {
-  "capturedAt": "2026-09-05T23:55:42.679Z",
-  "sourceCommit": "396bc7c8bc945de2de0a221d0efd68b945475f7c",
+  "capturedAt": "2026-09-06T00:08:32.651Z",
+  "sourceCommit": "3405b6b10a3eda41422ae8b0f5b4fd2fbafdb32b",
   "health": {
     "status": "online",
     "operationalReady": true,
     "service": "Mason Forge Cloud",
     "environment": "production",
-    "releaseId": "2026-09-05-dedicated-holding-scan-queue",
+    "releaseId": "2026-09-06-accelerated-holding-scan",
     "database": "D1 VERIFIED",
     "projectFileStorage": "R2 VERIFIED",
     "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
     "openai": "CONFIGURED",
     "projects": 13,
-    "files": 3069,
+    "files": 3099,
     "taskTotals": {
       "COMPLETED": 1845
     },
@@ -26,16 +26,16 @@
     },
     "extraction": {
       "extracted": 2153,
-      "queued": 4,
+      "queued": 3,
       "retrying": 0,
       "failed": 0,
-      "pending": 912
+      "pending": 943
     },
     "staleRunningTasks": 0,
     "completedTasksWithoutOutput": 0,
     "duplicateOutputTasks": 0,
     "countsReconcile": true,
-    "projectFileTotal": 3069,
+    "projectFileTotal": 3099,
     "projectTaskTotal": 1845,
     "r2Samples": [
       {
@@ -80,7 +80,7 @@
       {
         "id": 3,
         "name": "Bask Development",
-        "file_count": 648,
+        "file_count": 678,
         "queued_tasks": 0,
         "running_tasks": 0,
         "blocked_tasks": 0,
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-05T23:55:43.589Z"
+    "checkedAt": "2026-09-06T00:08:33.383Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-05T23:55:44.196Z",
+    "retrievedAt": "2026-09-06T00:08:33.936Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",
@@ -400,7 +400,7 @@
         "client": null,
         "status": "INTAKE",
         "review_status": "NEEDS REVIEW",
-        "file_count": 648,
+        "file_count": 678,
         "running_tasks": 0,
         "queued_tasks": 0,
         "completed_tasks": 160,

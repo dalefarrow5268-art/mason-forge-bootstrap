@@ -1,0 +1,27 @@
+{
+  "submissionId": "bask-bradenton-2513-v1",
+  "projectId": 3,
+  "observedAt": "2026-09-06T01:53:01.750Z",
+  "issueId": "phase-two-malformed-json-8635",
+  "stateBeforeRepair": {
+    "phaseOne": "COMPLETE 169/169",
+    "phaseTwo": "RUNNING 0/169",
+    "error": "Expected ',' or ']' after array element in JSON at position 8635 (line 177 column 6)",
+    "repairRequests": 0
+  },
+  "diagnosis": "The Phase Two model call requested generic JSON mode. That mode did not enforce the evidence record schema and returned syntactically malformed output, which was rejected and retained for retry.",
+  "repair": "Replace generic JSON mode with a strict JSON Schema for cited Who/What/Where/When/Why findings and limitations. Detect incomplete Responses API output explicitly. Existing quote, location and no-guess validation remains enforced.",
+  "verification": {
+    "staticSyntax": "passed",
+    "phaseTwoTests": "passed",
+    "phaseOneRegressionTests": "passed",
+    "holdingTests": "7 passed",
+    "production": "pending deployment"
+  },
+  "remainingBlockers": [
+    "Phase Two must complete and resolve any evidence review issues before later phases run.",
+    "Takeoff remains gated until phases 2 through 8 and verified scales/regions are complete.",
+    "Verified CSI 2026 catalog is not connected.",
+    "BASK estimate-delivery connection is not verified."
+  ]
+}

@@ -1,8 +1,1591 @@
 {
-  "success": false,
-  "errors": [
-    "Verification report was not produced."
+  "schemaVersion": 2,
+  "startedAt": "2026-09-06T00:40:02.293Z",
+  "completedAt": "2026-09-06T00:40:06.222Z",
+  "success": true,
+  "worker": {
+    "attempt": 1,
+    "httpStatus": 200,
+    "data": {
+      "status": "online",
+      "operationalReady": true,
+      "service": "Mason Forge Cloud",
+      "environment": "production",
+      "releaseId": "2026-09-06-separate-capture-review",
+      "database": "D1 VERIFIED",
+      "projectFileStorage": "R2 VERIFIED",
+      "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
+      "openai": "CONFIGURED",
+      "projects": 13,
+      "files": 3179,
+      "taskTotals": {
+        "COMPLETED": 1845
+      },
+      "totalTasks": 1845,
+      "outputCount": 1845,
+      "continuity": {
+        "checkpoint_id": "checkpoint_bf35671f-9b1a-4964-a848-0c9605ebc6ab",
+        "version": 5627,
+        "verification_status": "VERIFIED",
+        "updated_at": "2026-09-04T23:30:26.394Z"
+      },
+      "extraction": {
+        "extracted": 2155,
+        "queued": 1,
+        "retrying": 0,
+        "failed": 0,
+        "pending": 1023
+      },
+      "staleRunningTasks": 0,
+      "completedTasksWithoutOutput": 0,
+      "duplicateOutputTasks": 0,
+      "countsReconcile": true,
+      "projectFileTotal": 3179,
+      "projectTaskTotal": 1845,
+      "r2Samples": [
+        {
+          "fileId": 481,
+          "projectId": 2,
+          "present": true
+        },
+        {
+          "fileId": 482,
+          "projectId": 2,
+          "present": true
+        },
+        {
+          "fileId": 483,
+          "projectId": 2,
+          "present": true
+        }
+      ],
+      "projectsDetail": [
+        {
+          "id": 1,
+          "name": "Walmart 1490.1011 - Rockford_ IL - SUP-SP-2027",
+          "file_count": 0,
+          "queued_tasks": 0,
+          "running_tasks": 0,
+          "blocked_tasks": 0,
+          "completed_tasks": 5,
+          "failed_tasks": 0,
+          "canceled_tasks": 0
+        },
+        {
+          "id": 2,
+          "name": "Priority 08 - Enterprise Operations",
+          "file_count": 14,
+          "queued_tasks": 0,
+          "running_tasks": 0,
+          "blocked_tasks": 0,
+          "completed_tasks": 45,
+          "failed_tasks": 0,
+          "canceled_tasks": 0
+        },
+        {
+          "id": 3,
+          "name": "Bask Development",
+          "file_count": 758,
+          "queued_tasks": 0,
+          "running_tasks": 0,
+          "blocked_tasks": 0,
+          "completed_tasks": 160,
+          "failed_tasks": 0,
+          "canceled_tasks": 0
+        },
+        {
+          "id": 4,
+          "name": "Bask Fairfield Inn Tampa",
+          "file_count": 1963,
+          "queued_tasks": 0,
+          "running_tasks": 0,
+          "blocked_tasks": 0,
+          "completed_tasks": 1165,
+          "failed_tasks": 0,
+          "canceled_tasks": 0
+        },
+        {
+          "id": 5,
+          "name": "Bask StudioRes Estero",
+          "file_count": 165,
+          "queued_tasks": 0,
+          "running_tasks": 0,
+          "blocked_tasks": 0,
+          "completed_tasks": 60,
+          "failed_tasks": 0,
+          "canceled_tasks": 0
+        },
+        {
+          "id": 6,
+          "name": "Dayton Convention Center Hotel",
+          "file_count": 0,
+          "queued_tasks": 0,
+          "running_tasks": 0,
+          "blocked_tasks": 0,
+          "completed_tasks": 5,
+          "failed_tasks": 0,
+          "canceled_tasks": 0
+        },
+        {
+          "id": 7,
+          "name": "Autograph by Marriott, Jericho",
+          "file_count": 1,
+          "queued_tasks": 0,
+          "running_tasks": 0,
+          "blocked_tasks": 0,
+          "completed_tasks": 10,
+          "failed_tasks": 0,
+          "canceled_tasks": 0
+        },
+        {
+          "id": 8,
+          "name": "Kensington Parking Deck Schaumburg, IL",
+          "file_count": 0,
+          "queued_tasks": 0,
+          "running_tasks": 0,
+          "blocked_tasks": 0,
+          "completed_tasks": 5,
+          "failed_tasks": 0,
+          "canceled_tasks": 0
+        },
+        {
+          "id": 9,
+          "name": "Walmart 1490.1011 - Rockford, IL - SUP-SP-2027",
+          "file_count": 0,
+          "queued_tasks": 0,
+          "running_tasks": 0,
+          "blocked_tasks": 0,
+          "completed_tasks": 5,
+          "failed_tasks": 0,
+          "canceled_tasks": 0
+        },
+        {
+          "id": 10,
+          "name": "TMC Helix Park Autograph Hotel by Marriott",
+          "file_count": 11,
+          "queued_tasks": 0,
+          "running_tasks": 0,
+          "blocked_tasks": 0,
+          "completed_tasks": 50,
+          "failed_tasks": 0,
+          "canceled_tasks": 0
+        },
+        {
+          "id": 11,
+          "name": "Jericho, NY AGC Hotel",
+          "file_count": 0,
+          "queued_tasks": 0,
+          "running_tasks": 0,
+          "blocked_tasks": 0,
+          "completed_tasks": 5,
+          "failed_tasks": 0,
+          "canceled_tasks": 0
+        },
+        {
+          "id": 12,
+          "name": "test",
+          "file_count": 0,
+          "queued_tasks": 0,
+          "running_tasks": 0,
+          "blocked_tasks": 0,
+          "completed_tasks": 5,
+          "failed_tasks": 0,
+          "canceled_tasks": 0
+        },
+        {
+          "id": 13,
+          "name": "SSX",
+          "file_count": 267,
+          "queued_tasks": 0,
+          "running_tasks": 0,
+          "blocked_tasks": 0,
+          "completed_tasks": 325,
+          "failed_tasks": 0,
+          "canceled_tasks": 0
+        }
+      ],
+      "checkedAt": "2026-09-06T00:40:02.856Z"
+    },
+    "errors": []
+  },
+  "dashboardSamples": [
+    {
+      "capturedAt": "2026-09-06T00:40:03.467Z",
+      "httpStatus": 200,
+      "data": {
+        "retrievedAt": "2026-09-06T00:40:03.403Z",
+        "continuity": {
+          "scope_type": "system",
+          "scope_id": "mason-forge",
+          "checkpoint_id": "checkpoint_bf35671f-9b1a-4964-a848-0c9605ebc6ab",
+          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-mcp-discovery-13\",\"projects\":13,\"files\":2513,\"extraction\":{\"total\":2513,\"extracted\":2148,\"queued\":0,\"extracting\":0,\"retrying\":0,\"failed\":0,\"routedReview\":365,\"pending\":0,\"accounted\":2513},\"taskTotals\":{\"COMPLETED\":1845},\"outputCount\":1845,\"latestOutputAt\":\"2026-09-04T22:53:56.271Z\",\"latestActivityAt\":\"2026-09-04T23:16:50.922Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
+          "summary": "Mason Forge live state: 13 projects, 2513 files, 0 running, 0 queued, 1845 completed, 1845 outputs, 2148 files extracted.",
+          "verification_status": "VERIFIED",
+          "source": "LIVE D1 VERIFIED STATE",
+          "version": 5627,
+          "created_at": "2026-07-24T15:05:09.403Z",
+          "updated_at": "2026-09-04T23:30:26.394Z",
+          "state": {
+            "system": "Mason Forge Cloud",
+            "deployment": "LIVE",
+            "releaseId": "2026-07-24-mcp-discovery-13",
+            "projects": 13,
+            "files": 2513,
+            "extraction": {
+              "total": 2513,
+              "extracted": 2148,
+              "queued": 0,
+              "extracting": 0,
+              "retrying": 0,
+              "failed": 0,
+              "routedReview": 365,
+              "pending": 0,
+              "accounted": 2513
+            },
+            "taskTotals": {
+              "COMPLETED": 1845
+            },
+            "outputCount": 1845,
+            "latestOutputAt": "2026-09-04T22:53:56.271Z",
+            "latestActivityAt": "2026-09-04T23:16:50.922Z",
+            "staleRunningTasks": 0,
+            "staleExtractionJobs": 0,
+            "evidenceRule": "Active work requires RUNNING task evidence or completed department outputs."
+          }
+        },
+        "projects": [
+          {
+            "id": 13,
+            "name": "SSX",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 267,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 325,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 12,
+            "name": "test",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 11,
+            "name": "Jericho, NY AGC Hotel",
+            "location": "Jericho, NY",
+            "client": "AGC",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 10,
+            "name": "TMC Helix Park Autograph Hotel by Marriott",
+            "location": "Houston, TX",
+            "client": "Concord Hospitality / W.A. Randolph - Burton Construction JV",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 11,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 50,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 9,
+            "name": "Walmart 1490.1011 - Rockford, IL - SUP-SP-2027",
+            "location": "Rockford, IL",
+            "client": "Walmart",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 8,
+            "name": "Kensington Parking Deck Schaumburg, IL",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 7,
+            "name": "Autograph by Marriott, Jericho",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 1,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 10,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 6,
+            "name": "Dayton Convention Center Hotel",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 5,
+            "name": "Bask StudioRes Estero",
+            "location": "22910 Lyden Drive, Estero FL 33928",
+            "client": "Tulip Associates, LLC",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 165,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 60,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 4,
+            "name": "Bask Fairfield Inn Tampa",
+            "location": "9301 N. 29th Street, Tampa FL 33612",
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 1963,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 1165,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 3,
+            "name": "Bask Development",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 758,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 160,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 2,
+            "name": "Priority 08 - Enterprise Operations",
+            "location": "National / Multi-Site",
+            "client": "SubSource Exchange",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 14,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 45,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 1,
+            "name": "Walmart 1490.1011 - Rockford_ IL - SUP-SP-2027",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          }
+        ],
+        "taskTotals": {
+          "COMPLETED": 1845
+        },
+        "outputCount": 1845,
+        "evidenceRule": "Do not claim active work without RUNNING task events or completed department outputs.",
+        "taskTotalsRows": [
+          {
+            "status": "COMPLETED",
+            "count": 1845
+          }
+        ]
+      },
+      "errors": [],
+      "globalTasks": {
+        "COMPLETED": 1845
+      },
+      "projectTasks": {
+        "QUEUED": 0,
+        "RUNNING": 0,
+        "BLOCKED": 0,
+        "COMPLETED": 1845,
+        "FAILED": 0,
+        "CANCELED": 0
+      },
+      "projectFiles": 3179
+    },
+    {
+      "capturedAt": "2026-09-06T00:40:05.620Z",
+      "httpStatus": 200,
+      "data": {
+        "retrievedAt": "2026-09-06T00:40:05.585Z",
+        "continuity": {
+          "scope_type": "system",
+          "scope_id": "mason-forge",
+          "checkpoint_id": "checkpoint_bf35671f-9b1a-4964-a848-0c9605ebc6ab",
+          "state_json": "{\"system\":\"Mason Forge Cloud\",\"deployment\":\"LIVE\",\"releaseId\":\"2026-07-24-mcp-discovery-13\",\"projects\":13,\"files\":2513,\"extraction\":{\"total\":2513,\"extracted\":2148,\"queued\":0,\"extracting\":0,\"retrying\":0,\"failed\":0,\"routedReview\":365,\"pending\":0,\"accounted\":2513},\"taskTotals\":{\"COMPLETED\":1845},\"outputCount\":1845,\"latestOutputAt\":\"2026-09-04T22:53:56.271Z\",\"latestActivityAt\":\"2026-09-04T23:16:50.922Z\",\"staleRunningTasks\":0,\"staleExtractionJobs\":0,\"evidenceRule\":\"Active work requires RUNNING task evidence or completed department outputs.\"}",
+          "summary": "Mason Forge live state: 13 projects, 2513 files, 0 running, 0 queued, 1845 completed, 1845 outputs, 2148 files extracted.",
+          "verification_status": "VERIFIED",
+          "source": "LIVE D1 VERIFIED STATE",
+          "version": 5627,
+          "created_at": "2026-07-24T15:05:09.403Z",
+          "updated_at": "2026-09-04T23:30:26.394Z",
+          "state": {
+            "system": "Mason Forge Cloud",
+            "deployment": "LIVE",
+            "releaseId": "2026-07-24-mcp-discovery-13",
+            "projects": 13,
+            "files": 2513,
+            "extraction": {
+              "total": 2513,
+              "extracted": 2148,
+              "queued": 0,
+              "extracting": 0,
+              "retrying": 0,
+              "failed": 0,
+              "routedReview": 365,
+              "pending": 0,
+              "accounted": 2513
+            },
+            "taskTotals": {
+              "COMPLETED": 1845
+            },
+            "outputCount": 1845,
+            "latestOutputAt": "2026-09-04T22:53:56.271Z",
+            "latestActivityAt": "2026-09-04T23:16:50.922Z",
+            "staleRunningTasks": 0,
+            "staleExtractionJobs": 0,
+            "evidenceRule": "Active work requires RUNNING task evidence or completed department outputs."
+          }
+        },
+        "projects": [
+          {
+            "id": 13,
+            "name": "SSX",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 267,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 325,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 12,
+            "name": "test",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 11,
+            "name": "Jericho, NY AGC Hotel",
+            "location": "Jericho, NY",
+            "client": "AGC",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 10,
+            "name": "TMC Helix Park Autograph Hotel by Marriott",
+            "location": "Houston, TX",
+            "client": "Concord Hospitality / W.A. Randolph - Burton Construction JV",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 11,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 50,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 9,
+            "name": "Walmart 1490.1011 - Rockford, IL - SUP-SP-2027",
+            "location": "Rockford, IL",
+            "client": "Walmart",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 8,
+            "name": "Kensington Parking Deck Schaumburg, IL",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 7,
+            "name": "Autograph by Marriott, Jericho",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 1,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 10,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 6,
+            "name": "Dayton Convention Center Hotel",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 5,
+            "name": "Bask StudioRes Estero",
+            "location": "22910 Lyden Drive, Estero FL 33928",
+            "client": "Tulip Associates, LLC",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 165,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 60,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 4,
+            "name": "Bask Fairfield Inn Tampa",
+            "location": "9301 N. 29th Street, Tampa FL 33612",
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 1963,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 1165,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 3,
+            "name": "Bask Development",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 758,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 160,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 2,
+            "name": "Priority 08 - Enterprise Operations",
+            "location": "National / Multi-Site",
+            "client": "SubSource Exchange",
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 14,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 45,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          },
+          {
+            "id": 1,
+            "name": "Walmart 1490.1011 - Rockford_ IL - SUP-SP-2027",
+            "location": null,
+            "client": null,
+            "status": "INTAKE",
+            "review_status": "NEEDS REVIEW",
+            "file_count": 0,
+            "running_tasks": 0,
+            "queued_tasks": 0,
+            "completed_tasks": 5,
+            "failed_tasks": 0,
+            "blocked_tasks": 0,
+            "canceled_tasks": 0
+          }
+        ],
+        "taskTotals": {
+          "COMPLETED": 1845
+        },
+        "outputCount": 1845,
+        "evidenceRule": "Do not claim active work without RUNNING task events or completed department outputs.",
+        "taskTotalsRows": [
+          {
+            "status": "COMPLETED",
+            "count": 1845
+          }
+        ]
+      },
+      "errors": [],
+      "globalTasks": {
+        "COMPLETED": 1845
+      },
+      "projectTasks": {
+        "QUEUED": 0,
+        "RUNNING": 0,
+        "BLOCKED": 0,
+        "COMPLETED": 1845,
+        "FAILED": 0,
+        "CANCELED": 0
+      },
+      "projectFiles": 3179
+    }
   ],
-  "sourceCommit": "0e337b635d81de51024b62739160365c18cff9bf",
-  "workflowRunId": "34001643858"
+  "progression": {
+    "activeAtStart": false,
+    "progressionProved": false,
+    "timestampsFresh": true,
+    "outputsNondecreasing": true,
+    "firstOutputCount": 1845,
+    "secondOutputCount": 1845,
+    "firstCompleted": 1845,
+    "secondCompleted": 1845
+  },
+  "extractionDiagnostics": {
+    "4": {
+      "httpStatus": 200,
+      "count": 1784,
+      "statusCounts": {
+        "EXTRACTED - NEEDS HUMAN REVIEW": 170,
+        "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT": 146,
+        "EXTRACTED - READY": 672,
+        "EXTRACTED - MANUAL REVIEW REQUIRED: DOCUMENT": 155,
+        "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 471,
+        "MANUAL REVIEW REQUIRED: DOCUMENT": 37,
+        "EXTRACTED - VISUAL REVIEW REQUIRED: SCAN": 27,
+        "EXTRACTED - VISUAL REVIEW REQUIRED: IMAGE": 105,
+        "MANUAL REVIEW REQUIRED: IMAGE": 1
+      },
+      "actionableSamples": [
+        {
+          "id": 2016,
+          "fileName": "BASK_Estimating_System_Main_8.22.26.zip",
+          "relativePath": "BASK Estimating System Main/BASK_Estimating_System_Main_8.22.26.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1407713,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2054,
+          "fileName": "general-conditions.tsx",
+          "relativePath": "BASK Estimating System Main/app/general-conditions.tsx",
+          "fileType": "text/plain",
+          "sizeBytes": 33989,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1944,
+          "fileName": "BASK_FAIRFIELD_ESTIMATE_2026-08-17_1630.zip",
+          "relativePath": "Bask Fairfield Estimate/BASK_FAIRFIELD_ESTIMATE_2026-08-17_1630.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 725372,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1945,
+          "fileName": "BASK_FAIRFIELD_ESTIMATE_SCHEDULE_GC_2026-08-17_1630.zip",
+          "relativePath": "Bask Fairfield Estimate/BASK_FAIRFIELD_ESTIMATE_SCHEDULE_GC_2026-08-17_1630.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 492653,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1947,
+          "fileName": "CURRENT - Fairfield_Material_List_by_Division_2026-08-17_V1.pdf",
+          "relativePath": "Bask Fairfield Inn Tampa/Estimate/00 CURRENT - Latest/CURRENT - Fairfield_Material_List_by_Division_2026-08-17_V1.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 493659,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 849,
+          "fileName": "Bask_Fairfield_Inn_Tampa_Clean_Estimate_V1.zip",
+          "relativePath": "Bask Fairfield Inn Tampa/Estimate/Bask_Fairfield_Inn_Tampa_Clean_Estimate_V1.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 813170,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 897,
+          "fileName": "Fairfield_Trade_Estimate_Website_V1.zip",
+          "relativePath": "Bask Fairfield Inn Tampa/Estimate/Fairfield_Trade_Estimate_Website_V1.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 346860,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 947,
+          "fileName": "Fairfield_Trade_Estimate_Website_V2.zip",
+          "relativePath": "Bask Fairfield Inn Tampa/Estimate/Fairfield_Trade_Estimate_Website_V2.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 822332,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1332,
+          "fileName": "Fairfield_Trade_Estimate_Website_V21.zip",
+          "relativePath": "Bask Fairfield Inn Tampa/Estimate/Fairfield_Trade_Estimate_Website_V21.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 232376,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1036,
+          "fileName": "Fairfield_Trade_Estimate_Website_V3.zip",
+          "relativePath": "Bask Fairfield Inn Tampa/Estimate/Fairfield_Trade_Estimate_Website_V3.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 825574,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1334,
+          "fileName": "Fairfield_Trade_Estimate_Website_V31.zip",
+          "relativePath": "Bask Fairfield Inn Tampa/Estimate/Fairfield_Trade_Estimate_Website_V31.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 886955,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1375,
+          "fileName": "Fairfield_Trade_Estimate_Website_V32.zip",
+          "relativePath": "Bask Fairfield Inn Tampa/Estimate/Fairfield_Trade_Estimate_Website_V32.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 889640,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1236,
+          "fileName": "Fairfield_Trade_Estimate_Website_V4.zip",
+          "relativePath": "Bask Fairfield Inn Tampa/Estimate/Fairfield_Trade_Estimate_Website_V4.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 830154,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1295,
+          "fileName": "Fairfield_Trade_Estimate_Website_V5.zip",
+          "relativePath": "Bask Fairfield Inn Tampa/Estimate/Fairfield_Trade_Estimate_Website_V5.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 834066,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1301,
+          "fileName": "Fairfield_Trade_Estimate_Website_V6.zip",
+          "relativePath": "Bask Fairfield Inn Tampa/Estimate/Fairfield_Trade_Estimate_Website_V6.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 836493,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2200,
+          "fileName": "Fairfield_Rev347_Operational_Handoff_CORRECTED_2026-08-26.zip",
+          "relativePath": "Bask Fairfield Inn Tampa/Estimates/Handoffs/Fairfield_Rev347_Operational_Handoff_CORRECTED_2026-08-26.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 123904,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1303,
+          "fileName": "A005-FINISHES-LEDGER.md",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Finishes/Sheet A005/A005-FINISHES-LEDGER.md",
+          "fileType": "text/markdown",
+          "sizeBytes": 874,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 1309,
+          "fileName": "A120-FINISHES-LEDGER.md",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Finishes/Sheet A120/A120-FINISHES-LEDGER.md",
+          "fileType": "text/markdown",
+          "sizeBytes": 904,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 956,
+          "fileName": "A113-Third-Floor-Plan-Rev.04.pdf",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A113/A113-Third-Floor-Plan-Rev.04.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 605415,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 960,
+          "fileName": "A114-Fourth-Floor-Plan-Rev.04.pdf",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A114/A114-Fourth-Floor-Plan-Rev.04.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 717461,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 958,
+          "fileName": "A115-Fifth-Floor-Plan-Rev.04.pdf",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A115/A115-Fifth-Floor-Plan-Rev.04.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 702191,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 961,
+          "fileName": "A116-MASONRY-LEDGER.md",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A116/A116-MASONRY-LEDGER.md",
+          "fileType": "text/markdown",
+          "sizeBytes": 777,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 962,
+          "fileName": "A200-Front-and-Back-Exterior-Elevations-Rev.04.pdf",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A200/A200-Front-and-Back-Exterior-Elevations-Rev.04.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 553055,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 966,
+          "fileName": "A201-Side-Exterior-Elevations-Rev.03.pdf",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A201/A201-Side-Exterior-Elevations-Rev.03.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 604456,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 967,
+          "fileName": "A300-Building-Sections-1-Rev.02.pdf",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A300/A300-Building-Sections-1-Rev.02.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 316542,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 970,
+          "fileName": "A310-Building-Section-2-Rev.02.pdf",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A310/A310-Building-Section-2-Rev.02.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 386514,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 969,
+          "fileName": "A312-EXTERIOR-WALL-SECTIONS-Rev.02.pdf",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A312/A312-EXTERIOR-WALL-SECTIONS-Rev.02.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 465279,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 973,
+          "fileName": "A313-EXTERIOR-WALL-SECTIONS-Rev.02.pdf",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A313/A313-EXTERIOR-WALL-SECTIONS-Rev.02.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 354397,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 974,
+          "fileName": "A314-EXTERIOR-WALL-SECTIONS-Rev.04.pdf",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A314/A314-EXTERIOR-WALL-SECTIONS-Rev.04.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 585354,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 978,
+          "fileName": "A490-STAIR-1-Rev.02.pdf",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A490/A490-STAIR-1-Rev.02.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 467111,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 979,
+          "fileName": "A-600-DOOR-SCHEDULE-_-DETAILS-Rev.03.pdf",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A600/A-600-DOOR-SCHEDULE-_-DETAILS-Rev.03.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 204705,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 981,
+          "fileName": "A-610-WINDOW-SCHEDULE-_-DETAILS-Rev.01.pdf",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A610/A-610-WINDOW-SCHEDULE-_-DETAILS-Rev.01.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 2432943,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 986,
+          "fileName": "A610-MASONRY-LEDGER.md",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet A610/A610-MASONRY-LEDGER.md",
+          "fileType": "text/markdown",
+          "sizeBytes": 827,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 985,
+          "fileName": "C16-MASONRY-LEDGER.md",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet C16/C16-MASONRY-LEDGER.md",
+          "fileType": "text/markdown",
+          "sizeBytes": 1223,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 984,
+          "fileName": "C6-MASONRY-LEDGER.md",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet C6/C6-MASONRY-LEDGER.md",
+          "fileType": "text/markdown",
+          "sizeBytes": 702,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 988,
+          "fileName": "S101-MASONRY-LEDGER.md",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet S101/S101-MASONRY-LEDGER.md",
+          "fileType": "text/markdown",
+          "sizeBytes": 772,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 989,
+          "fileName": "S201-MASONRY-LEDGER.md",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet S201/S201-MASONRY-LEDGER.md",
+          "fileType": "text/markdown",
+          "sizeBytes": 747,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 987,
+          "fileName": "S202-MASONRY-LEDGER.md",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet S202/S202-MASONRY-LEDGER.md",
+          "fileType": "text/markdown",
+          "sizeBytes": 771,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 990,
+          "fileName": "S203-MASONRY-LEDGER.md",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet S203/S203-MASONRY-LEDGER.md",
+          "fileType": "text/markdown",
+          "sizeBytes": 746,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 991,
+          "fileName": "S301-MASONRY-LEDGER.md",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet S301/S301-MASONRY-LEDGER.md",
+          "fileType": "text/markdown",
+          "sizeBytes": 760,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 992,
+          "fileName": "S302-MASONRY-LEDGER.md",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet S302/S302-MASONRY-LEDGER.md",
+          "fileType": "text/markdown",
+          "sizeBytes": 760,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 993,
+          "fileName": "S303-MASONRY-LEDGER.md",
+          "relativePath": "Bask Fairfield Inn Tampa/Trade Takeoffs/Masonry/Sheet S303/S303-MASONRY-LEDGER.md",
+          "fileType": "text/markdown",
+          "sizeBytes": 760,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 1882,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-16-V33.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-16-V33.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 227706,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1920,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-16-V34.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-16-V34.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 297184,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1928,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V35-ELECTRICAL-COMPLETE.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V35-ELECTRICAL-COMPLETE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 301783,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1929,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V36-PAINTING-WALLCOVERING-COMPLETE.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V36-PAINTING-WALLCOVERING-COMPLETE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 303953,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1930,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V37-FULL-HOTEL-FURNITURE-COMPLETE.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V37-FULL-HOTEL-FURNITURE-COMPLETE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 306223,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1931,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V38-FULL-HOTEL-FLOORING-COMPLETE.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V38-FULL-HOTEL-FLOORING-COMPLETE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 308457,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1932,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V39-FULL-HOTEL-DRYWALL-FRAMING-CEILINGS-COMPLETE.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V39-FULL-HOTEL-DRYWALL-FRAMING-CEILINGS-COMPLETE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 310230,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1933,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V40-FULL-HOTEL-DOORS-FRAMES-HARDWARE-COMPLETE.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V40-FULL-HOTEL-DOORS-FRAMES-HARDWARE-COMPLETE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 312780,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1934,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V41-FULL-HOTEL-CASEWORK-COUNTERTOPS-MILLWORK-COMPLETE.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V41-FULL-HOTEL-CASEWORK-COUNTERTOPS-MILLWORK-COMPLETE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 315243,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1935,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V42-FULL-HOTEL-TOILET-ACCESSORIES-PARTITIONS-MIRRORS-SPECIALTIES-COMPLETE.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V42-FULL-HOTEL-TOILET-ACCESSORIES-PARTITIONS-MIRRORS-SPECIALTIES-COMPLETE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 318051,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1936,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V43-FULL-HOTEL-FOODSERVICE-LAUNDRY-APPLIANCES-EQUIPMENT-COMPLETE.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V43-FULL-HOTEL-FOODSERVICE-LAUNDRY-APPLIANCES-EQUIPMENT-COMPLETE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 320857,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1937,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V44-FULL-HOTEL-ELEVATORS-CONVEYING-SYSTEMS-COMPLETE.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V44-FULL-HOTEL-ELEVATORS-CONVEYING-SYSTEMS-COMPLETE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 323251,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1938,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V45-FULL-HOTEL-FIRE-SPRINKLER-SUPPRESSION-COMPLETE.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V45-FULL-HOTEL-FIRE-SPRINKLER-SUPPRESSION-COMPLETE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 326546,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1939,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V46-FULL-HOTEL-PLUMBING-SYSTEMS-FIXTURES-EQUIPMENT-COMPLETE.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V46-FULL-HOTEL-PLUMBING-SYSTEMS-FIXTURES-EQUIPMENT-COMPLETE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 330026,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1940,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V47-CANCELED-POOL-ALL-RELATED-SCOPE-REMOVED.zip",
+          "relativePath": "CURRENT - Bask Fairfield Main Estimating Template/CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V47-CANCELED-POOL-ALL-RELATED-SCOPE-REMOVED.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 328028,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1315,
+          "fileName": "CURRENT-Fairfield-Estimate-Schedule-General-Conditions-Proposal-LOCKED-2026-08-16.zip",
+          "relativePath": "CURRENT - Fairfield Estimate Schedule General Conditions Proposal",
+          "fileType": "application/zip",
+          "sizeBytes": 703315,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1333,
+          "fileName": "FAIRFIELD_PERFECT_RESTART_HANDOFF_2026-08-16.zip",
+          "relativePath": "CURRENT - Fairfield Estimate Schedule General Conditions Proposal/Restart Handoff 2026-08-16",
+          "fileType": "application/zip",
+          "sizeBytes": 707218,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1941,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V48-COMPLETE-MASONRY-SCOPE.zip",
+          "relativePath": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V48-COMPLETE-MASONRY-SCOPE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 329613,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1942,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V49-COMPLETE-METALS-SCOPE.zip",
+          "relativePath": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V49-COMPLETE-METALS-SCOPE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 332498,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1943,
+          "fileName": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V50-COMPLETE-ROUGH-CARPENTRY-BLOCKING-SCOPE.zip",
+          "relativePath": "CURRENT-BASK-FAIRFIELD-MAIN-ESTIMATING-TEMPLATE-2026-08-17-V50-COMPLETE-ROUGH-CARPENTRY-BLOCKING-SCOPE.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 334438,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2506,
+          "fileName": "Fairfield-Inn-Tampa_BASK-Development_Dale-Farrow_2026-09-04_105441_America-Chicago_06m29s_AUDIO.webm",
+          "relativePath": "Cost to Complete/Current Subcontractor Call Notes/Call Recordings/Fairfield-Inn-Tampa_BASK-Development_Dale-Farrow_2026-09-04_105441_America-Chicago_06m29s_AUDIO.webm",
+          "fileType": "audio/webm",
+          "sizeBytes": 4263582,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2074,
+          "fileName": "A-116_ROOFTOP_PLATFORM_RAMP_CTC_TAKEOFF_BACKUP_2026-08-23.md",
+          "relativePath": "Cost to Complete/Estimating Takeoff Backup/A-116_ROOFTOP_PLATFORM_RAMP_CTC_TAKEOFF_BACKUP_2026-08-23.md",
+          "fileType": "text/markdown",
+          "sizeBytes": 1794,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 2198,
+          "fileName": "Fairfield_Cost_to_Complete_Takeoff_Detail_Rev339.xlsx",
+          "relativePath": "Cost to Complete/Estimating Takeoff Backup/Fairfield_Cost_to_Complete_Takeoff_Detail_Rev339.xlsx",
+          "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "sizeBytes": 43638,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 2201,
+          "fileName": "BASK_Fairfield_Paul_Meeting_Package_2026-08-26.zip",
+          "relativePath": "Cost to Complete/Meeting Packages/BASK_Fairfield_Paul_Meeting_Package_2026-08-26.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 7399711,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2498,
+          "fileName": "Fairfield-Inn-Tampa_2026-09-04_Multi-Call-Recording.mp3",
+          "relativePath": "Daily Recordings/Fairfield-Inn-Tampa_2026-09-04_Multi-Call-Recording.mp3",
+          "fileType": "audio/mpeg",
+          "sizeBytes": 8508429,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2497,
+          "fileName": "Fairfield-Inn-Tampa_2026-09-04_Multi-Call-Recording.webm",
+          "relativePath": "Daily Recordings/Fairfield-Inn-Tampa_2026-09-04_Multi-Call-Recording.webm",
+          "fileType": "audio/webm",
+          "sizeBytes": 12164715,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 1955,
+          "fileName": "BASK_Fairfield_Financial_and_Project_Takeover_Responsibility_Matrices_2026-08-20.pdf",
+          "relativePath": "Financial Analysis/BASK_Fairfield_Financial_and_Project_Takeover_Responsibility_Matrices_2026-08-20.pdf",
+          "fileType": "application/pdf",
+          "sizeBytes": 9117,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 2062,
+          "fileName": "BASK_Gray_Bear_Contract_Pay_App_Reconciliation_V6_2026-08-23.xlsx",
+          "relativePath": "Financial Analysis/Contract Reconciliation/By Subcontractor/Gray Bear/BASK_Gray_Bear_Contract_Pay_App_Reconciliation_V6_2026-08-23.xlsx",
+          "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "sizeBytes": 11818,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 1953,
+          "fileName": "BASK_Fairfield_Legal_Template_Project_Record_Turnover_Demand.docx",
+          "relativePath": "Financial Analysis/Legal Templates/BASK_Fairfield_Legal_Template_Project_Record_Turnover_Demand.docx",
+          "fileType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "sizeBytes": 39344,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 1954,
+          "fileName": "BASK_FAIRFIELD_FINANCIAL_ANALYSIS_EXACT_RESTART_HANDOFF_2026-08-20_0810_1_.zip",
+          "relativePath": "Financial Analysis/Restart Handoffs/BASK_FAIRFIELD_FINANCIAL_ANALYSIS_EXACT_RESTART_HANDOFF_2026-08-20_0810_1_.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 8305,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2052,
+          "fileName": "BASK_Fairfield_General_Conditions_Breakdown_2026-08-23_Rev26_CORRECTED.xlsx",
+          "relativePath": "General Conditions/BASK_Fairfield_General_Conditions_Breakdown_2026-08-23_Rev26_CORRECTED.xlsx",
+          "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "sizeBytes": 34731,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: DOCUMENT"
+        },
+        {
+          "id": 637,
+          "fileName": "IMG_3368.JPG",
+          "relativePath": "Photos/Site Visit - 2026-08-01/IMG_3368.JPG",
+          "fileType": "image/jpeg",
+          "sizeBytes": 8466065,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: IMAGE"
+        },
+        {
+          "id": 2076,
+          "fileName": "Fairfield_Division_02_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 02 - Existing Conditions/Fairfield_Division_02_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 34190,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2077,
+          "fileName": "Fairfield_Division_03_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 03 - Concrete/Fairfield_Division_03_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 36193,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2078,
+          "fileName": "Fairfield_Division_04_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 04 - Masonry/Fairfield_Division_04_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1041154,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2079,
+          "fileName": "Fairfield_Division_05_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 05 - Metals/Fairfield_Division_05_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1026644,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2080,
+          "fileName": "Fairfield_Division_06_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 06 - Wood_ Plastics and Composites/Fairfield_Division_06_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1062980,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2081,
+          "fileName": "Fairfield_Division_07_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 07 - Thermal and Moisture Protection/Fairfield_Division_07_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1084331,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2082,
+          "fileName": "Fairfield_Division_08_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 08 - Openings/Fairfield_Division_08_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1042090,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2083,
+          "fileName": "Fairfield_Division_10_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 10 - Specialties/Fairfield_Division_10_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1022913,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2084,
+          "fileName": "Fairfield_Division_11_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 11 - Equipment/Fairfield_Division_11_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1807268,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2085,
+          "fileName": "Fairfield_Division_12_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 12 - Furnishings/Fairfield_Division_12_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1829538,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2086,
+          "fileName": "Fairfield_Division_13_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 13 - Special Construction/Fairfield_Division_13_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1894669,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2087,
+          "fileName": "Fairfield_Division_14_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 14 - Conveying Equipment/Fairfield_Division_14_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1856644,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2088,
+          "fileName": "Fairfield_Division_21_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 21 - Fire Suppression/Fairfield_Division_21_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1754712,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2089,
+          "fileName": "Fairfield_Division_22_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 22 - Plumbing/Fairfield_Division_22_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1737874,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2090,
+          "fileName": "Fairfield_Division_23_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 23 - HVAC/Fairfield_Division_23_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1103266,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2091,
+          "fileName": "Fairfield_Division_26_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 26 - Electrical/Fairfield_Division_26_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1052868,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2092,
+          "fileName": "Fairfield_Division_27_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 27 - Communications/Fairfield_Division_27_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1058216,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2093,
+          "fileName": "Fairfield_Division_28_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 28 - Fire Alarm and Security/Fairfield_Division_28_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1203264,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2094,
+          "fileName": "Fairfield_Division_31_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 31 - Earthwork/Fairfield_Division_31_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 1137440,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2095,
+          "fileName": "Fairfield_Division_32_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 32 - Exterior Improvements/Fairfield_Division_32_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 41025,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2096,
+          "fileName": "Fairfield_Division_33_Remaining_Work_Bid_Package_SERVER.zip",
+          "relativePath": "Remaining Work Bid Packages/Division 33 - Utilities/Fairfield_Division_33_Remaining_Work_Bid_Package_SERVER.zip",
+          "fileType": "application/zip",
+          "sizeBytes": 40032,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2287,
+          "fileName": "Fairfield Project _ Request for Information.eml",
+          "relativePath": "Subcontractors _ Vendors/Project Sub Conversations/31 - W Insulation Co. Inc/Fairfield Project _ Request for Information.eml",
+          "fileType": "message/rfc822",
+          "sizeBytes": 1696,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2282,
+          "fileName": "Fairfield-Inn-Tampa_31-W-Insulation-Co-Inc_Rebekah-Mejia_2026-09-01_133743_America-Chicago_07m00s_AUDIO _1_.webm",
+          "relativePath": "Subcontractors _ Vendors/Project Sub Conversations/31 - W Insulation Co. Inc/Fairfield-Inn-Tampa_31-W-Insulation-Co-Inc_Rebekah-Mejia_2026-09-01_133743_America-Chicago_07m00s_AUDIO _1_.webm",
+          "fileType": "audio/webm",
+          "sizeBytes": 6734735,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2285,
+          "fileName": "Proposal for the Fairfield Inn in Tampa 31W Insulation _1_.eml",
+          "relativePath": "Subcontractors _ Vendors/Project Sub Conversations/31 - W Insulation Co. Inc/Proposal for the Fairfield Inn in Tampa 31W Insulation _1_.eml",
+          "fileType": "message/rfc822",
+          "sizeBytes": 3333,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2284,
+          "fileName": "Proposal for the Fairfield Inn in Tampa 31W Insulation.eml",
+          "relativePath": "Subcontractors _ Vendors/Project Sub Conversations/31 - W Insulation Co. Inc/Proposal for the Fairfield Inn in Tampa 31W Insulation.eml",
+          "fileType": "message/rfc822",
+          "sizeBytes": 317976,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        },
+        {
+          "id": 2347,
+          "fileName": "Acerbo _ Fairfield Project Information.eml",
+          "relativePath": "Subcontractors _ Vendors/Project Sub Conversations/Acerbo Inc/Acerbo _ Fairfield Project Information.eml",
+          "fileType": "message/rfc822",
+          "sizeBytes": 1451,
+          "reviewStatus": "MANUAL REVIEW REQUIRED: UNSUPPORTED FORMAT"
+        }
+      ]
+    },
+    "5": {
+      "httpStatus": 200,
+      "count": 165,
+      "statusCounts": {
+        "EXTRACTED - MANUAL REVIEW REQUIRED: DOCUMENT": 5,
+        "EXTRACTED - NEEDS HUMAN REVIEW": 122,
+        "EXTRACTED - READY": 6,
+        "EXTRACTED - VISUAL REVIEW REQUIRED: SCAN": 3,
+        "EXTRACTED - VISUAL REVIEW REQUIRED: DRAWING": 29
+      },
+      "actionableSamples": []
+    }
+  },
+  "errors": [],
+  "sourceCommit": "b36960fca0cccb46b30390cacebe799bbb08a192",
+  "workflowRunId": "34001859071"
 }

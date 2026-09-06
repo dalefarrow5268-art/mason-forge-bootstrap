@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-06T10:40:00Z",
+  "project": {
+    "projectId": 3,
+    "projectName": "Downtown Bradenton",
+    "submissionId": "bask-bradenton-2513-v1"
+  },
+  "continuityRead": [
+    "verification/intake-repairs/2026-09-06T0835Z-bradenton-phase-three-page-context.json",
+    "verification/intake-repairs/2026-09-06T0855Z-bradenton-dashboard-catalog-gate.json",
+    "live SSX Project Intake phaseProgress"
+  ],
+  "issueIds": [
+    {
+      "id": "phase3-item-bask-bradenton-2513-v1-3321",
+      "observedState": "NEEDS_REVIEW",
+      "diagnosis": "The source PDF is valid and complete, but the document service reported truncated edge content and incomplete coverage for the current sheet.",
+      "source": {
+        "fileId": 3321,
+        "path": "23-936_HAR-100- Plans.pdf/page-00058.pdf",
+        "sizeBytes": 304068,
+        "sha256": "4570ff6d01f0302efa74186f3d8d494135913772551a0aaf396ee237d7b5591f",
+        "preserved": true
+      },
+      "repair": {
+        "method": "Rendered an exact full-page 150 DPI derivative from the preserved one-page vector PDF; remapped only the failed Phase Three item.",
+        "derivativeFileId": 4025,
+        "path": "SSX Project Holding Folder/Phase Three Derived Review/page-00058-phase-three-150dpi.png",
+        "sizeBytes": 800253,
+        "width": 5400,
+        "height": 3600,
+        "sha256": "02fb43e3dfe7cab6b7fbd93cd75081c419a3ab985c16361f20a597905b679046"
+      },
+      "verification": [
+        "PR #68 merged",
+        "deployment 34027459978 succeeded after test repair",
+        "targeted retry 34027501536 changed exactly one item",
+        "final live count 133 COMPLETE of 133"
+      ]
+    },
+    {
+      "id": "deploy-34026788888",
+      "observedState": "FAILED",
+      "diagnosis": "cloud/scripts/test_holding.py retained a hardcoded Phase Two RELEASE_ID assertion.",
+      "actualRepair": "Restored the test file from the last known-good commit and retained dynamic runner-to-wrangler release checks without a fixed release equality.",
+      "verification": [
+        "PR #71 merged",
+        "Deploy Mason Forge Cloud run 34027459978 succeeded"
+      ],
+      "supersededAttempts": [
+        {
+          "pr": 69,
+          "result": "failed because replacement text was malformed by replacement-string suffix expansion"
+        },
+        {
+          "pr": 70,
+          "result": "failed because the earlier malformed operation had duplicated the remainder of the test file"
+        },
+        {
+          "pr": 71,
+          "result": "clean restoration and verified successful deployment"
+        }
+      ]
+    },
+    {
+      "id": "phase3-parent-state-bask-bradenton-2513-v1",
+      "observedState": "Parent NEEDS_REVIEW with child PENDING",
+      "diagnosis": "The targeted child retry did not restore phase_three_jobs to RUNNING, so queuePhaseThree correctly ignored the pending item.",
+      "actualRepair": "The verified retry workflow now restores only the matching parent job when item file 4025 is PENDING, QUEUED, or RUNNING, clears the stale report pointer, and wakes normal dispatch.",
+      "verification": [
+        "PR #72 merged",
+        "release PR #73 merged",
+        "deployment 34027822370 succeeded",
+        "retry run 34027867276 recorded jobChanges=1",
+        "live item count 133 COMPLETE of 133"
+      ]
+    },
+    {
+      "id": "phase3-dashboard-ready-status",
+      "observedState": "Dashboard displayed QUEUED after 133 of 133 items completed",
+      "diagnosis": "The generic phase summary did not classify READY_FOR_ESTIMATE as a completed job status.",
+      "actualRepair": "Treat READY_FOR_ESTIMATE as COMPLETE in phase summaries; no job state or review gate is modified.",
+      "verificationPending": "Deploy and confirm Phase Three displays COMPLETE."
+    }
+  ],
+  "liveMilestone": {
+    "checkedAt": "2026-09-06T10:38:25.357Z",
+    "phase1": {
+      "status": "COMPLETE",
+      "done": 169,
+      "total": 169
+    },
+    "phase2": {
+      "status": "COMPLETE",
+      "done": 169,
+      "total": 169
+    },
+    "phase3": {
+      "storedJobState": "READY_FOR_ESTIMATE",
+      "itemsComplete": 133,
+      "total": 133,
+      "displayStatusBeforeSummaryRepair": "QUEUED"
+    },
+    "phase4": {
+      "status": "NEEDS_REVIEW",
+      "reason": "Verified Living Schedule sections are not loaded."
+    },
+    "repairRequests": []
+  },
+  "authoritativeHierarchy": {
+    "expected": "Existing Living Schedule hierarchy, approximately 72,000 sections/activities",
+    "candidates": [
+      {
+        "path": "/Schedule System Work/SSX_LIVING_FLOW_MASTER_HANDOFF_2026-08-14_1907.zip",
+        "sizeBytes": 29235330
+      },
+      {
+        "path": "/SSX_LIVING_FLOW_MASTER_HANDOFF_2026-08-14_1907.zip",
+        "sizeBytes": 29235330
+      }
+    ],
+    "retrieval": "Both preserved copies returned HTTP 502 on fresh materialization attempts.",
+    "constraint": "The 432 fulfillment SEC inventory records are an indexed summary and were not substituted for the full hierarchy.",
+    "nextAction": "Retry authoritative archive retrieval and validate record schema, count, uniqueness, division mapping, and provenance before loading Phase Four."
+  },
+  "remainingBlockers": [
+    "Authoritative Living Schedule hierarchy bytes are temporarily unavailable; Phase Four cannot safely load sections.",
+    "BASK estimate-delivery connection is not verified.",
+    "Verified quantities and units remain pending later takeoff phases; none were guessed.",
+    "The final UNPRICED estimate is not complete."
+  ],
+  "safety": {
+    "originalUploadsChanged": false,
+    "pricesAdded": false,
+    "bidInvitationsSent": false,
+    "reviewGatesBypassed": false,
+    "failuresSuppressed": false,
+    "codesInvented": false,
+    "measurementsGuessed": false
+  }
+}

@@ -2,7 +2,7 @@ const names=['File inventory & sorting','Project information','CSI divisions','C
 const rows=async(env,sql,...args)=>(await env.DB.prepare(sql).bind(...args).all()).results||[];
 export function summarize(jobs,items,phase){
  const counts={};for(const x of items)counts[x.status]=(counts[x.status]||0)+1;
- let status=!jobs.length?'WAITING':jobs.every(x=>x.status==='COMPLETE')?'COMPLETE':jobs.some(x=>/NEEDS_REVIEW|WAITING_REVIEW|WAITING_STANDARD|FAILED/.test(x.status))?'NEEDS_REVIEW':jobs.some(x=>x.status==='DRAFTS_READY')?'DRAFTS_READY':jobs.some(x=>['RUNNING','INVENTORIED'].includes(x.status))?'RUNNING':'QUEUED';
+ let status=!jobs.length?'WAITING':jobs.every(x=>['COMPLETE','READY_FOR_ESTIMATE'].includes(x.status))?'COMPLETE':jobs.some(x=>/NEEDS_REVIEW|WAITING_REVIEW|WAITING_STANDARD|FAILED/.test(x.status))?'NEEDS_REVIEW':jobs.some(x=>x.status==='DRAFTS_READY')?'DRAFTS_READY':jobs.some(x=>['RUNNING','INVENTORIED'].includes(x.status))?'RUNNING':'QUEUED';
  if(phase===1&&items.some(x=>x.status==='NEEDS_REVIEW'))status='NEEDS_REVIEW';
  const total=items.length,done=(counts.COMPLETE||0)+(counts.SORTED||0);const complete=['COMPLETE','DRAFTS_READY'].includes(status);
  return {phase,name:names[phase-1],status,counts,total,done,percent:complete?100:total?Math.min(99,Math.floor(done/total*100)):0,errors:[...new Set([...jobs,...items].map(x=>x.error||x.reason).filter(Boolean))].slice(0,8),outputs:items.filter(x=>x.result_key||x.findings_key||x.output_file_id).length};

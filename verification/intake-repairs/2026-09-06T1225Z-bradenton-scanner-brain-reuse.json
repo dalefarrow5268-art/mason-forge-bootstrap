@@ -1,0 +1,27 @@
+{
+  "issueId": "phase-four-repeated-source-analysis",
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "diagnosis": "Phase Four ignored plan_layer_jobs.brain_keys_json and re-uploaded every plan PDF despite complete scanner reviews.",
+  "repair": [
+    "Added a shared loader for completed scanner Brain records linked to each plan page.",
+    "Phase Four uses scanner records only when every linked review has COMPLETE coverage, zero unreadable regions, and valid cited findings.",
+    "Missing, invalid, incomplete, or oversized Brain context falls back to the preserved source PDF.",
+    "Each Phase Four output records SCANNER_BRAIN or ORIGINAL_PDF_FALLBACK plus source SHA-256."
+  ],
+  "verification": [
+    "Static syntax checks pending CI",
+    "Unit tests cover valid reuse and coverage/unreadable/invalid/oversize fallback gates"
+  ],
+  "invariants": [
+    "No section codes are created outside the verified catalog",
+    "No quantities or prices are added",
+    "Original uploads are unchanged",
+    "Review gates are unchanged"
+  ],
+  "remaining": [
+    "Production deployment",
+    "Live proof of SCANNER_BRAIN results",
+    "Extend verified reuse to later phases after Phase Four validation"
+  ]
+}

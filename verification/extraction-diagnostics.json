@@ -1,12 +1,12 @@
 {
-  "capturedAt": "2026-09-06T10:28:04.838Z",
-  "sourceCommit": "94ef6428bc9e104817650e12fb425d654e4746b8",
+  "capturedAt": "2026-09-06T10:35:51.605Z",
+  "sourceCommit": "0935f1e1455fc650365d3ad799a4ab6ca272c3e2",
   "health": {
     "status": "online",
     "operationalReady": true,
     "service": "Mason Forge Cloud",
     "environment": "production",
-    "releaseId": "2026-09-06-phase-three-page58-render",
+    "releaseId": "2026-09-06-phase-three-parent-resume",
     "database": "D1 VERIFIED",
     "projectFileStorage": "R2 VERIFIED",
     "departmentQueue": "QUEUE VERIFIED BY COMPLETED OUTPUTS",
@@ -199,10 +199,10 @@
         "canceled_tasks": 0
       }
     ],
-    "checkedAt": "2026-09-06T10:28:05.384Z"
+    "checkedAt": "2026-09-06T10:35:52.032Z"
   },
   "bootstrap": {
-    "retrievedAt": "2026-09-06T10:28:05.843Z",
+    "retrievedAt": "2026-09-06T10:35:52.333Z",
     "continuity": {
       "scope_type": "system",
       "scope_id": "mason-forge",

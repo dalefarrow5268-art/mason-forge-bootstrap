@@ -19,7 +19,9 @@
     "strictSchemaProductionDeployment": "passed via Actions run 34005146865",
     "strictSchemaLiveResult": "13 of 169 complete; no new malformed JSON after deployment",
     "followupIssue": "One response was structurally valid but incomplete because it reached max_output_tokens.",
-    "followupRepair": "Raise the bounded response cap from 5,000 to 12,000 tokens and require concise evidence fields; pending deployment."
+    "followupRepair": "Raised the bounded response cap from 5,000 to 12,000 tokens and required concise evidence fields; deployed via Actions run 34005402180.",
+    "throughputDiagnosis": "Phase Two shared queues with scanner, Phase One and department work. Live state showed only two concurrent Phase Two items despite higher aggregate queue limits.",
+    "throughputRepair": "Add a dedicated mason-forge-phase-two queue with max concurrency 20. Retain atomic item claims, retry limits, strict evidence validation and a legacy-queue fallback; pending deployment."
   },
   "remainingBlockers": [
     "Phase Two must complete and resolve any evidence review issues before later phases run.",

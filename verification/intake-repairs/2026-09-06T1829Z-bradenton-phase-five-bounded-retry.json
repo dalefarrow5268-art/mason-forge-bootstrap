@@ -1,0 +1,91 @@
+{
+  "checkedAt": "2026-09-06T18:28:43.936Z",
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "continuityRead": {
+    "projectCheckpoint": "checkpoint_64c5f95a-e67b-478e-b5f0-6854742105db",
+    "priorAudit": "verification/intake-repairs/2026-09-06T1718Z-bradenton-phase-four-progress.json",
+    "note": "Fresh phaseProgress and sanitized GitHub Actions diagnostics used because legacy project continuity predates intake phases."
+  },
+  "projectsChecked": [
+    3,
+    13,
+    10,
+    7,
+    5,
+    4,
+    2
+  ],
+  "otherProjectsWithSubmissions": [],
+  "requestedRepairIds": [],
+  "issue": {
+    "id": "phase-five-first-attempt-format-terminal",
+    "diagnosis": "Six Phase Five jobs were sent directly to NEEDS_REVIEW after one malformed model line even though each saved result contained 3-13 valid cited scope lines. The worker treated a retryable formatting anomaly as terminal and withheld every valid line.",
+    "affectedSections": [
+      "05 50 00",
+      "06 05 00",
+      "06 22 00",
+      "06 41 00",
+      "12 05 00",
+      "12 50 00"
+    ],
+    "repair": "Every Phase Five result is now saved under an attempt-specific R2 key. Format-only validation failures retry the complete section up to three attempts. No invalid line is accepted; a section remains NEEDS_REVIEW if any line is still malformed after the bound.",
+    "verification": {
+      "pullRequest": 89,
+      "pullRequestHead": "49a8bfa749f10f1f2b88180174492df6b3b66221",
+      "ciRun": 34051324180,
+      "verifyRun": 34051324174,
+      "deploymentRun": 34051370143,
+      "deploymentCommit": "bf0731682092bc4294e19edfa9fb30eb1822e9b9",
+      "requeueRun": 34051425978,
+      "requeued": 6,
+      "acceptedAfterRetry": 5,
+      "remainingReview": 1
+    }
+  },
+  "remainingReview": {
+    "id": "bask-bradenton-2513-v1-06 41 00",
+    "sectionCode": "06 41 00",
+    "attempts": 3,
+    "error": "Scope must be one short line with valid source references",
+    "savedValidLineCount": 6,
+    "diagnosis": "One model-generated line remains malformed after three full-section retries. Existing valid lines stay withheld until the section passes as a whole.",
+    "action": "Manual evidence-level scope review required; no acceptance gate suppressed."
+  },
+  "liveState": {
+    "checkedAt": "2026-09-06T18:28:24.994Z",
+    "phase4": {
+      "status": "NEEDS_REVIEW",
+      "complete": 415,
+      "total": 475,
+      "percent": 87,
+      "needsReview": 48,
+      "queued": 12
+    },
+    "phase5": {
+      "status": "NEEDS_REVIEW",
+      "readyForEstimate": 113,
+      "total": 114,
+      "percent": 99,
+      "needsReview": 1
+    },
+    "phases6Through13": "WAITING",
+    "takeoffCrewCount": 0,
+    "repairRequestCount": 0
+  },
+  "preservation": [
+    "Original uploads unchanged",
+    "All accepted Phase Four and Phase Five work preserved",
+    "All retry attempts retained under attempt-specific keys",
+    "Citation, complete-section, readability, no-invention, quantity, and pricing gates unchanged",
+    "No prices or bid invitations produced"
+  ],
+  "remainingBlockers": [
+    "48 Phase Four source-readability/evidence holds",
+    "12 Phase Four jobs still queued",
+    "Phase Five section 06 41 00 requires manual evidence-level scope review",
+    "No takeoff crew runs; verified quantities and units are not complete",
+    "BASK estimate delivery connection remains unverified"
+  ],
+  "notificationReason": "Verified production repair recovered five of six previously blocked Phase Five sections and isolated the remaining evidence-review item."
+}

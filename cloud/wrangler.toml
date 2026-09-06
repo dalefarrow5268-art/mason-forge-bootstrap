@@ -8,7 +8,7 @@ MASON_DASHBOARD_TOKEN_SHA256 = "dcb9fe568c3ed1b32b17a17341a2cdaf7af25491d0457e33
 ENVIRONMENT = "production"
 SYSTEM_NAME = "Mason Forge Cloud"
 OPENAI_MODEL = "gpt-5-mini"
-RELEASE_ID = "2026-09-06-phase-two-dedicated-queue"
+RELEASE_ID = "2026-09-06-phase-three-ready"
 EVIDENCE_BATCH_SIZE = "20"
 OPENAI_REQUEST_TIMEOUT_MS = "600000"
 
@@ -37,6 +37,10 @@ queue = "mason-forge-phase-one"
 [[queues.producers]]
 binding = "PHASE_TWO_QUEUE"
 queue = "mason-forge-phase-two"
+
+[[queues.producers]]
+binding = "PHASE_THREE_QUEUE"
+queue = "mason-forge-phase-three"
 
 [[queues.consumers]]
 queue = "mason-forge-department-work"
@@ -67,6 +71,15 @@ dead_letter_queue = "mason-forge-department-dead-letter"
 
 [[queues.consumers]]
 queue = "mason-forge-phase-two"
+max_batch_size = 1
+max_batch_timeout = 1
+max_retries = 5
+retry_delay = 120
+max_concurrency = 20
+dead_letter_queue = "mason-forge-department-dead-letter"
+
+[[queues.consumers]]
+queue = "mason-forge-phase-three"
 max_batch_size = 1
 max_batch_timeout = 1
 max_retries = 5

@@ -1,0 +1,42 @@
+name: Diagnose Phase Three Review
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diagnose-phase-three-review.yml']
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Inspect Bradenton Phase Three review results
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node --input-type=module <<'JS'
+          import {execFileSync} from 'node:child_process';
+          import {readFileSync,mkdirSync} from 'node:fs';
+          const base='https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID;
+          async function query(sql,params=[]){const r=await fetch(base+'/d1/database/736f655b-889d-4fb2-8948-0a396d39436f/query',{method:'POST',headers:{authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN,'content-type':'application/json'},body:JSON.stringify({sql,params}),signal:AbortSignal.timeout(30000)});const d=await r.json();if(!r.ok||!d.success)throw Error(JSON.stringify({status:r.status,errors:d.errors}));return d.result?.[0]?.results||[];}
+          const submission='bask-bradenton-2513-v1';
+          console.log('job',JSON.stringify(await query('SELECT id,status,updated_at FROM phase_three_jobs WHERE id=?',[submission])));
+          console.log('counts',JSON.stringify(await query('SELECT status,COUNT(*) count,MIN(updated_at) oldest,MAX(updated_at) newest FROM phase_three_items WHERE job_id=? GROUP BY status',[submission])));
+          console.log('errors',JSON.stringify(await query("SELECT COALESCE(error,'(result issue)') reason,COUNT(*) count FROM phase_three_items WHERE job_id=? AND status='NEEDS_REVIEW' GROUP BY COALESCE(error,'(result issue)') ORDER BY count DESC",[submission])));
+          const rows=await query("SELECT i.id,i.file_id,i.attempts,i.error,i.result_key,f.relative_path FROM phase_three_items i JOIN project_files f ON f.id=i.file_id WHERE i.job_id=? AND i.status='NEEDS_REVIEW' ORDER BY i.updated_at LIMIT 12",[submission]);
+          mkdirSync('phase-three-samples',{recursive:true});
+          for(const [index,row] of rows.entries()){
+            const summary={id:row.id,fileId:row.file_id,attempts:row.attempts,error:row.error,path:row.relative_path};
+            if(row.result_key){
+              const target='phase-three-samples/'+index+'.json';
+              try{
+                execFileSync('npx',['--yes','wrangler@4.92.0','r2','object','get','mason-forge-project-files/'+row.result_key,'--remote','--file',target],{stdio:['ignore','ignore','pipe'],env:process.env});
+                const result=JSON.parse(readFileSync(target,'utf8'));
+                summary.issues=result.issues;summary.divisionCount=Array.isArray(result.divisions)?result.divisions.length:null;summary.coverageNote=result.coverageNote;
+              }catch(e){summary.resultReadError=String(e.stderr||e.message).slice(0,500);}
+            }
+            console.log('sample',JSON.stringify(summary));
+          }
+          JS

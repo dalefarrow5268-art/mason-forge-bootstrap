@@ -1,0 +1,45 @@
+{
+  "recordedAt": "2026-09-06T08:35:00Z",
+  "submissionId": "bask-bradenton-2513-v1",
+  "projectId": 3,
+  "issueId": "phase-three-page-context-false-incomplete",
+  "observed": {
+    "phase3Status": "RUNNING",
+    "total": 133,
+    "needsReview": 97,
+    "queued": 35,
+    "running": 1,
+    "savedWorkerErrors": 0,
+    "repairRequests": 0
+  },
+  "diagnosticWorkflow": "https://github.com/dalefarrow5268-art/mason-forge-bootstrap/actions/runs/34022072563",
+  "diagnosis": "The Phase Three worker receives one page per job but interpreted references to other sheets as proof that the current input was incomplete. The other pages are already separate jobs in the same 133-page aggregate. Low-confidence candidate mappings were also converted into blocking issues even when high-confidence divisions were successfully supported.",
+  "evidence": [
+    "All 97 NEEDS_REVIEW items had saved result issues rather than worker exceptions.",
+    "Sample outputs repeatedly said only one sheet was supplied and referenced sheets were missing, despite the complete prepared plan set being queued page by page.",
+    "Sample outputs contained valid high-confidence division evidence but were blocked by missing-other-sheet language and omitted low-confidence candidates."
+  ],
+  "repair": [
+    "Define completeReview as complete coverage of the current sheet, not the entire drawing set.",
+    "Tell the worker that other submitted pages are reviewed separately.",
+    "Omit low-confidence candidates instead of converting safe omissions into failures.",
+    "Allow a fully reviewed sheet to return zero divisions.",
+    "Keep unreadable, truncated, and incomplete current-sheet coverage as blocking issues.",
+    "After successful production deployment, requeue only Bradenton Phase Three NEEDS_REVIEW items once."
+  ],
+  "localVerification": {
+    "nodeSyntax": "PASS",
+    "phaseThreeRegression": "PASS",
+    "newAssertions": [
+      "low-confidence candidates are safely omitted",
+      "fully reviewed zero-division sheet completes without an invented division",
+      "incomplete current-sheet coverage remains blocking"
+    ]
+  },
+  "remainingVerification": [
+    "CI and production deployment must pass.",
+    "Targeted requeue must report the affected count.",
+    "Live NEEDS_REVIEW results must be re-evaluated under the corrected current-sheet rules.",
+    "Genuinely unreadable current sheets remain manual review blockers."
+  ]
+}

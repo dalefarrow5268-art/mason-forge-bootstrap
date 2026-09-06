@@ -12,7 +12,7 @@ export async function eligibleFiles(env,submission){
  return [...new Set(items.map(i=>i.output_file_id))];
 }
 export async function queuePhaseTwo(env){
- const phaseTwoQueues=[env.PHASE_ONE_QUEUE,env.HOLDING_SCAN_QUEUE,env.DEPARTMENT_QUEUE].filter((queue,index,all)=>queue&&all.indexOf(queue)===index);
+ const phaseTwoQueues=(env.PHASE_TWO_QUEUE?[env.PHASE_TWO_QUEUE]:[env.PHASE_ONE_QUEUE,env.HOLDING_SCAN_QUEUE,env.DEPARTMENT_QUEUE]).filter((queue,index,all)=>queue&&all.indexOf(queue)===index);
  const sendPhaseTwo=async body=>{const sent=await Promise.allSettled(phaseTwoQueues.map(queue=>queue.send(body)));if(!sent.some(result=>result.status==='fulfilled'))throw sent[0]?.reason||new Error('No Phase Two queue available');};
  const submissions=(await env.DB.prepare('SELECT s.* FROM phase_project_submissions s LEFT JOIN phase_two_jobs j ON j.id=s.id WHERE j.id IS NULL AND length(trim(s.sealed_at))>0 ORDER BY COALESCE(s.checked_at,0) LIMIT 5').all()).results||[];
  for(const s of submissions){await env.DB.prepare('UPDATE phase_project_submissions SET checked_at=? WHERE id=?').bind(now(),s.id).run();const files=await eligibleFiles(env,s);if(!files)continue;

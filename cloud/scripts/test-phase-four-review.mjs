@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {normalizeSections} from '../src/phase-four-review.js';
+const catalog={division:'03',sections:[{code:'03 30 00',title:'Cast-in-Place Concrete'}]};
+const accepted=normalizeSections({sections:[{code:'03 30 00',scope:'Concrete slab shown',sheet:'S1.1',evidence:'Slab note',confidence:'HIGH'}],limitations:['Mix design is off-sheet'],issues:[],completeReview:true,coverageNote:'Complete'},catalog);
+assert.equal(accepted.issues.length,0);
+assert.equal(accepted.limitations.length,1);
+assert.equal(accepted.sections.length,1);
+const rejected=normalizeSections({sections:[{code:'03 99 99',scope:'Guess',sheet:'S1.1',evidence:'None',confidence:'HIGH'}],limitations:[],issues:[],completeReview:true},catalog);
+assert.equal(rejected.sections.length,0);
+assert.ok(rejected.issues.length);
+const incomplete=normalizeSections({sections:[],limitations:[],issues:[],completeReview:false},catalog);
+assert.ok(incomplete.issues.includes('Section review coverage is incomplete or unconfirmed'));
+console.log('Phase Four blocking issue and limitation checks passed.');

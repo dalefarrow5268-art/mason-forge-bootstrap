@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {normalizeScopes} from '../src/phase-five-review.js';
+import {normalizeScopes,shouldRetryFormatIssues} from '../src/phase-five-review.js';
 const evidence=[{sheet:'A9.1',evidence:'SLOPED CONCRETE SIDEWALK PER CIVIL'}];
 const accepted=normalizeScopes({lines:[{text:'Provide sloped concrete sidewalk as indicated on A9.1.',evidenceIndexes:[0]}],issues:['Slope dimensions are not shown.'],completeReview:false},evidence);
 assert.equal(accepted.lines.length,1);
@@ -10,4 +10,8 @@ assert.equal(uncited.lines.length,0);
 assert.ok(uncited.issues.length);
 const empty=normalizeScopes({lines:[],issues:['No supported scope']},evidence);
 assert.ok(empty.issues.includes('No supported section scopes'));
+assert.equal(shouldRetryFormatIssues(['Scope must be one short line with valid source references'],1),true);
+assert.equal(shouldRetryFormatIssues(['Scope must be one short line with valid source references'],2),true);
+assert.equal(shouldRetryFormatIssues(['Scope must be one short line with valid source references'],3),false);
+assert.equal(shouldRetryFormatIssues(['No supported section scopes'],1),false);
 console.log('Phase Five deterministic scope validation passed.');

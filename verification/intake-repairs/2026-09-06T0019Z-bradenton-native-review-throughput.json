@@ -1,0 +1,34 @@
+{
+  "projectId": 3,
+  "submissionId": "bask-bradenton-2513-v1",
+  "issueId": "bradenton-native-review-throughput-v2",
+  "investigatedAt": "2026-09-06T00:19:16.809Z",
+  "observed": {
+    "scanTotal": 169,
+    "scanComplete": 14,
+    "scanNeedsReview": 0,
+    "pagesComplete": 14,
+    "phaseOnePercent": 33,
+    "phaseErrors": 0,
+    "repairRequests": 0
+  },
+  "diagnosis": [
+    "The first bounded acceleration cleared saved review exceptions and advanced completion, but projected scan-gate duration remained too long for the requested evening delivery window.",
+    "Prior partial reviews identified fine print as visually small even though coordinate-preserving vector textBlocks and words were already saved with each native page."
+  ],
+  "repair": [
+    "Increase only the dedicated Holding scanner consumer from concurrency 10 to 20; keep the general department queue at 5.",
+    "Increase scheduler dispatch capacity from 50 to 100 eligible messages per cycle.",
+    "Explicitly require native-page reviews to use saved vector textBlocks and words as evidence for visually small text while cross-checking the preserved PDF."
+  ],
+  "safety": [
+    "Coverage, unreadable-region, and finding validation remain unchanged.",
+    "Vector extraction is evidence, not authorization to infer missing content or verify scale.",
+    "No original upload, completed scan, layer, measurement, quantity, unit, CSI code, or price is changed."
+  ],
+  "verificationRequired": [
+    "All scanner and phase tests pass.",
+    "Production deploys and verifies successfully.",
+    "Bradenton completion continues rising without new phase errors or unbounded retries."
+  ]
+}

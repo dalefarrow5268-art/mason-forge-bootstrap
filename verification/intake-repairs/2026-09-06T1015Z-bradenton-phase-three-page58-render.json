@@ -1,0 +1,52 @@
+{
+  "recordedAt": "2026-09-06T10:15:00Z",
+  "submissionId": "bask-bradenton-2513-v1",
+  "projectId": 3,
+  "issueId": "phase-three-page-3321-truncated-input",
+  "observed": {
+    "phaseThree": {
+      "status": "NEEDS_REVIEW",
+      "complete": 132,
+      "total": 133,
+      "needsReview": 1
+    },
+    "itemId": "bask-bradenton-2513-v1-3321",
+    "sourceFileId": 3321,
+    "sourcePath": "SSX Project Holding Folder/Phase One Project Review/3065 - prepared.zip/Plans/00001/Downtown Bradenton (2).zip/Downtown Bradenton/23-936_HAR-100- Plans.pdf/page-00058.pdf",
+    "attempts": 2,
+    "savedWorkerError": null,
+    "savedIssues": [
+      "Source image/file indicates 'The file is too long and its contents have been truncated.' Some edge content of the sheet may be missing from the supplied file.",
+      "Current sheet review coverage is incomplete or unconfirmed"
+    ]
+  },
+  "diagnosis": "The final one-page PDF is valid and only 304,068 bytes, but the document-input path reported truncated current-sheet coverage. The issue is specific to the review representation, not a damaged or oversized original.",
+  "sourceVerification": {
+    "sourcePages": 1,
+    "sourcePagePoints": "2592 x 1728",
+    "sourceBytes": 304068,
+    "sourceSha256": "4570ff6d01f0302efa74186f3d8d494135913772551a0aaf396ee237d7b5591f"
+  },
+  "repair": {
+    "derivativeFileId": 4025,
+    "derivativePath": "SSX Project Holding Folder/Phase Three Derived Review/page-00058-phase-three-150dpi.png",
+    "derivativePixels": "5400 x 3600",
+    "derivativeBytes": 800253,
+    "derivativeSha256": "02fb43e3dfe7cab6b7fbd93cd75081c419a3ab985c16361f20a597905b679046",
+    "action": "After successful production deployment, remap only the blocked Phase Three item to the checksum-verified rendered derivative and reset only that item's review attempt.",
+    "originalPreserved": true
+  },
+  "safeguards": [
+    "No original upload changed or deleted.",
+    "No completed Phase Three item reset.",
+    "No review issue suppressed; the rendered sheet must pass the normal worker review.",
+    "No CSI code, section, scope, quantity, unit, price, or invitation invented."
+  ],
+  "verification": {
+    "diagnosticWorkflow": "https://github.com/dalefarrow5268-art/mason-forge-bootstrap/actions/runs/34022072563",
+    "renderedPageVisualCoverage": "PASS",
+    "renderedPageGeometry": "PASS",
+    "uploadSizeAndShaVerification": "PASS",
+    "liveCompletionPending": true
+  }
+}

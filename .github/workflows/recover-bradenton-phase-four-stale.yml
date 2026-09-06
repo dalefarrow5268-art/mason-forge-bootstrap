@@ -1,0 +1,39 @@
+name: Recover Bradenton Phase Four Stale Queue
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/recover-bradenton-phase-four-stale.yml']
+permissions:
+  contents: read
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Return only stale Bradenton Phase Four deliveries to pending
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node --input-type=module <<'JS'
+          const base='https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID;
+          const headers={authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN,'content-type':'application/json'};
+          async function query(sql,params=[]){
+            const r=await fetch(base+'/d1/database/736f655b-889d-4fb2-8948-0a396d39436f/query',{method:'POST',headers,body:JSON.stringify({sql,params}),signal:AbortSignal.timeout(30000)});
+            const d=await r.json();
+            if(!r.ok||!d.success) throw Error(JSON.stringify({status:r.status,errors:d.errors}));
+            return d.result?.[0]||{};
+          }
+          const submission='bask-bradenton-2513-v1';
+          const cutoff=new Date(Date.now()-20*60*1000).toISOString();
+          const stamp=new Date().toISOString();
+          const stale=await query("SELECT i.id,i.job_id,i.file_id,i.attempts,i.updated_at FROM phase_four_items i JOIN phase_four_jobs j ON j.id=i.job_id WHERE j.submission_id=? AND i.status='QUEUED' AND i.updated_at<?",[submission,cutoff]);
+          console.log('stale',JSON.stringify(stale.results||[]));
+          if((stale.results||[]).length){
+            const ids=stale.results.map(x=>x.id);
+            for(const id of ids) await query("UPDATE phase_four_items SET status='PENDING',updated_at=? WHERE id=? AND status='QUEUED' AND updated_at<?",[stamp,id,cutoff]);
+          }
+          const counts=await query("SELECT status,COUNT(*) count FROM phase_four_items i JOIN phase_four_jobs j ON j.id=i.job_id WHERE j.submission_id=? GROUP BY status",[submission]);
+          console.log('counts',JSON.stringify(counts.results||[]));
+          JS

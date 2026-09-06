@@ -2,8 +2,11 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import {ZipWriter,Uint8ArrayWriter,TextReader} from '@zip.js/zip.js';
-import {processPhaseOne,queuePhaseOne,safe,normalizeReview,storeStream} from '../src/phase-one-review.js';
+import {processPhaseOne,queuePhaseOne,safe,normalizeReview,storeStream,preparedSourceCategory} from '../src/phase-one-review.js';
 assert.match(readFileSync(new URL('../src/phase-one-review.js',import.meta.url),'utf8'),/env\.HOLDING_SCAN_QUEUE\|\|env\.PHASE_ONE_QUEUE\|\|env\.DEPARTMENT_QUEUE/);
+assert.equal(preparedSourceCategory('00001/project/Architectural Plans.pdf/page-00001.pdf'),'Plans');
+assert.equal(preparedSourceCategory('00003/project/Hotel Geo Report.pdf/page-00034.pdf'),'Geotech');
+assert.equal(preparedSourceCategory('00002/project/meeting-minutes.pdf/page-00001.pdf'),null);
 const sql=new DatabaseSync(':memory:');
 sql.exec(`CREATE TABLE project_files(id INTEGER PRIMARY KEY,project_id INTEGER,r2_key TEXT UNIQUE,file_name TEXT,relative_path TEXT,file_type TEXT,size_bytes INTEGER,review_status TEXT,source_class TEXT,uploaded_at TEXT,updated_at TEXT,archived_at TEXT); CREATE TABLE project_folders(id TEXT,project_id INTEGER,folder_path TEXT UNIQUE,created_at TEXT,updated_at TEXT);`);
 sql.exec(readFileSync(new URL('../schema/0007_phase_one_review.sql',import.meta.url),'utf8'));
@@ -98,8 +101,8 @@ console.log('PASS: preparation is not review; complete saved Brain scan required
 // Phase One immediately while semantic sheet interpretation stays queued.
 sent.length=0;
 const nativeZip=new ZipWriter(new Uint8ArrayWriter(),{useWebWorkers:false});
-await nativeZip.add('plans/page-00001.pdf',new TextReader('preserved vector page'));
-await nativeZip.add('plans/page-00001.pdf.brain-capture/native.json',new TextReader(JSON.stringify({captureStatus:'CAPTURED_NOT_SEMANTICALLY_REVIEWED',cacheKey:'fixture',captureSha256:'abc'})));
+await nativeZip.add('plans/Architectural Plans.pdf/page-00001.pdf',new TextReader('preserved vector page'));
+await nativeZip.add('plans/Architectural Plans.pdf/page-00001.pdf.brain-capture/native.json',new TextReader(JSON.stringify({captureStatus:'CAPTURED_NOT_SEMANTICALLY_REVIEWED',cacheKey:'fixture',captureSha256:'abc'})));
 const nativeBytes=await nativeZip.close();objects.set('prepared350',nativeBytes);
 sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(350,3,'source350','original.zip','Holding/original.zip',100,'PHASE ONE INTAKE')").run();
 sql.prepare("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes,source_class) VALUES(351,3,'prepared350','prepared.zip','Prepared/350.zip',?,'HOLDING PREPARED PACKAGE')").run(nativeBytes.length);
@@ -113,6 +116,10 @@ assert.equal(sql.prepare('SELECT status FROM holding_preparations WHERE source_f
 assert(sent.some(x=>x.id==='intake-350'),'deterministic capture releases Phase One');
 await processPhaseOne({kind:'PHASE_ONE',table:'phase_one_jobs',id:'intake-350'},env);
 assert.equal(sql.prepare("SELECT COUNT(*) n FROM phase_one_items WHERE job_id='intake-350'").get().n,1,'native capture companion is Brain evidence, not a Phase One document');
+const nativeItem=sql.prepare("SELECT id FROM phase_one_items WHERE job_id='intake-350'").get();
+await processPhaseOne({kind:'PHASE_ONE',table:'phase_one_items',id:nativeItem.id},env);
+const nativeSorted=sql.prepare("SELECT status,category FROM phase_one_items WHERE id=?").get(nativeItem.id);
+assert.equal(nativeSorted.status,'SORTED');assert.equal(nativeSorted.category,'Plans');
 sql.prepare("UPDATE holding_scan_items SET status='PENDING',updated_at='now' WHERE source_file_id=350").run();
 sent.length=0;await queueHoldingScan(env);
 assert(sent.some(x=>x.kind==='HOLDING_SCAN'&&x.id.startsWith('scan-350-351-')),'semantic review survives Phase One release');

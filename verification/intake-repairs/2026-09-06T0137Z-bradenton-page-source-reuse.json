@@ -1,9 +1,10 @@
 {
   "recordedAt": "2026-09-06T01:37:15.910Z",
+  "verifiedAt": "2026-09-06T01:47:12.076Z",
   "projectId": 3,
   "submissionId": "bask-bradenton-2513-v1",
   "issueId": "bradenton-phase-one-repeated-package-read-20260906",
-  "diagnosis": "Phase One reopened the 184347652-byte prepared ZIP for every page even though the same verified page bytes had already been materialized as individual BRAIN SCAN SOURCE objects. The repeated archive reads remained the dominant Phase One latency after category AI calls were removed.",
+  "diagnosis": "Phase One reopened the 184347652-byte prepared ZIP for every page even though the same verified page bytes had already been materialized as individual BRAIN SCAN SOURCE objects. Queue delivery then serialized the otherwise deterministic routing.",
   "observedBeforeRepair": {
     "phaseOneStatus": "RUNNING",
     "phaseOneTotal": 169,
@@ -15,29 +16,55 @@
   },
   "repair": {
     "releaseId": "2026-09-06-phase-one-bounded-drain",
+    "pullRequests": [
+      50,
+      51
+    ],
+    "mergeCommits": [
+      "aa1520b5da998bea4d60ab7901d139552e06c3a7",
+      "24d65c337b8d01d9d30fdf965af7cd374f108715"
+    ],
     "behavior": [
-      "Match only an exact project, source class, byte size, and full /Sources/ path suffix.",
-      "Read the already-materialized verified page object rather than reopen the full prepared ZIP.",
+      "Match only an exact project, BRAIN SCAN SOURCE class, byte size, and full /Sources/ path suffix.",
+      "Read the already-materialized verified page object instead of reopening the full prepared ZIP.",
       "Write an independent Phase One working copy and verify its stored byte size.",
-      "Fall back to the existing ZIP extraction path when an exact verified page source is unavailable.",
-      "Drain at most 20 provenance-qualified pages inside each scheduler or health pass using the same atomic claim as queue consumers."
+      "Fall back to ZIP extraction when an exact verified page source is unavailable.",
+      "Drain at most 20 provenance-qualified pages in each scheduler or health pass using the same atomic claim as queue consumers."
     ],
     "preservation": [
-      "The Brain source object and original upload remain unchanged.",
-      "Existing sorted pages and semantic Brain records remain unchanged.",
-      "No category is inferred unless the verified parent source identity already qualifies for deterministic routing.",
-      "No scale, quantity, CSI code, price, or estimate result is added."
+      "Brain source objects and original uploads remain unchanged.",
+      "Previously completed work remains unchanged.",
+      "No scale, quantity, CSI code, price, or takeoff result was added.",
+      "Semantic Mason Brain review continues independently."
     ]
   },
   "verification": {
     "javascriptSyntaxCheck": "PASS",
-    "phaseOneIntegrationSuite": "PASS including package-unavailable Brain-source reuse",
+    "phaseOneIntegrationSuite": "PASS including successful Brain-source reuse with the prepared ZIP unavailable",
     "holdingSuite": "PASS (7 tests)",
-    "production": "PENDING DEPLOYMENT"
+    "productionDeployment": {
+      "status": "PASS",
+      "actionRun": 34004696043,
+      "url": "https://github.com/dalefarrow5268-art/mason-forge-bootstrap/actions/runs/34004696043"
+    },
+    "live": {
+      "checkedAt": "2026-09-06T01:47:12.076Z",
+      "phaseOneStatus": "COMPLETE",
+      "phaseOneTotal": 169,
+      "phaseOneSorted": 169,
+      "phaseOnePercent": 100,
+      "phaseTwoStatus": "RUNNING",
+      "phaseTwoTotal": 169,
+      "phaseTwoQueued": 31,
+      "phaseTwoPending": 138,
+      "repairRequests": 0
+    },
+    "milestone": "Phase One advanced from 71 to 160 in one bounded pass and completed 169/169 in the next pass."
   },
   "remainingBlockers": [
-    "Production deployment and live throughput improvement must be verified.",
-    "Verified CSI 2026 catalog remains required.",
+    "Phase Two project-information processing is active and must be reviewed for duplicate per-page analysis before further acceleration.",
+    "Eight semantic Brain reviews require bounded review resolution; detailed semantic review continues independently.",
+    "Verified CSI 2026 catalog remains required before Phase Three can complete.",
     "BASK estimate-delivery connection remains unverified.",
     "Takeoff quantities require verified scale and source evidence."
   ]

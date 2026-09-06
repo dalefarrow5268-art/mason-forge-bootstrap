@@ -1,11 +1,11 @@
-import {queuePhaseThree,processPhaseThree,normalizeDivisions,phaseThreeFormat,validateDivisionCatalogDocument,importDivisionCatalog} from '../src/phase-three-review.js';
+import {queuePhaseThree,processPhaseThree,normalizeDivisions,phaseThreeFormat,validateDivisionCatalogDocument,importDivisionCatalog,validateFulfillmentDivisionRows,syncDivisionCatalogFromFulfillment} from '../src/phase-three-review.js';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import {ZipWriter,Uint8ArrayWriter,TextReader} from '@zip.js/zip.js';
 import {queuePhaseTwo,processPhaseTwo,sourceIds,normalizeFacts} from '../src/phase-two-review.js';
 const sql=new DatabaseSync(':memory:');
-sql.exec(`CREATE TABLE project_files(id INTEGER PRIMARY KEY,project_id INTEGER,r2_key TEXT UNIQUE,file_name TEXT,relative_path TEXT,file_type TEXT,size_bytes INTEGER,review_status TEXT,source_class TEXT,uploaded_at TEXT,updated_at TEXT,archived_at TEXT); CREATE TABLE project_folders(id TEXT,project_id INTEGER,folder_path TEXT UNIQUE,created_at TEXT,updated_at TEXT);`);
+sql.exec(`CREATE TABLE projects(id INTEGER PRIMARY KEY); INSERT INTO projects(id) VALUES(13); CREATE TABLE project_files(id INTEGER PRIMARY KEY,project_id INTEGER,r2_key TEXT UNIQUE,file_name TEXT,relative_path TEXT,file_type TEXT,size_bytes INTEGER,review_status TEXT,source_class TEXT,uploaded_at TEXT,updated_at TEXT,archived_at TEXT); CREATE TABLE project_folders(id TEXT,project_id INTEGER,folder_path TEXT UNIQUE,created_at TEXT,updated_at TEXT);`);
 sql.exec(readFileSync(new URL('../schema/0007_phase_one_review.sql',import.meta.url),'utf8'));
 const DB={async batch(statements){return Promise.all(statements.map(s=>s.run()));},prepare(s){return {bind(...p){return {
  async run(){return {meta:{changes:sql.prepare(s).run(...p).changes}};},
@@ -16,6 +16,7 @@ const objects=new Map(),sent=[];
 const bucket={async head(k){return objects.has(k)?{size:objects.get(k).length}:null},async get(k,o){let b=objects.get(k);if(!b)return null;if(o?.range)b=b.slice(o.range.offset,o.range.offset+o.range.length);return{size:b.length,body:new Blob([b]).stream(),async text(){return new TextDecoder().decode(b)},async arrayBuffer(){return b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength)}}},async put(k,v){objects.set(k,typeof v==='string'?new TextEncoder().encode(v):v);},async delete(k){objects.delete(k)},async createMultipartUpload(k){const parts=[];return{async uploadPart(n,b){parts[n-1]=b.slice();return{partNumber:n,etag:String(n)}},async complete(){const out=new Uint8Array(parts.reduce((n,p)=>n+p.length,0));let pos=0;for(const p of parts){out.set(p,pos);pos+=p.length;}objects.set(k,out)},async abort(){objects.delete(k)}}}};
 const env={DB,PROJECT_FILES:bucket,PHASE_TWO_QUEUE:{async send(b){sent.push(b)}},PHASE_THREE_QUEUE:{async send(b){sent.push(b)}}};
 sql.exec(readFileSync(new URL('../schema/0008_phase_two.sql',import.meta.url),'utf8'));
+sql.exec(readFileSync(new URL('../schema/0004_fulfillment_inventory.sql',import.meta.url),'utf8'));
 assert.equal(sourceIds('[1,1]'),null);assert.equal(sourceIds('[]'),null);
 assert.equal(normalizeFacts({findings:[{question:'Who',fact:'guess'}]}).findings.length,0);
 sql.exec(`INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,size_bytes) VALUES(1,13,'original','submission.zip','SSX Project Holding Folder/Phase One Project Review/Test/submission.zip',12);
@@ -35,10 +36,16 @@ assert.equal(sql.prepare('SELECT relative_path FROM project_files WHERE id=1').g
 console.log('PASS: submission gate, review blocks, idempotent queue, five questions, citations, report, originals');
 
 sql.exec(readFileSync(new URL('../schema/0009_phase_three.sql',import.meta.url),'utf8'));
+const livingDivisions=Array.from({length:50},(_,i)=>{const code=String(i).padStart(2,'0');return {inventory_number:`SFC-DIV-${String(i+15).padStart(6,'0')}`,csi_code:code,item_name:`${code} Registered Division ${code}`,folder_path:`SSX Fulfillment Center/01 CSI Divisions/${code} Registered Division ${code}`};});
+assert.equal(validateFulfillmentDivisionRows(livingDivisions).length,50);
+assert.throws(()=>validateFulfillmentDivisionRows(livingDivisions.slice(1)),/exactly 50/);
+for(const [i,row] of livingDivisions.entries())sql.prepare("INSERT INTO fulfillment_inventory(inventory_number,project_id,item_type,item_name,csi_code,folder_path,status,created_at,updated_at) VALUES(?,13,'DIV',?,?,?,'ACTIVE','now','now')").run(row.inventory_number,row.item_name,row.csi_code,row.folder_path);
+const synced=await syncDivisionCatalogFromFulfillment(env);assert.equal(synced.divisions.length,50);assert.match(synced.source,/Living Schedule permanent inventory/);
 assert.throws(()=>validateDivisionCatalogDocument({edition:'2026',licensedAccessConfirmed:true,completeCatalog:true,expectedDivisionCount:2,sourceReference:'https://www.csiresources.org/standards/masterformat2026',divisions:[{code:'03',title:'Concrete'}]}),/count/);
 assert.throws(()=>validateDivisionCatalogDocument({edition:'2026',licensedAccessConfirmed:true,completeCatalog:true,expectedDivisionCount:2,sourceReference:'https://www.csiresources.org/standards/masterformat2026',divisions:[{code:'03',title:'Concrete'},{code:'03',title:'Concrete'}]}),/Duplicate/);
 sql.exec("UPDATE phase_one_items SET category='Plans'");
-await queuePhaseThree(env);assert.equal(sql.prepare('SELECT status FROM phase_three_jobs').get().status,'WAITING_STANDARD');assert.equal(sent.length,0);
+await queuePhaseThree(env);assert.equal(sql.prepare('SELECT status FROM phase_three_jobs').get().status,'RUNNING');assert.equal(sent.length,1);
+sql.exec("DELETE FROM phase_three_items; UPDATE phase_three_jobs SET status='WAITING_STANDARD',catalog_json=NULL; DELETE FROM phase_three_catalogs; DELETE FROM phase_three_divisions;");sent.length=0;
 const catalogDocument={edition:'2026',licensedAccessConfirmed:true,completeCatalog:true,expectedDivisionCount:1,sourceReference:'https://www.csiresources.org/standards/masterformat2026',divisions:[{code:'03',title:'Test Concrete'}]};
 const catalogBytes=new TextEncoder().encode(JSON.stringify(catalogDocument));objects.set('catalog',catalogBytes);sql.exec("INSERT INTO project_files(id,project_id,r2_key,file_name,relative_path,file_type,size_bytes,uploaded_at,updated_at) VALUES(999,13,'catalog','catalog.json','catalog.json','application/json',"+catalogBytes.length+",'now','now')");
 const catalogHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',catalogBytes)),b=>b.toString(16).padStart(2,'0')).join('');

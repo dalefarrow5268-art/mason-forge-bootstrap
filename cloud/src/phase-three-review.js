@@ -6,6 +6,39 @@ export async function divisionCatalog(env){
  if(!rows.length||rows.some(r=>!/^\d{2}$/.test(r.code)||Number(r.code)>49||!r.title?.trim()))return null;
  return {edition:'2026',source:meta.source_reference,verifiedAt:meta.verified_at,divisions:rows};
 }
+export function validateDivisionCatalogDocument(data){
+ if(data?.edition!=='2026')throw new Error('Catalog edition must be 2026');
+ if(data?.licensedAccessConfirmed!==true||data?.completeCatalog!==true)throw new Error('Licensed access and complete catalog confirmation are required');
+ if(typeof data.sourceReference!=='string'||!/^https:\/\//i.test(data.sourceReference)||data.sourceReference.length>1000)throw new Error('An HTTPS catalog source reference is required');
+ if(!Number.isInteger(data.expectedDivisionCount)||data.expectedDivisionCount<1||data.expectedDivisionCount>50)throw new Error('Expected division count must be declared');
+ if(!Array.isArray(data.divisions)||data.divisions.length!==data.expectedDivisionCount)throw new Error('Catalog division count does not match the declared complete count');
+ const seen=new Set(),divisions=[];
+ for(const row of data.divisions){
+  const code=String(row?.code||''),title=String(row?.title||'').trim();
+  if(!/^\d{2}$/.test(code)||Number(code)>49||!title||title.length>200)throw new Error('Every catalog row requires a valid two-digit code and exact title');
+  if(seen.has(code))throw new Error(`Duplicate catalog division code: ${code}`);seen.add(code);divisions.push({code,title});
+ }
+ divisions.sort((a,b)=>a.code.localeCompare(b.code));
+ return {edition:'2026',sourceReference:data.sourceReference,divisions};
+}
+export async function importDivisionCatalog(env,submissionId,sourceFileId,expectedSha256){
+ if(!Number.isInteger(sourceFileId)||!/^\w*[a-f0-9]{64}\w*$/i.test(expectedSha256||''))throw new Error('Source file ID and SHA-256 are required');
+ const file=await env.DB.prepare(`SELECT f.* FROM project_files f JOIN phase_project_submissions s ON s.project_id=f.project_id WHERE s.id=? AND f.id=? AND f.archived_at IS NULL`).bind(submissionId,sourceFileId).first();
+ if(!file)throw new Error('Catalog source file is not registered in this project');
+ if(file.size_bytes>1024*1024)throw new Error('Catalog source JSON exceeds 1 MiB');
+ const object=await env.PROJECT_FILES.get(file.r2_key);if(!object)throw new Error('Catalog source file is unavailable');
+ const bytes=new Uint8Array(await object.arrayBuffer()),hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
+ if(hash!==expectedSha256.toLowerCase())throw new Error('Catalog source SHA-256 does not match');
+ let document;try{document=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));}catch{throw new Error('Catalog source must be valid UTF-8 JSON');}
+ const catalog=validateDivisionCatalogDocument(document),verifiedAt=now(),source=`${catalog.sourceReference} | project-file:${sourceFileId} | sha256:${hash}`;
+ await env.DB.batch([
+  env.DB.prepare("DELETE FROM phase_three_divisions WHERE edition='2026'").bind(),
+  ...catalog.divisions.map(row=>env.DB.prepare("INSERT INTO phase_three_divisions(edition,code,title) VALUES('2026',?,?)").bind(row.code,row.title)),
+  env.DB.prepare("INSERT OR REPLACE INTO phase_three_catalogs(edition,source_reference,verified_at) VALUES('2026',?,?)").bind(source,verifiedAt),
+  env.DB.prepare("UPDATE phase_three_jobs SET status='WAITING_STANDARD',catalog_json=NULL,updated_at=? WHERE id=? AND status='NEEDS_REVIEW' AND NOT EXISTS(SELECT 1 FROM phase_three_items WHERE job_id=phase_three_jobs.id)").bind(verifiedAt,submissionId)
+ ]);
+ return {edition:'2026',divisionCount:catalog.divisions.length,sourceFileId,sourceSha256:hash,verifiedAt,status:'VERIFIED_CATALOG_LOADED'};
+}
 export async function queuePhaseThree(env){
  await env.DB.prepare("INSERT OR IGNORE INTO phase_three_jobs(id,created_at,updated_at) SELECT id,?,? FROM phase_two_jobs WHERE status='COMPLETE'").bind(now(),now()).run();
  const catalog=await divisionCatalog(env);

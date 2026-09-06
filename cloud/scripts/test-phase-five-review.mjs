@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {normalizeScopes} from '../src/phase-five-review.js';
+const evidence=[{sheet:'A9.1',evidence:'SLOPED CONCRETE SIDEWALK PER CIVIL'}];
+const accepted=normalizeScopes({lines:[{text:'Provide sloped concrete sidewalk as indicated on A9.1.',evidenceIndexes:[0]}],issues:['Slope dimensions are not shown.'],completeReview:false},evidence);
+assert.equal(accepted.lines.length,1);
+assert.equal(accepted.issues.length,0);
+assert.equal(accepted.limitations.length,1);
+const uncited=normalizeScopes({lines:[{text:'Provide sidewalk.',evidenceIndexes:[]}],issues:[]},evidence);
+assert.equal(uncited.lines.length,0);
+assert.ok(uncited.issues.length);
+const empty=normalizeScopes({lines:[],issues:['No supported scope']},evidence);
+assert.ok(empty.issues.includes('No supported section scopes'));
+console.log('Phase Five deterministic scope validation passed.');
